@@ -32,6 +32,24 @@
     },
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "4e2b6915-5b8f-4aea-9f71-e69179ece785"
+      }
+    },
+    "owner": "csniacllyou",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/4e2b6915-5b8f-4aea-9f71-e69179ece785",
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0,
+      "requestHeaders": {
+        "expo-channel-name": "preview"
+      }
     }
   }
 }
