@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import type { Pool, PoolClient } from "pg";
 import { z } from "zod";
-import { HttpError, idParams, parse, requireUser } from "../lib/http.js";
+import { HttpError, idParams, parse, requireUser, requireVerifiedEmail } from "../lib/http.js";
 import { hashOpaqueToken, newInviteCode, newInviteToken, normalizeInviteCode } from "../lib/security.js";
 
 const createBody = z.object({ name: z.string().trim().min(1).max(80), relationshipStartedOn: z.string().date().nullable().optional() }).strict();
@@ -35,6 +35,7 @@ export function registerPairRoutes(app: FastifyInstance, db: Pool) {
 
   app.post("/pairs", async (request, reply) => {
     const userId = await requireUser(request);
+    await requireVerifiedEmail(db, userId);
     const body = parse(createBody, request.body);
     const client = await db.connect();
     try {
@@ -81,6 +82,7 @@ export function registerPairRoutes(app: FastifyInstance, db: Pool) {
 
   app.post("/pairs/join", async (request) => {
     const userId = await requireUser(request);
+    await requireVerifiedEmail(db, userId);
     const { secret } = parse(joinBody, request.body);
     const normalized = normalizeInviteCode(secret);
     const isCode = /^[A-Z2-9]{12}$/.test(normalized);

@@ -1,6 +1,9 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type PropsWithChildren } from "react";
+import { Platform } from "react-native";
 import { BackendError, backendClient, type AuthSessionDto, type UserDto } from "@/services/backendClient";
 import { clearSession, readSession, writeSession, type StoredSession } from "@/services/secureStorage";
+
+const deviceLabel = Platform.OS === "ios" ? "iPhone" : Platform.OS === "android" ? "Android" : "Устройство";
 
 interface SignUpInput {
   displayName: string;
@@ -17,6 +20,8 @@ interface AuthContextValue {
   signUp: (input: SignUpInput) => Promise<void>;
   signOut: () => Promise<void>;
   refreshSession: () => Promise<StoredSession | null>;
+  verifyEmail: (code: string) => Promise<void>;
+  resendVerification: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -98,7 +103,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
   const signIn = useCallback(async (email: string, password: string) => {
     authEpochRef.current += 1;
-    await applySession(toStoredSession(await backendClient.login({ email: email.trim().toLowerCase(), password })));
+    await applySession(toStoredSession(await backendClient.login({ email: email.trim().toLowerCase(), password, deviceLabel })));
   }, [applySession]);
 
   const signUp = useCallback(async ({ displayName, email, password }: SignUpInput) => {
@@ -107,8 +112,31 @@ export function AuthProvider({ children }: PropsWithChildren) {
       displayName: displayName.trim(),
       email: email.trim().toLowerCase(),
       password,
+      deviceLabel,
     })));
   }, [applySession]);
+
+  const withAccessToken = useCallback(async <T,>(operation: (token: string) => Promise<T>): Promise<T> => {
+    if (!session?.accessToken) throw new BackendError("Сначала войдите в аккаунт", 401);
+    try {
+      return await operation(session.accessToken);
+    } catch (error) {
+      if (!(error instanceof BackendError) || error.status !== 401) throw error;
+      const refreshed = await refreshSession();
+      if (!refreshed) throw error;
+      return operation(refreshed.accessToken);
+    }
+  }, [refreshSession, session?.accessToken]);
+
+  const verifyEmail = useCallback(async (code: string) => {
+    await withAccessToken((token) => backendClient.verifyEmail(code, token));
+    const refreshedUser = await withAccessToken((token) => backendClient.me(token));
+    setSession((current) => current ? { ...current, user: refreshedUser } : current);
+  }, [withAccessToken]);
+
+  const resendVerification = useCallback(async () => {
+    await withAccessToken((token) => backendClient.resendVerification(token));
+  }, [withAccessToken]);
 
   const signOut = useCallback(async () => {
     authEpochRef.current += 1;
@@ -125,11 +153,13 @@ export function AuthProvider({ children }: PropsWithChildren) {
     isAuthenticated: !!session,
     isHydrated,
     refreshSession,
+    resendVerification,
     signIn,
     signOut,
     signUp,
     user: session?.user ?? null,
-  }), [isHydrated, refreshSession, session, signIn, signOut, signUp]);
+    verifyEmail,
+  }), [isHydrated, refreshSession, resendVerification, session, signIn, signOut, signUp, verifyEmail]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

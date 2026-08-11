@@ -4,6 +4,15 @@ export interface UserDto {
   id: string;
   email: string;
   displayName: string;
+  emailVerified: boolean;
+}
+
+export interface SessionSummaryDto {
+  familyId: string;
+  deviceLabel: string | null;
+  createdAt: string;
+  lastSeenAt: string;
+  current: boolean;
 }
 
 export interface AuthSessionDto {
@@ -96,15 +105,27 @@ async function request<T>(path: string, init: RequestInit = {}, accessToken?: st
 }
 
 export const backendClient = {
-  register: (input: { email: string; password: string; displayName: string }) =>
+  register: (input: { email: string; password: string; displayName: string; deviceLabel?: string }) =>
     request<AuthSessionDto>("/auth/register", { method: "POST", body: JSON.stringify(input) }),
-  login: (input: { email: string; password: string }) =>
+  login: (input: { email: string; password: string; deviceLabel?: string }) =>
     request<AuthSessionDto>("/auth/login", { method: "POST", body: JSON.stringify(input) }),
   refresh: (refreshToken: string) =>
     request<RefreshSessionDto>("/auth/refresh", { method: "POST", body: JSON.stringify({ refreshToken }) }),
   me: (accessToken: string) => request<UserDto>("/auth/me", {}, accessToken),
   logout: (refreshToken: string, accessToken: string) =>
     request<void>("/auth/logout", { method: "POST", body: JSON.stringify({ refreshToken }) }, accessToken),
+  verifyEmail: (code: string, accessToken: string) =>
+    request<void>("/auth/verify-email", { method: "POST", body: JSON.stringify({ code }) }, accessToken),
+  resendVerification: (accessToken: string) =>
+    request<void>("/auth/resend-verification", { method: "POST" }, accessToken),
+  forgotPassword: (email: string) =>
+    request<{ message: string }>("/auth/forgot-password", { method: "POST", body: JSON.stringify({ email }) }),
+  resetPassword: (input: { email: string; code: string; newPassword: string }) =>
+    request<void>("/auth/reset-password", { method: "POST", body: JSON.stringify(input) }),
+  listSessions: async (accessToken: string) =>
+    (await request<{ items: SessionSummaryDto[] }>("/auth/sessions", {}, accessToken)).items,
+  revokeSession: (familyId: string, accessToken: string) =>
+    request<void>(`/auth/sessions/${encodeURIComponent(familyId)}`, { method: "DELETE" }, accessToken),
   getPair: async (accessToken: string) => (await request<{ pair: PairDto | null }>("/pairs/me", {}, accessToken)).pair,
   createPair: (input: { name: string; relationshipStartedOn: string }, accessToken: string) =>
     request<{ pair: PairDto; invite: PairInviteDto }>("/pairs", { method: "POST", body: JSON.stringify(input) }, accessToken),

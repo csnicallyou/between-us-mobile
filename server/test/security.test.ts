@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { encryptFeedback, hashOpaqueToken, newInviteCode, newInviteToken, normalizeInviteCode } from "../src/lib/security.js";
+import { encryptFeedback, hashOpaqueToken, newInviteCode, newInviteToken, newResetToken, newVerificationCode, normalizeInviteCode } from "../src/lib/security.js";
 
 describe("security primitives", () => {
   it("generates normalized 12-character invite codes", () => {
@@ -21,5 +21,19 @@ describe("security primitives", () => {
     expect(first.ciphertext.toString("utf8")).not.toContain("private");
     expect(first.nonce.equals(second.nonce)).toBe(false);
     expect(first.authTag).toHaveLength(16);
+  });
+
+  it("generates zero-padded 6-digit verification codes across many draws", () => {
+    for (let i = 0; i < 200; i += 1) {
+      expect(newVerificationCode()).toMatch(/^\d{6}$/);
+    }
+  });
+
+  it("generates unguessable, unique reset tokens", () => {
+    const first = newResetToken();
+    const second = newResetToken();
+    expect(first).not.toBe(second);
+    expect(first.length).toBeGreaterThanOrEqual(40);
+    expect(hashOpaqueToken(first)).not.toBe(hashOpaqueToken(second));
   });
 });

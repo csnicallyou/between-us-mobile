@@ -16,6 +16,12 @@ export function normalizeInviteCode(value: string) {
   return value.replace(/[\s-]/g, "").toUpperCase();
 }
 
+export function newVerificationCode() {
+  return String(randomBytes(4).readUInt32BE(0) % 1_000_000).padStart(6, "0");
+}
+
+export const newResetToken = () => randomBytes(32).toString("base64url");
+
 export const hashPassword = (password: string) => argon2.hash(password, {
   type: argon2.argon2id,
   memoryCost: 19_456,
