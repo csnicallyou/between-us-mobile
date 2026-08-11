@@ -2,6 +2,7 @@ import type { FastifyInstance } from "fastify";
 import type { Pool } from "pg";
 import { z } from "zod";
 import { paginationQuery, parse, requirePair, requireUser } from "../lib/http.js";
+import { sendPushToUser } from "../lib/push.js";
 
 const bodySchema = z.object({ content: z.string().trim().min(1).max(4000) }).strict();
 
@@ -18,6 +19,14 @@ export function registerChatRoutes(app: FastifyInstance, db: Pool) {
     const { content } = parse(bodySchema, request.body);
     const result = await db.query("INSERT INTO chat_messages(pair_id,author_id,content) VALUES ($1,$2,$3) RETURNING id,author_id,content,created_at", [pairId, userId, content]);
     const row = result.rows[0]!;
+    const partner = await db.query<{ user_id: string }>("SELECT user_id FROM pair_members WHERE pair_id=$1 AND user_id<>$2", [pairId, userId]);
+    if (partner.rows[0]) {
+      void sendPushToUser(db, partner.rows[0].user_id, {
+        title: "Между нами",
+        body: "Новое сообщение в общем чате",
+        data: { type: "chat" },
+      }).catch(() => undefined);
+    }
     return reply.code(201).send({ id: row.id, authorId: row.author_id, content: row.content, createdAt: row.created_at });
   });
 }

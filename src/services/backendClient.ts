@@ -126,6 +126,10 @@ export const backendClient = {
     (await request<{ items: SessionSummaryDto[] }>("/auth/sessions", {}, accessToken)).items,
   revokeSession: (familyId: string, accessToken: string) =>
     request<void>(`/auth/sessions/${encodeURIComponent(familyId)}`, { method: "DELETE" }, accessToken),
+  registerPushToken: (input: { expoPushToken: string; platform: "ios" | "android"; timezone?: string; quietHoursStart?: number | null; quietHoursEnd?: number | null }, accessToken: string) =>
+    request<void>("/devices/push-token", { method: "PUT", body: JSON.stringify(input) }, accessToken),
+  unregisterPushToken: (expoPushToken: string, accessToken: string) =>
+    request<void>("/devices/push-token", { method: "DELETE", body: JSON.stringify({ expoPushToken }) }, accessToken),
   getPair: async (accessToken: string) => (await request<{ pair: PairDto | null }>("/pairs/me", {}, accessToken)).pair,
   createPair: (input: { name: string; relationshipStartedOn: string }, accessToken: string) =>
     request<{ pair: PairDto; invite: PairInviteDto }>("/pairs", { method: "POST", body: JSON.stringify(input) }, accessToken),

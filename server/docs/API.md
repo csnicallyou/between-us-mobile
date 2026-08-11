@@ -42,4 +42,11 @@ An invite is `{id,token,code,expiresAt,link}` and is only returned at creation. 
 - `POST /feedback` with `{content}` is intentionally write-only and returns a receipt, never content.
 - `POST /media` uses `multipart/form-data` with one file. `GET|DELETE /media/:id` are private pair-scoped operations.
 
+## Push notifications
+
+- `PUT /devices/push-token` — `{expoPushToken,platform,quietHoursStart?,quietHoursEnd?,timezone?}` → `204`. Upserts by `expoPushToken` (globally unique), so re-registering the same device just updates ownership/preferences.
+- `DELETE /devices/push-token` — `{expoPushToken}` → `204`. Called on sign-out.
+
+`POST /chat/messages` sends a generic push ("Новое сообщение в общем чате", no message content) to the other pair member via `server/src/lib/push.ts` (Expo push service), skipping tokens inside their configured quiet hours. Failures never affect the chat response. This is the only trigger implemented so far — plans/memories/agreements/conflicts don't push yet. Real delivery on this beta's free-signed sideload IPA is unverified (push notification entitlements generally need a paid Apple Developer account).
+
 The authoritative machine-readable surface is `openapi.yaml`. Entry payload sub-schemas remain versioned by the mobile/domain layer; the API preserves the object and supplies record versioning and tenant isolation.

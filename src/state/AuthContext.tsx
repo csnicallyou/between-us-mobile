@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type PropsWithChildren } from "react";
 import { Platform } from "react-native";
 import { BackendError, backendClient, type AuthSessionDto, type UserDto } from "@/services/backendClient";
+import { registerPushToken, unregisterPushToken } from "@/services/pushNotifications";
 import { clearSession, readSession, writeSession, type StoredSession } from "@/services/secureStorage";
 
 const deviceLabel = Platform.OS === "ios" ? "iPhone" : Platform.OS === "android" ? "Android" : "Устройство";
@@ -144,9 +145,15 @@ export function AuthProvider({ children }: PropsWithChildren) {
     setSession(null);
     await clearSession();
     if (current) {
+      await unregisterPushToken(current.accessToken).catch(() => undefined);
       await backendClient.logout(current.refreshToken, current.accessToken).catch(() => undefined);
     }
   }, [session]);
+
+  useEffect(() => {
+    if (!session?.accessToken) return;
+    void registerPushToken(session.accessToken);
+  }, [session?.accessToken]);
 
   const value = useMemo<AuthContextValue>(() => ({
     accessToken: session?.accessToken ?? null,

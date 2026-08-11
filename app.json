@@ -32,7 +32,24 @@
         }
       ],
       "expo-sqlite",
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      "expo-notifications",
+      [
+        "expo-widgets",
+        {
+          "bundleIdentifier": "com.betweenus.mobile.widgets",
+          "groupIdentifier": "group.com.betweenus.mobile",
+          "widgets": [
+            {
+              "name": "LastJournalEntry",
+              "displayName": "Последняя запись дневника",
+              "description": "Показывает заголовок и начало последней общей записи дневника.",
+              "supportedFamilies": ["systemSmall", "systemMedium"],
+              "contentMarginsDisabled": false
+            }
+          ]
+        }
+      ]
     ],
     "ios": {
       "supportsTablet": false,
