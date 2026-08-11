@@ -17,7 +17,12 @@ export function AppButton({ label, variant = "primary", style, ...props }: AppBu
       {...props}
     >
       {supportsNativeLiquidGlass && variant !== "primary" ? (
-        <NativeGlassLayer cornerRadius={radius.md} interactive variant="clear" />
+        <NativeGlassLayer
+          cornerRadius={radius.md}
+          interactive
+          tintColor={variant === "danger" ? "rgba(209,100,87,0.12)" : "rgba(255,255,255,0.10)"}
+          variant="clear"
+        />
       ) : null}
       <Text style={[styles.label, variant !== "primary" && styles.darkLabel, variant === "danger" && styles.dangerLabel]}>{label}</Text>
     </Pressable>

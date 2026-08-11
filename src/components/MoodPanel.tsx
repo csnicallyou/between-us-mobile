@@ -1,6 +1,8 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { NativeGlassLayer } from "@/components/NativeGlassLayer";
 import { memberLabels, moodLabels } from "@/domain/labels";
 import type { MemberId, MemberMood, Mood } from "@/domain/models";
+import { supportsNativeLiquidGlass } from "@/platform/glass";
 import { colors, controlShadow, radius, spacing, typography } from "@/theme/tokens";
 
 interface MoodPanelProps {
@@ -20,7 +22,13 @@ export function MoodPanel({ currentMemberId, moods, onChangeMood }: MoodPanelPro
       </View>
       <View style={styles.people}>
         {(["anton", "lisa"] as const).map((memberId) => (
-          <View key={memberId} style={[styles.person, memberId === "lisa" && styles.lisaPerson]}>
+          <View key={memberId} style={[styles.person, memberId === "lisa" && styles.lisaPerson, supportsNativeLiquidGlass && styles.nativeGlass]}>
+            {supportsNativeLiquidGlass ? (
+              <NativeGlassLayer
+                cornerRadius={radius.lg}
+                tintColor={memberId === "lisa" ? "rgba(104,89,172,0.11)" : "rgba(209,100,87,0.10)"}
+              />
+            ) : null}
             <View style={[styles.avatar, memberId === "lisa" && styles.lisaAvatar]}><Text style={styles.avatarText}>{memberLabels[memberId][0]}</Text></View>
             <Text style={styles.name}>{memberLabels[memberId]}</Text>
             <Text style={styles.value}>{moods[memberId].mood ? moodLabels[moods[memberId].mood] : "Не выбрано"}</Text>
@@ -32,7 +40,15 @@ export function MoodPanel({ currentMemberId, moods, onChangeMood }: MoodPanelPro
         {quickMoods.map((mood) => {
           const active = moods[currentMemberId].mood === mood;
           return (
-            <Pressable key={mood} onPress={() => onChangeMood(mood)} style={[styles.option, active && styles.activeOption]}>
+            <Pressable key={mood} onPress={() => onChangeMood(mood)} style={[styles.option, active && styles.activeOption, supportsNativeLiquidGlass && styles.nativeGlass]}>
+              {supportsNativeLiquidGlass ? (
+                <NativeGlassLayer
+                  cornerRadius={radius.pill}
+                  interactive
+                  tintColor={active ? "rgba(51,123,116,0.16)" : "rgba(255,255,255,0.08)"}
+                  variant="clear"
+                />
+              ) : null}
               <Text style={[styles.optionText, active && styles.activeOptionText]}>{moodLabels[mood]}</Text>
             </Pressable>
           );
@@ -61,4 +77,5 @@ const styles = StyleSheet.create({
   activeOption: { backgroundColor: colors.seaSoft, borderColor: "rgba(51,123,116,0.48)" },
   optionText: { color: colors.muted, fontFamily: typography.body, fontSize: 12 },
   activeOptionText: { color: colors.sea, fontWeight: "700" },
+  nativeGlass: { backgroundColor: "transparent", borderWidth: 0, elevation: 0 },
 });

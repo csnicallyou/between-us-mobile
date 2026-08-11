@@ -4,21 +4,31 @@ import { Platform, StyleSheet } from "react-native";
 interface NativeGlassLayerProps {
   cornerRadius: number;
   interactive?: boolean;
+  tintColor?: string | undefined;
   variant?: "clear" | "regular";
 }
 
-export function NativeGlassLayer({ cornerRadius, interactive = false, variant = "clear" }: NativeGlassLayerProps) {
+export function NativeGlassLayer({ cornerRadius, interactive = false, tintColor, variant = "regular" }: NativeGlassLayerProps) {
   if (Platform.OS !== "ios") {
     return null;
   }
 
   return (
     <GlassView
-      colorScheme="light"
       glassEffectStyle={variant}
       isInteractive={interactive}
       pointerEvents="none"
-      style={[StyleSheet.absoluteFill, { borderRadius: cornerRadius, overflow: "hidden" }]}
+      {...(tintColor ? { tintColor } : {})}
+      style={[StyleSheet.absoluteFill, styles.depth, { borderRadius: cornerRadius }]}
     />
   );
 }
+
+const styles = StyleSheet.create({
+  depth: {
+    shadowColor: "#173246",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.16,
+    shadowRadius: 22,
+  },
+});

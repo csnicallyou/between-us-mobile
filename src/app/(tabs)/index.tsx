@@ -27,7 +27,7 @@ export default function HomeScreen() {
 
   return (
     <Screen header={<PageHeader kicker="Наше общее место" title="Между нами" subtitle="Важные события, планы и мысли — в одном защищённом пространстве." />}>
-      <Surface style={styles.timer}>
+      <Surface glassTintColor="rgba(255,255,255,0.08)" style={styles.timer}>
         <Text style={styles.timerLabel}>Вместе с 10 февраля 2026 года</Text>
         <Text style={styles.timerValue}>{relationshipDuration(snapshot.relationshipStartedAt)}</Text>
         <Text style={styles.timerCaption}>Таймер обновляется автоматически</Text>
@@ -35,14 +35,14 @@ export default function HomeScreen() {
 
       <MoodPanel currentMemberId={snapshot.currentMemberId} moods={snapshot.moods} onChangeMood={setCurrentMood} />
 
-      <Surface style={styles.nextPlan}>
+      <Surface glassTintColor="rgba(51,123,116,0.10)" style={styles.nextPlan}>
         <View style={styles.sectionRow}><Text style={styles.sectionLabel}>Ближайшее важное</Text><Text style={styles.date}>{dateLabel(nextPlan?.date ?? null)}</Text></View>
         <Text style={styles.cardTitle}>{nextPlan?.title ?? "Добавьте первый план"}</Text>
         <Text style={styles.nextPlanBody}>{nextPlan?.description ?? "Совместные планы появятся здесь."}</Text>
         {nextPlan ? <Text style={styles.tag}>{planKindLabels[nextPlan.kind]}</Text> : null}
       </Surface>
 
-      <Surface style={styles.message}>
+      <Surface glassTintColor="rgba(255,255,255,0.08)" style={styles.message}>
         <Text style={styles.sectionLabel}>Последняя запись партнёра</Text>
         <Text style={styles.messageTitle}>{partnerEntry?.title ?? "Пока нет сообщений"}</Text>
         <Text style={styles.cardBody}>{partnerEntry?.content ?? "Напишите друг другу первую запись."}</Text>

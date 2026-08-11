@@ -5,13 +5,15 @@ import { supportsNativeLiquidGlass } from "@/platform/glass";
 import { colors, radius, shadow, spacing } from "@/theme/tokens";
 
 interface SurfaceProps extends PropsWithChildren {
+  glassTintColor?: string;
+  glassVariant?: "clear" | "regular";
   style?: StyleProp<ViewStyle>;
 }
 
-export function Surface({ children, style }: SurfaceProps) {
+export function Surface({ children, glassTintColor, glassVariant = "regular", style }: SurfaceProps) {
   return (
     <View style={[styles.surface, style, supportsNativeLiquidGlass && styles.nativeSurface]}>
-      {supportsNativeLiquidGlass ? <NativeGlassLayer cornerRadius={radius.lg} /> : null}
+      {supportsNativeLiquidGlass ? <NativeGlassLayer cornerRadius={radius.lg} tintColor={glassTintColor} variant={glassVariant} /> : null}
       {children}
     </View>
   );
@@ -24,5 +26,5 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     ...shadow,
   },
-  nativeSurface: { backgroundColor: "transparent", elevation: 0, shadowOpacity: 0 },
+  nativeSurface: { backgroundColor: "transparent", elevation: 0 },
 });

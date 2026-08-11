@@ -41,8 +41,11 @@ const nativeGlassLayer = await readFile(new URL("../src/components/NativeGlassLa
 if (!nativeGlassLayer.includes('from "expo-glass-effect"')) {
   throw new Error("NativeGlassLayer must use the UIKit-backed expo-glass-effect component");
 }
-if (!nativeGlassLayer.includes('variant = "clear"')) {
-  throw new Error("NativeGlassLayer must default to clear Liquid Glass instead of an opaque material");
+if (!nativeGlassLayer.includes('variant = "regular"')) {
+  throw new Error("NativeGlassLayer must default to regular Liquid Glass for visible optical depth");
+}
+if (nativeGlassLayer.includes('colorScheme="light"')) {
+  throw new Error("NativeGlassLayer must allow UIKit to choose the system glass color scheme");
 }
 if (nativeGlassLayer.includes("@expo/ui/swift-ui")) {
   throw new Error("NativeGlassLayer must not wrap an empty SwiftUI shape");
