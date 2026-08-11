@@ -7,6 +7,7 @@ import rateLimit from "@fastify/rate-limit";
 import type { Pool } from "pg";
 import type { AppConfig } from "./config.js";
 import { HttpError } from "./lib/http.js";
+import { createMailer } from "./lib/mailer.js";
 import { registerAuthRoutes } from "./routes/auth.js";
 import { registerUserRoutes } from "./routes/users.js";
 import { registerPairRoutes } from "./routes/pairs.js";
@@ -46,8 +47,10 @@ export function buildApp(config: AppConfig, db: Pool) {
     }
   });
 
+  const mailer = createMailer(config, app);
+
   app.register(async (api) => {
-    registerAuthRoutes(api, db, config);
+    registerAuthRoutes(api, db, config, mailer);
     registerUserRoutes(api, db);
     registerPairRoutes(api, db);
     registerEntryRoutes(api, db);

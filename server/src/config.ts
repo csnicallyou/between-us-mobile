@@ -22,7 +22,9 @@ const schema = z.object({
   MAX_UPLOAD_BYTES: z.coerce.number().int().positive().max(20 * 1024 * 1024).default(5 * 1024 * 1024),
   ACCESS_TOKEN_TTL: z.string().default("15m"),
   REFRESH_TOKEN_DAYS: z.coerce.number().int().min(1).max(90).default(30),
-  TRUST_PROXY: booleanString.default("false")
+  TRUST_PROXY: booleanString.default("false"),
+  SMTP_URL: z.string().optional(),
+  MAIL_FROM: z.string().default("Между нами <no-reply@between-us.local>")
 });
 
 export type AppConfig = ReturnType<typeof loadConfig>;

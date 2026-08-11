@@ -5,7 +5,9 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { AppButton } from "@/components/AppButton";
 import { AuthScaffold } from "@/components/AuthScaffold";
+import { EmailVerificationPanel } from "@/components/EmailVerificationPanel";
 import { PairInviteCard } from "@/components/PairInviteCard";
+import { useAuth } from "@/state/AuthContext";
 import { usePair } from "@/state/PairContext";
 import { colors, radius, spacing } from "@/theme/tokens";
 
@@ -17,6 +19,7 @@ function toIsoDate(value: Date) {
 
 export function PairSetupScreen({ initialSecret = "" }: { initialSecret?: string }) {
   const router = useRouter();
+  const { user } = useAuth();
   const { createInvite, createPair, invite, isLoading, joinPair, pair, pendingInvite } = usePair();
   const effectiveSecret = initialSecret || pendingInvite;
   const [mode, setMode] = useState<SetupMode>(effectiveSecret ? "join" : "choose");
@@ -98,6 +101,10 @@ export function PairSetupScreen({ initialSecret = "" }: { initialSecret?: string
         <AppButton disabled={isSubmitting} label={isSubmitting ? "Создаём…" : "Создать приглашение"} onPress={() => void issueInvite()} />
       </AuthScaffold>
     );
+  }
+
+  if (!user?.emailVerified) {
+    return <AuthScaffold title="Почти готово" subtitle="Прежде чем создать или присоединиться к паре, подтвердите почту."><EmailVerificationPanel /></AuthScaffold>;
   }
 
   return (

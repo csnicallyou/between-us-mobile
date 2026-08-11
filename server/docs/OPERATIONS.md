@@ -14,3 +14,7 @@ Recommended health checks:
 - VPN regression: existing unit status and actual client connectivity, not merely open ports.
 
 The full public launch should move this API, database, and media to a dedicated host. No application code depends on VPN services, so migration is a DNS/configuration change plus database/media restore.
+
+## Transactional email
+
+Email verification and password reset codes go through `SMTP_URL` (a standard `smtp://user:pass@host:port` connection string) and `MAIL_FROM`. Neither is set on the beta `/etc/between-us-api.env` yet, so the server logs the code instead of sending it (`journalctl -u between-us-api | grep "logging mail instead"`) — usable end to end for the current two-person beta, not for real users. Before inviting anyone outside the beta pair, add a real SMTP provider's `SMTP_URL` and a `MAIL_FROM` address to the env file and restart `between-us-api.service`.

@@ -8,6 +8,7 @@ export interface StoredUser {
   id: string;
   email: string;
   displayName: string;
+  emailVerified: boolean;
 }
 
 export interface StoredSession {
@@ -33,14 +34,18 @@ function isSession(value: unknown): value is StoredSession {
   if (!value || typeof value !== "object") return false;
   const session = value as Partial<StoredSession>;
   const user = session.user as Partial<StoredUser> | undefined;
-  return typeof session.accessToken === "string"
+  if (!(
+    typeof session.accessToken === "string"
     && session.accessToken.length > 0
     && typeof session.refreshToken === "string"
     && session.refreshToken.length > 0
     && !!user
     && typeof user.id === "string"
     && typeof user.email === "string"
-    && typeof user.displayName === "string";
+    && typeof user.displayName === "string"
+  )) return false;
+  if (typeof user.emailVerified !== "boolean") user.emailVerified = false;
+  return true;
 }
 
 async function readManifest(): Promise<StoredManifest | null> {

@@ -3,43 +3,46 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput } from "react
 import { type Href, useRouter } from "expo-router";
 import { AppButton } from "@/components/AppButton";
 import { AuthScaffold } from "@/components/AuthScaffold";
-import { useAuth } from "@/state/AuthContext";
+import { backendClient } from "@/services/backendClient";
 import { colors, radius, spacing } from "@/theme/tokens";
 
-export default function SignInScreen() {
+export default function ForgotPasswordScreen() {
   const router = useRouter();
-  const { signIn } = useAuth();
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [sent, setSent] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const submit = async () => {
-    if (!/^\S+@\S+\.\S+$/.test(email.trim()) || !password) {
-      setError("Введите корректную почту и пароль");
-      return;
-    }
+    if (!/^\S+@\S+\.\S+$/.test(email.trim())) { setError("Введите корректную электронную почту"); return; }
     setError(null);
     setIsSubmitting(true);
     try {
-      await signIn(email, password);
-      router.replace("/(onboarding)" as Href);
+      await backendClient.forgotPassword(email.trim().toLowerCase());
+      setSent(true);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Не удалось войти");
+      setError(caught instanceof Error ? caught.message : "Не удалось отправить код");
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  if (sent) {
+    return (
+      <AuthScaffold title="Проверьте почту" subtitle={`Если аккаунт с адресом ${email.trim().toLowerCase()} существует, мы отправили код для сброса пароля.`}>
+        <AppButton label="У меня есть код" onPress={() => router.push(`/(auth)/reset-password?email=${encodeURIComponent(email.trim().toLowerCase())}` as Href)} />
+        <Pressable onPress={() => router.back()}><Text style={styles.link}>Назад ко входу</Text></Pressable>
+      </AuthScaffold>
+    );
+  }
+
   return (
-    <AuthScaffold title="Снова вместе" subtitle="Войдите, чтобы открыть ваше общее пространство.">
+    <AuthScaffold title="Забыли пароль?" subtitle="Укажите почту — пришлём код для сброса пароля.">
       <TextInput accessibilityLabel="Электронная почта" autoCapitalize="none" autoComplete="email" keyboardType="email-address" maxLength={254} onChangeText={setEmail} placeholder="Почта" placeholderTextColor={colors.muted} style={styles.input} value={email} />
-      <TextInput accessibilityLabel="Пароль" autoCapitalize="none" autoComplete="current-password" maxLength={200} onChangeText={setPassword} onSubmitEditing={() => void submit()} placeholder="Пароль" placeholderTextColor={colors.muted} secureTextEntry style={styles.input} value={password} />
       {error ? <Text accessibilityLiveRegion="polite" style={styles.error}>{error}</Text> : null}
-      <AppButton disabled={isSubmitting} label={isSubmitting ? "Входим…" : "Войти"} onPress={() => void submit()} />
+      <AppButton disabled={isSubmitting} label={isSubmitting ? "Отправляем…" : "Отправить код"} onPress={() => void submit()} />
       {isSubmitting ? <ActivityIndicator color={colors.sea} /> : null}
-      <Pressable accessibilityRole="link" onPress={() => router.push("/(auth)/forgot-password" as Href)}><Text style={styles.link}>Забыли пароль?</Text></Pressable>
-      <Pressable accessibilityRole="link" onPress={() => router.push("/(auth)/sign-up" as Href)}><Text style={styles.link}>Нет аккаунта? Зарегистрироваться</Text></Pressable>
+      <Pressable onPress={() => router.back()}><Text style={styles.link}>Назад ко входу</Text></Pressable>
     </AuthScaffold>
   );
 }

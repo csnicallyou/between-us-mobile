@@ -30,6 +30,30 @@ paths:
   /auth/me:
     get:
       responses: { '200': { description: Current user, content: { application/json: { schema: { $ref: '#/components/schemas/User' } } } }, '401': { $ref: '#/components/responses/Error' } }
+  /auth/verify-email:
+    post:
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [code], properties: { code: { type: string, pattern: '^\d{6}$' } } } } } }
+      responses: { '204': { description: Email verified }, '400': { $ref: '#/components/responses/Error' } }
+  /auth/resend-verification:
+    post:
+      responses: { '204': { description: A new code was sent (or the account is already verified) }, '429': { $ref: '#/components/responses/Error' } }
+  /auth/forgot-password:
+    post:
+      security: []
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [email], properties: { email: { type: string, format: email } } } } } }
+      responses: { '202': { description: Generic acknowledgement regardless of whether the account exists } }
+  /auth/reset-password:
+    post:
+      security: []
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [email, code, newPassword], properties: { email: { type: string, format: email }, code: { type: string, pattern: '^\d{6}$' }, newPassword: { type: string, minLength: 10, maxLength: 200 } } } } } }
+      responses: { '204': { description: Password reset; all sessions revoked }, '400': { $ref: '#/components/responses/Error' } }
+  /auth/sessions:
+    get:
+      responses: { '200': { description: Active device sessions, content: { application/json: { schema: { type: object, properties: { items: { type: array, items: { type: object, properties: { familyId: { type: string, format: uuid }, deviceLabel: { type: [string, 'null'] }, createdAt: { type: string, format: date-time }, lastSeenAt: { type: string, format: date-time }, current: { type: boolean } } } } } } } } } } }
+  /auth/sessions/{familyId}:
+    delete:
+      parameters: [{ name: familyId, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses: { '204': { description: Session revoked }, '404': { $ref: '#/components/responses/Error' } }
   /users/me:
     get:
       responses: { '200': { description: Current profile, content: { application/json: { schema: { $ref: '#/components/schemas/User' } } } } }
@@ -42,7 +66,7 @@ paths:
   /pairs:
     post:
       requestBody: { required: true, content: { application/json: { schema: { type: object, required: [name], properties: { name: { type: string, maxLength: 80 }, relationshipStartedOn: { type: [string, 'null'], format: date } } } } } }
-      responses: { '201': { description: Pair and first invite, content: { application/json: { schema: { type: object, properties: { pair: { $ref: '#/components/schemas/Pair' }, invite: { $ref: '#/components/schemas/Invite' } } } } } }, '409': { $ref: '#/components/responses/Error' } }
+      responses: { '201': { description: Pair and first invite, content: { application/json: { schema: { type: object, properties: { pair: { $ref: '#/components/schemas/Pair' }, invite: { $ref: '#/components/schemas/Invite' } } } } } }, '403': { $ref: '#/components/responses/Error' }, '409': { $ref: '#/components/responses/Error' } }
   /pairs/invites:
     post:
       responses: { '201': { description: One-time invite secret, content: { application/json: { schema: { type: object, properties: { invite: { $ref: '#/components/schemas/Invite' } } } } } }, '409': { $ref: '#/components/responses/Error' } }
@@ -135,8 +159,8 @@ components:
       properties: { refreshToken: { type: string } }
     User:
       type: object
-      required: [id, email, displayName]
-      properties: { id: { type: string, format: uuid }, email: { type: string, format: email }, displayName: { type: string }, createdAt: { type: string, format: date-time } }
+      required: [id, email, displayName, emailVerified]
+      properties: { id: { type: string, format: uuid }, email: { type: string, format: email }, displayName: { type: string }, createdAt: { type: string, format: date-time }, emailVerified: { type: boolean } }
     Session:
       type: object
       required: [user, accessToken, refreshToken]
