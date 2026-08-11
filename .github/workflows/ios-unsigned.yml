@@ -1,0 +1,97 @@
+name: Build unsigned iOS IPA
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+    paths:
+      - .github/workflows/ios-unsigned.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-unsigned-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build for USB sideloading
+    runs-on: macos-26
+    timeout-minutes: 45
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install JavaScript dependencies
+        run: npm ci
+
+      - name: Verify project
+        run: |
+          npm run typecheck
+          npm run check:source
+          npx expo-doctor
+
+      - name: Generate the native iOS project
+        env:
+          CI: "1"
+        run: npx expo prebuild --platform ios --clean
+
+      - name: Build an unsigned device application
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          workspace="$(find ios -maxdepth 1 -name '*.xcworkspace' -print -quit)"
+          if [[ -z "$workspace" ]]; then
+            echo "No Xcode workspace was generated" >&2
+            exit 1
+          fi
+
+          scheme="$(basename "$workspace" .xcworkspace)"
+          derived_data="$RUNNER_TEMP/BetweenUsDerivedData"
+
+          xcodebuild \
+            -workspace "$workspace" \
+            -scheme "$scheme" \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath "$derived_data" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            build
+
+          app_path="$(find "$derived_data/Build/Products/Release-iphoneos" -maxdepth 1 -name '*.app' -print -quit)"
+          if [[ -z "$app_path" ]]; then
+            echo "The build completed without an .app bundle" >&2
+            exit 1
+          fi
+
+          output="$RUNNER_TEMP/BetweenUsUnsigned"
+          mkdir -p "$output/Payload"
+          ditto "$app_path" "$output/Payload/$(basename "$app_path")"
+
+          (
+            cd "$output"
+            /usr/bin/zip -qry BetweenUs-unsigned.ipa Payload
+            shasum -a 256 BetweenUs-unsigned.ipa > BetweenUs-unsigned.ipa.sha256
+          )
+
+      - name: Upload unsigned IPA
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: BetweenUs-unsigned-ios
+          path: |
+            ${{ runner.temp }}/BetweenUsUnsigned/BetweenUs-unsigned.ipa
+            ${{ runner.temp }}/BetweenUsUnsigned/BetweenUs-unsigned.ipa.sha256
+          if-no-files-found: error
+          retention-days: 7

@@ -14,7 +14,8 @@
           "faceIDPermission": "Разрешите приложению использовать Face ID для защиты пространства пары."
         }
       ],
-      "expo-font"
+      "expo-font",
+      "expo-status-bar"
     ],
     "ios": {
       "supportsTablet": false,

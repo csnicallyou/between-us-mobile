@@ -1,71 +1,41 @@
-import { Ionicons } from "@expo/vector-icons";
-import { BlurView } from "expo-blur";
-import { LinearGradient } from "expo-linear-gradient";
-import { Tabs } from "expo-router";
-import { Platform, StyleSheet, View } from "react-native";
-import { colors, radius, shadow, typography } from "@/theme/tokens";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { NativeTabs } from "expo-router/unstable-native-tabs";
+import { colors, typography } from "@/theme/tokens";
 
-const icons = {
-  index: ["home-outline", "home"],
-  calendar: ["calendar-outline", "calendar"],
-  plans: ["map-outline", "map"],
-  journal: ["book-outline", "book"],
-  more: ["grid-outline", "grid"],
-} as const;
+const tabs = [
+  { name: "index", label: "Сегодня", icon: "home-outline", selectedIcon: "home", sf: "house", selectedSf: "house.fill" },
+  { name: "calendar", label: "Календарь", icon: "calendar-outline", selectedIcon: "calendar", sf: "calendar", selectedSf: "calendar" },
+  { name: "plans", label: "Планы", icon: "map-outline", selectedIcon: "map", sf: "map", selectedSf: "map.fill" },
+  { name: "journal", label: "Дневник", icon: "book-outline", selectedIcon: "book", sf: "book.closed", selectedSf: "book.closed.fill" },
+  { name: "more", label: "Ещё", icon: "grid-outline", selectedIcon: "grid", sf: "square.grid.2x2", selectedSf: "square.grid.2x2.fill" },
+] as const;
 
 export default function TabsLayout() {
   return (
-    <Tabs
-      screenOptions={({ route }) => ({
-        headerShown: false,
-        tabBarActiveTintColor: colors.sea,
-        tabBarInactiveTintColor: colors.muted,
-        tabBarActiveBackgroundColor: "rgba(255,255,255,0.58)",
-        tabBarBackground: () => (
-          <BlurView blurMethod="dimezisBlurViewSdk31Plus" intensity={88} tint="systemThinMaterialLight" style={styles.tabMaterial}>
-            <LinearGradient
-              colors={["rgba(255,255,255,0.92)", "rgba(255,255,255,0.36)", "rgba(218,238,243,0.64)"]}
-              end={{ x: 1, y: 1 }}
-              locations={[0, 0.52, 1]}
-              start={{ x: 0, y: 0 }}
-              style={StyleSheet.absoluteFill}
-            />
-            <View style={styles.tabSpecular} />
-          </BlurView>
-        ),
-        tabBarItemStyle: { borderRadius: radius.md, marginVertical: 5, outlineColor: "transparent", outlineWidth: 0 },
-        tabBarLabelStyle: { fontFamily: typography.body, fontSize: 11, fontWeight: "500", marginTop: 2 },
-        tabBarStyle: {
-          backgroundColor: "rgba(255,255,255,0.42)",
-          borderColor: colors.glassLine,
-          borderRadius: 27,
-          borderTopWidth: 2,
-          borderWidth: 1,
-          bottom: Platform.OS === "ios" ? 8 : 10,
-          height: Platform.OS === "ios" ? 78 : 68,
-          left: 12,
-          paddingHorizontal: 5,
-          paddingTop: 4,
-          position: "absolute",
-          right: 12,
-          ...shadow,
-        },
-        tabBarIcon: ({ color, focused, size }) => {
-          const pair = icons[route.name as keyof typeof icons] ?? icons.more;
-          return <Ionicons color={color} name={focused ? pair[1] : pair[0]} size={size} />;
-        },
-      })}
+    <NativeTabs
+      blurEffect="systemChromeMaterialLight"
+      disableTransparentOnScrollEdge={false}
+      iconColor={{ default: colors.muted, selected: colors.sea }}
+      labelStyle={{
+        default: { color: colors.muted, fontFamily: typography.body, fontSize: 11, fontWeight: "500" },
+        selected: { color: colors.sea, fontFamily: typography.body, fontSize: 11, fontWeight: "600" },
+      }}
+      minimizeBehavior="onScrollDown"
+      shadowColor="rgba(23,50,70,0.12)"
+      tintColor={colors.sea}
     >
-      <Tabs.Screen name="index" options={{ title: "Сегодня" }} />
-      <Tabs.Screen name="calendar" options={{ title: "Календарь" }} />
-      <Tabs.Screen name="plans" options={{ title: "Планы" }} />
-      <Tabs.Screen name="journal" options={{ title: "Дневник" }} />
-      <Tabs.Screen name="more" options={{ title: "Ещё" }} />
-    </Tabs>
+      {tabs.map((tab) => (
+        <NativeTabs.Trigger key={tab.name} name={tab.name}>
+          <NativeTabs.Trigger.Icon
+            src={{
+              default: <NativeTabs.Trigger.VectorIcon family={Ionicons} name={tab.icon} />,
+              selected: <NativeTabs.Trigger.VectorIcon family={Ionicons} name={tab.selectedIcon} />,
+            }}
+            sf={{ default: tab.sf, selected: tab.selectedSf }}
+          />
+          <NativeTabs.Trigger.Label>{tab.label}</NativeTabs.Trigger.Label>
+        </NativeTabs.Trigger>
+      ))}
+    </NativeTabs>
   );
 }
-
-const styles = StyleSheet.create({
-  tabMaterial: { borderRadius: 27, flex: 1, overflow: "hidden" },
-  tabSpecular: { backgroundColor: "rgba(255,255,255,0.9)", borderRadius: 999, height: 2, left: 28, position: "absolute", right: 28, top: 1 },
-});

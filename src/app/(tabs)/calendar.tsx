@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { Screen } from "@/components/Screen";
 import { Surface } from "@/components/Surface";
 import { useAppData } from "@/state/AppDataContext";
-import { colors, controlShadow, radius, spacing, typography } from "@/theme/tokens";
+import { colors, radius, spacing, typography } from "@/theme/tokens";
 
 const weekdays = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
 
@@ -32,6 +32,7 @@ export default function CalendarScreen() {
   }, [cursor]);
 
   const selectedItems = snapshot.calendar.filter((item) => item.date === selected);
+  const weeks = useMemo(() => Array.from({ length: 6 }, (_, index) => days.slice(index * 7, index * 7 + 7)), [days]);
 
   return (
     <Screen header={<PageHeader kicker="Всё важное по датам" title="Календарь" subtitle="Планы, поездки и памятные события собираются в общей хронологии." />}>
@@ -43,18 +44,20 @@ export default function CalendarScreen() {
         </View>
         <View style={styles.weekRow}>{weekdays.map((day) => <Text key={day} style={styles.weekday}>{day}</Text>)}</View>
         <View style={styles.grid}>
-          {days.map((date) => {
+          {weeks.map((week, weekIndex) => <View key={`week-${weekIndex}`} style={styles.dayRow}>{week.map((date) => {
             const value = isoDate(date);
             const active = value === selected;
             const outside = date.getMonth() !== cursor.getMonth();
             const hasItem = snapshot.calendar.some((item) => item.date === value);
             return (
-              <Pressable key={value} onPress={() => setSelected(value)} style={[styles.day, active && styles.activeDay]}>
+              <Pressable accessibilityLabel={new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long" }).format(date)} key={value} onPress={() => setSelected(value)} style={styles.dayCell}>
+                <View style={[styles.day, active && styles.activeDay]}>
                 <Text style={[styles.dayText, outside && styles.outsideText, active && styles.activeDayText]}>{date.getDate()}</Text>
                 {hasItem ? <View style={styles.dot} /> : null}
+                </View>
               </Pressable>
             );
-          })}
+          })}</View>)}
         </View>
       </Surface>
       <View style={styles.agendaHeader}><Text style={styles.agendaTitle}>Выбранный день</Text><Text style={styles.agendaDate}>{new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long" }).format(new Date(`${selected}T12:00:00`))}</Text></View>
@@ -65,21 +68,23 @@ export default function CalendarScreen() {
 }
 
 const styles = StyleSheet.create({
-  calendar: { backgroundColor: "rgba(255,255,255,0.66)", padding: spacing.md },
+  calendar: { backgroundColor: "rgba(250,252,253,0.9)", paddingHorizontal: spacing.md, paddingVertical: spacing.lg },
   monthRow: { alignItems: "center", flexDirection: "row", justifyContent: "space-between", marginBottom: spacing.lg },
-  arrow: { alignItems: "center", backgroundColor: "rgba(255,255,255,0.9)", borderColor: colors.glassLine, borderRadius: radius.md, borderWidth: 1, height: 44, justifyContent: "center", width: 44, ...controlShadow },
-  month: { color: colors.ink, fontFamily: typography.display, fontSize: 24, textTransform: "capitalize" },
+  arrow: { alignItems: "center", backgroundColor: colors.surfaceStrong, borderRadius: radius.pill, height: 44, justifyContent: "center", width: 44 },
+  month: { color: colors.ink, flexShrink: 1, fontFamily: typography.display, fontSize: 21, fontWeight: "600", textAlign: "center", textTransform: "capitalize" },
   weekRow: { flexDirection: "row" },
   weekday: { color: colors.muted, flex: 1, fontSize: 10, fontWeight: "600", paddingVertical: spacing.sm, textAlign: "center" },
-  grid: { flexDirection: "row", flexWrap: "wrap" },
-  day: { alignItems: "center", aspectRatio: 1, justifyContent: "center", padding: 2, width: "14.2857%" },
-  activeDay: { backgroundColor: colors.sea, borderColor: colors.glassLine, borderRadius: radius.md, borderWidth: 1, ...controlShadow },
-  dayText: { color: colors.ink, fontSize: 13 },
+  grid: { gap: 2 },
+  dayRow: { flexDirection: "row" },
+  dayCell: { alignItems: "center", flex: 1, height: 44, justifyContent: "center" },
+  day: { alignItems: "center", borderRadius: radius.pill, height: 38, justifyContent: "center", width: 38 },
+  activeDay: { backgroundColor: colors.sea },
+  dayText: { color: colors.ink, fontSize: 15, fontVariant: ["tabular-nums"] },
   outsideText: { color: "#AAB8BC" },
   activeDayText: { color: colors.white, fontWeight: "700" },
   dot: { backgroundColor: colors.coral, borderRadius: radius.pill, height: 4, marginTop: 3, width: 4 },
   agendaHeader: { alignItems: "baseline", flexDirection: "row", justifyContent: "space-between", marginBottom: spacing.md, marginTop: spacing.xl },
-  agendaTitle: { color: colors.ink, fontFamily: typography.display, fontSize: 26 },
+  agendaTitle: { color: colors.ink, fontFamily: typography.display, fontSize: 24, fontWeight: "600" },
   agendaDate: { color: colors.muted, fontSize: 12 },
   item: { marginBottom: spacing.md },
   itemSource: { color: colors.sea, fontSize: 11, fontWeight: "700" },

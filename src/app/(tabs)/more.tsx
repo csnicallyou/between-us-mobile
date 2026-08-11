@@ -1,8 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useEffect, useState } from "react";
+import { AccessibilityInfo, Pressable, StyleSheet, Text, View } from "react-native";
 import { PageHeader } from "@/components/PageHeader";
+import { NativeGlassLayer } from "@/components/NativeGlassLayer";
 import { Screen } from "@/components/Screen";
 import { Surface } from "@/components/Surface";
+import { glassDiagnostics, supportsSwiftUILiquidGlass } from "@/platform/glass";
 import { colors, controlShadow, radius, spacing } from "@/theme/tokens";
 
 const sections = [
@@ -15,6 +18,12 @@ const sections = [
 ] as const;
 
 export default function MoreScreen() {
+  const [reduceTransparency, setReduceTransparency] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    void AccessibilityInfo.isReduceTransparencyEnabled().then(setReduceTransparency);
+  }, []);
+
   return (
     <Screen header={<PageHeader kicker="Все разделы" title="Ещё" subtitle="Дополнительные разделы общей платформы и будущие возможности." />}>
       <Surface style={styles.group}>
@@ -38,6 +47,21 @@ export default function MoreScreen() {
         <Text style={styles.foundationTitle}>Мобильная основа готова</Text>
         <Text style={styles.foundationText}>Следующий этап — авторизация пары, синхронизация с новым API и полноценные формы добавления данных.</Text>
       </Surface>
+      <View style={styles.diagnostics}>
+        <View pointerEvents="none" style={styles.probeBackdrop}>
+          <View style={[styles.probeOrb, styles.probeSea]} />
+          <View style={[styles.probeOrb, styles.probeCoral]} />
+        </View>
+        {supportsSwiftUILiquidGlass ? <View style={styles.probeGlass}><NativeGlassLayer cornerRadius={41} interactive variant="clear" /></View> : null}
+        <View style={styles.diagnosticsCopy}>
+          <Text style={styles.diagnosticsTitle}>Диагностика Liquid Glass</Text>
+          <Text style={styles.diagnosticsLine}>iOS: {glassDiagnostics.osVersion}</Text>
+          <Text style={styles.diagnosticsLine}>API: {glassDiagnostics.apiAvailable ? "доступен" : "недоступен"}</Text>
+          <Text style={styles.diagnosticsLine}>Сборка: {glassDiagnostics.compiledWithLiquidGlass ? "поддерживает" : "не поддерживает"}</Text>
+          <Text style={styles.diagnosticsLine}>SwiftUI Glass: {supportsSwiftUILiquidGlass ? "активен" : "недоступен"}</Text>
+          <Text style={styles.diagnosticsLine}>Уменьшение прозрачности: {reduceTransparency === null ? "проверяется" : reduceTransparency ? "включено" : "выключено"}</Text>
+        </View>
+      </View>
     </Screen>
   );
 }
@@ -56,4 +80,13 @@ const styles = StyleSheet.create({
   foundation: { backgroundColor: colors.seaSoft, marginTop: spacing.xl },
   foundationTitle: { color: colors.ink, fontSize: 16, fontWeight: "700" },
   foundationText: { color: colors.muted, fontSize: 13, lineHeight: 20, marginTop: spacing.sm },
+  diagnostics: { backgroundColor: colors.surfaceStrong, borderRadius: radius.lg, minHeight: 190, marginTop: spacing.xl, overflow: "hidden", padding: spacing.lg },
+  diagnosticsCopy: { position: "relative" },
+  diagnosticsTitle: { color: colors.ink, fontSize: 16, fontWeight: "700", marginBottom: spacing.sm },
+  diagnosticsLine: { color: colors.muted, fontSize: 13, lineHeight: 22 },
+  probeBackdrop: { bottom: 0, left: 0, position: "absolute", right: 0, top: 0 },
+  probeOrb: { borderRadius: radius.pill, height: 150, position: "absolute", width: 150 },
+  probeSea: { backgroundColor: "#73D1C4", right: -28, top: -46 },
+  probeCoral: { backgroundColor: "#F0A99C", bottom: -75, right: 58 },
+  probeGlass: { borderRadius: radius.pill, height: 82, position: "absolute", right: 24, top: 54, width: 82 },
 });

@@ -2,13 +2,13 @@ import { Platform } from "react-native";
 
 export const colors = {
   background: "#F7FAFC",
-  surface: "rgba(255, 255, 255, 0.5)",
+  surface: "rgba(250, 252, 253, 0.86)",
   surfaceStrong: "#FFFFFF",
   surfaceSoft: "rgba(244, 249, 250, 0.72)",
   ink: "#173246",
   muted: "#5B6D79",
   line: "rgba(76, 104, 118, 0.2)",
-  glassLine: "rgba(255, 255, 255, 0.98)",
+  glassLine: "rgba(63, 88, 101, 0.10)",
   sea: "#337B74",
   seaSoft: "rgba(215, 240, 235, 0.68)",
   coral: "#D16457",
@@ -38,16 +38,16 @@ export const radius = {
 } as const;
 
 export const typography = {
-  display: Platform.select({ ios: "Iowan Old Style", android: "serif", default: "serif" }),
+  display: Platform.select({ ios: "System", android: "sans-serif", default: "sans-serif" }),
   body: Platform.select({ ios: "System", android: "sans-serif", default: "sans-serif" }),
 } as const;
 
 export const shadow = Platform.select({
   ios: {
     shadowColor: "#526F7E",
-    shadowOpacity: 0.2,
-    shadowRadius: 26,
-    shadowOffset: { width: 0, height: 13 },
+    shadowOpacity: 0.1,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 8 },
   },
   android: { elevation: 6 },
   default: {},
@@ -56,9 +56,9 @@ export const shadow = Platform.select({
 export const controlShadow = Platform.select({
   ios: {
     shadowColor: "#587281",
-    shadowOpacity: 0.19,
-    shadowRadius: 13,
-    shadowOffset: { width: 0, height: 7 },
+    shadowOpacity: 0.11,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 5 },
   },
   android: { elevation: 4 },
   default: {},
