@@ -2,12 +2,20 @@
   "expo": {
     "name": "Между нами",
     "slug": "between-us-mobile",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "orientation": "portrait",
     "scheme": "betweenus",
     "userInterfaceStyle": "light",
     "plugins": [
-      "expo-router",
+      [
+        "expo-router",
+        {
+          "headers": {
+            "Cross-Origin-Embedder-Policy": "credentialless",
+            "Cross-Origin-Opener-Policy": "same-origin"
+          }
+        }
+      ],
       [
         "expo-secure-store",
         {
@@ -15,7 +23,16 @@
         }
       ],
       "expo-font",
-      "expo-status-bar"
+      "expo-status-bar",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Разрешите приложению выбирать фотографии для общих планов, памятных событий и персонального фона.",
+          "microphonePermission": false
+        }
+      ],
+      "expo-sqlite",
+      "@react-native-community/datetimepicker"
     ],
     "ios": {
       "supportsTablet": false,
@@ -29,6 +46,9 @@
       "adaptiveIcon": {
         "backgroundColor": "#E8EFEE"
       }
+    },
+    "web": {
+      "bundler": "metro"
     },
     "experiments": {
       "typedRoutes": true

@@ -1,6 +1,9 @@
 import type { PropsWithChildren, ReactNode } from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { ActivityIndicator, Image, ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { StatusBar } from "expo-status-bar";
+import { useAppData } from "@/state/AppDataContext";
+import { paletteForLuminance } from "@/theme/adaptivePalette";
 import { colors, spacing } from "@/theme/tokens";
 
 interface ScreenProps extends PropsWithChildren {
@@ -9,13 +12,19 @@ interface ScreenProps extends PropsWithChildren {
 }
 
 export function Screen({ children, header, scroll = true }: ScreenProps) {
+  const { snapshot, isHydrated } = useAppData();
+  const customBackground = snapshot.appearance.backgroundKind !== "default" && snapshot.appearance.backgroundValue;
+  const customColor = snapshot.appearance.backgroundKind === "color" ? snapshot.appearance.backgroundValue : null;
+  const palette = paletteForLuminance(snapshot.appearance.backgroundLuminance);
+  const adaptiveScrim = snapshot.appearance.backgroundKind === "image" ? (snapshot.appearance.backgroundLuminance < 0.36 ? "rgba(8,20,28,0.38)" : "rgba(247,250,252,0.46)") : palette.scrim;
   const content = <View style={styles.content}>{header}{children}</View>;
+  if (!isHydrated) return <SafeAreaView style={[styles.safeArea, styles.loading]}><StatusBar style="dark" /><ActivityIndicator color={colors.sea} size="large" /></SafeAreaView>;
   return (
-    <SafeAreaView style={styles.safeArea} edges={["top"]}>
+    <SafeAreaView style={[styles.safeArea, customColor ? { backgroundColor: customColor } : null]} edges={["top"]}>
+      <StatusBar style={customBackground ? palette.statusBar : "dark"} />
       <View pointerEvents="none" style={styles.ambient}>
-        <View style={[styles.orb, styles.orbSea]} />
-        <View style={[styles.orb, styles.orbViolet]} />
-        <View style={[styles.orb, styles.orbCoral]} />
+        {snapshot.appearance.backgroundKind === "image" && snapshot.appearance.backgroundValue ? <Image resizeMode="cover" source={{ uri: snapshot.appearance.backgroundValue }} style={StyleSheet.absoluteFill} /> : null}
+        {customBackground ? <View style={[StyleSheet.absoluteFill, { backgroundColor: adaptiveScrim }]} /> : <><View style={[styles.orb, styles.orbSea]} /><View style={[styles.orb, styles.orbViolet]} /><View style={[styles.orb, styles.orbCoral]} /></>}
       </View>
       {scroll ? <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>{content}</ScrollView> : content}
     </SafeAreaView>
@@ -31,4 +40,5 @@ const styles = StyleSheet.create({
   orbCoral: { backgroundColor: "#FFD9D1", bottom: 45, height: 260, right: -135, width: 260 },
   scrollContent: { flexGrow: 1 },
   content: { flex: 1, paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: 120 },
+  loading: { alignItems: "center", justifyContent: "center" },
 });

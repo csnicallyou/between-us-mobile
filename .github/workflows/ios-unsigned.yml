@@ -7,6 +7,10 @@ on:
       - master
     paths:
       - .github/workflows/ios-unsigned.yml
+      - app.json
+      - package.json
+      - package-lock.json
+      - src/**
 
 permissions:
   contents: read

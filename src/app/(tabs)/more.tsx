@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { type Href, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { AccessibilityInfo, Pressable, StyleSheet, Text, View } from "react-native";
 import { PageHeader } from "@/components/PageHeader";
@@ -9,15 +10,17 @@ import { glassDiagnostics, supportsNativeLiquidGlass } from "@/platform/glass";
 import { colors, controlShadow, radius, spacing } from "@/theme/tokens";
 
 const sections = [
-  { icon: "time-outline", title: "Наша история", subtitle: "Памятные события" },
-  { icon: "heart-outline", title: "Важное о нас", subtitle: "Поддержка и границы" },
-  { icon: "lock-closed-outline", title: "Тихий канал", subtitle: "Личное обращение" },
-  { icon: "chatbubbles-outline", title: "Разбор ссор", subtitle: "Эпизоды и выводы" },
-  { icon: "people-outline", title: "Договорённости", subtitle: "Общие правила" },
-  { icon: "sparkles-outline", title: "Чат втроём", subtitle: "Запланировано" },
+  { icon: "color-palette-outline", title: "Фон и контраст", subtitle: "Персональное оформление", href: "/appearance" },
+  { icon: "time-outline", title: "Наша история", subtitle: "Памятные события", href: "/memories" },
+  { icon: "heart-outline", title: "Важное о нас", subtitle: "Поддержка и границы", href: "/about" },
+  { icon: "lock-closed-outline", title: "Тихий канал", subtitle: "Личное обращение", href: "/quiet" },
+  { icon: "chatbubbles-outline", title: "Разбор ссор", subtitle: "Эпизоды и выводы", href: "/conflicts" },
+  { icon: "people-outline", title: "Договорённости", subtitle: "Общие правила", href: "/agreements" },
+  { icon: "sparkles-outline", title: "Чат втроём", subtitle: "Локальный прототип", href: "/chat" },
 ] as const;
 
 export default function MoreScreen() {
+  const router = useRouter();
   const [reduceTransparency, setReduceTransparency] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -29,7 +32,7 @@ export default function MoreScreen() {
       <Surface style={styles.group}>
         {sections.map((section, index) => (
           <View key={section.title}>
-            <Pressable accessibilityRole="button" style={({ pressed }) => [styles.item, pressed && styles.pressed]}>
+            <Pressable accessibilityRole="button" onPress={() => router.push(section.href as Href)} style={({ pressed }) => [styles.item, pressed && styles.pressed]}>
               <View style={[styles.iconWell, index % 3 === 1 && styles.violetWell, index % 3 === 2 && styles.coralWell]}>
                 <Ionicons color={index % 3 === 1 ? colors.violet : index % 3 === 2 ? colors.coral : colors.sea} name={section.icon} size={21} />
               </View>

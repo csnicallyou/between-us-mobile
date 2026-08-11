@@ -1,5 +1,7 @@
 import { StyleSheet, Text, View } from "react-native";
 import { colors, spacing, typography } from "@/theme/tokens";
+import { useAppData } from "@/state/AppDataContext";
+import { paletteForLuminance } from "@/theme/adaptivePalette";
 
 interface PageHeaderProps {
   title: string;
@@ -8,11 +10,14 @@ interface PageHeaderProps {
 }
 
 export function PageHeader({ title, subtitle, kicker }: PageHeaderProps) {
+  const { snapshot } = useAppData();
+  const palette = paletteForLuminance(snapshot.appearance.backgroundLuminance);
+  const custom = snapshot.appearance.backgroundKind !== "default";
   return (
     <View style={styles.container}>
-      {kicker ? <Text style={styles.kicker}>{kicker}</Text> : null}
-      <Text style={styles.title}>{title}</Text>
-      <Text style={styles.subtitle}>{subtitle}</Text>
+      {kicker ? <Text style={[styles.kicker, custom && { color: palette.foreground }]}>{kicker}</Text> : null}
+      <Text style={[styles.title, custom && { color: palette.foreground }]}>{title}</Text>
+      <Text style={[styles.subtitle, custom && { color: palette.mutedForeground }]}>{subtitle}</Text>
     </View>
   );
 }

@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
+import { type Href, useRouter } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { AppButton } from "@/components/AppButton";
 import { PageHeader } from "@/components/PageHeader";
@@ -7,6 +8,7 @@ import { Screen } from "@/components/Screen";
 import { Surface } from "@/components/Surface";
 import { useAppData } from "@/state/AppDataContext";
 import { colors, radius, spacing, typography } from "@/theme/tokens";
+import { useBackgroundPalette } from "@/theme/useBackgroundPalette";
 
 const weekdays = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
 
@@ -16,6 +18,8 @@ function isoDate(date: Date) {
 
 export default function CalendarScreen() {
   const { snapshot } = useAppData();
+  const router = useRouter();
+  const { custom, palette } = useBackgroundPalette();
   const now = new Date();
   const [cursor, setCursor] = useState(new Date(now.getFullYear(), now.getMonth(), 1));
   const [selected, setSelected] = useState(isoDate(now));
@@ -31,7 +35,11 @@ export default function CalendarScreen() {
     });
   }, [cursor]);
 
-  const selectedItems = snapshot.calendar.filter((item) => item.date === selected);
+  const calendarItems = useMemo(() => [
+    ...snapshot.plans.filter((plan) => plan.date && plan.showInCalendar !== false).map((plan) => ({ id: plan.id, title: plan.title, date: plan.date!, source: "plan" as const })),
+    ...snapshot.memories.filter((memory) => memory.showInCalendar).map((memory) => ({ id: memory.id, title: memory.title, date: memory.date, source: "memory" as const })),
+  ], [snapshot.memories, snapshot.plans]);
+  const selectedItems = calendarItems.filter((item) => item.date === selected);
   const weeks = useMemo(() => Array.from({ length: 6 }, (_, index) => days.slice(index * 7, index * 7 + 7)), [days]);
 
   return (
@@ -48,7 +56,7 @@ export default function CalendarScreen() {
             const value = isoDate(date);
             const active = value === selected;
             const outside = date.getMonth() !== cursor.getMonth();
-            const hasItem = snapshot.calendar.some((item) => item.date === value);
+            const hasItem = calendarItems.some((item) => item.date === value);
             return (
               <Pressable accessibilityLabel={new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long" }).format(date)} key={value} onPress={() => setSelected(value)} style={styles.dayCell}>
                 <View style={[styles.day, active && styles.activeDay]}>
@@ -60,9 +68,9 @@ export default function CalendarScreen() {
           })}</View>)}
         </View>
       </Surface>
-      <View style={styles.agendaHeader}><Text style={styles.agendaTitle}>Выбранный день</Text><Text style={styles.agendaDate}>{new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long" }).format(new Date(`${selected}T12:00:00`))}</Text></View>
-      {selectedItems.length ? selectedItems.map((item) => <Surface key={item.id} style={styles.item}><Text style={styles.itemSource}>{item.source === "plan" ? "План" : "Событие"}</Text><Text style={styles.itemTitle}>{item.title}</Text></Surface>) : <Text style={styles.empty}>На этот день пока ничего не добавлено.</Text>}
-      <View style={styles.actions}><AppButton label="Добавить событие" variant="secondary" style={styles.action} /><AppButton label="Новый план" style={styles.action} /></View>
+      <View style={styles.agendaHeader}><Text style={[styles.agendaTitle, custom && { color: palette.foreground }]}>Выбранный день</Text><Text style={[styles.agendaDate, custom && { color: palette.mutedForeground }]}>{new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long" }).format(new Date(`${selected}T12:00:00`))}</Text></View>
+      {selectedItems.length ? selectedItems.map((item) => <Surface key={item.id} style={styles.item}><Text style={styles.itemSource}>{item.source === "plan" ? "План" : "Событие"}</Text><Text style={styles.itemTitle}>{item.title}</Text></Surface>) : <Text style={[styles.empty, custom && { color: palette.mutedForeground }]}>На этот день пока ничего не добавлено.</Text>}
+      <View style={styles.actions}><AppButton label="Добавить событие" onPress={() => router.push("/memories" as Href)} variant="secondary" style={styles.action} /><AppButton label="Новый план" onPress={() => router.push("/plans" as Href)} style={styles.action} /></View>
     </Screen>
   );
 }

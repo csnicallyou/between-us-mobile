@@ -4,6 +4,7 @@ import { memberLabels, moodLabels } from "@/domain/labels";
 import type { MemberId, MemberMood, Mood } from "@/domain/models";
 import { supportsNativeLiquidGlass } from "@/platform/glass";
 import { colors, controlShadow, radius, spacing, typography } from "@/theme/tokens";
+import { useBackgroundPalette } from "@/theme/useBackgroundPalette";
 
 interface MoodPanelProps {
   currentMemberId: MemberId;
@@ -14,11 +15,12 @@ interface MoodPanelProps {
 const quickMoods: Mood[] = ["calm", "happy", "tender", "anxious", "tired"];
 
 export function MoodPanel({ currentMemberId, moods, onChangeMood }: MoodPanelProps) {
+  const { custom, palette } = useBackgroundPalette();
   return (
     <View style={styles.container}>
       <View style={styles.heading}>
-        <Text style={styles.title}>Как мы сейчас</Text>
-        <Text style={styles.caption}>Каждый меняет только своё состояние</Text>
+        <Text style={[styles.title, custom && { color: palette.foreground }]}>Как мы сейчас</Text>
+        <Text style={[styles.caption, custom && { color: palette.mutedForeground }]}>Каждый меняет только своё состояние</Text>
       </View>
       <View style={styles.people}>
         {(["anton", "lisa"] as const).map((memberId) => (
@@ -35,7 +37,7 @@ export function MoodPanel({ currentMemberId, moods, onChangeMood }: MoodPanelPro
           </View>
         ))}
       </View>
-      <Text style={styles.selectLabel}>Моё настроение</Text>
+      <Text style={[styles.selectLabel, custom && { color: palette.mutedForeground }]}>Моё настроение</Text>
       <View style={styles.options}>
         {quickMoods.map((mood) => {
           const active = moods[currentMemberId].mood === mood;
