@@ -2,13 +2,13 @@ import { Platform } from "react-native";
 
 export const colors = {
   background: "#F7FAFC",
-  surface: "rgba(255, 255, 255, 0.62)",
+  surface: "rgba(255, 255, 255, 0.5)",
   surfaceStrong: "#FFFFFF",
   surfaceSoft: "rgba(244, 249, 250, 0.72)",
   ink: "#173246",
   muted: "#5B6D79",
-  line: "rgba(92, 116, 128, 0.14)",
-  glassLine: "rgba(255, 255, 255, 0.92)",
+  line: "rgba(76, 104, 118, 0.2)",
+  glassLine: "rgba(255, 255, 255, 0.98)",
   sea: "#337B74",
   seaSoft: "rgba(215, 240, 235, 0.68)",
   coral: "#D16457",
@@ -44,22 +44,22 @@ export const typography = {
 
 export const shadow = Platform.select({
   ios: {
-    shadowColor: "#6B8290",
-    shadowOpacity: 0.13,
-    shadowRadius: 22,
-    shadowOffset: { width: 0, height: 10 },
+    shadowColor: "#526F7E",
+    shadowOpacity: 0.2,
+    shadowRadius: 26,
+    shadowOffset: { width: 0, height: 13 },
   },
-  android: { elevation: 2 },
+  android: { elevation: 6 },
   default: {},
 });
 
 export const controlShadow = Platform.select({
   ios: {
-    shadowColor: "#66808B",
-    shadowOpacity: 0.12,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 5 },
+    shadowColor: "#587281",
+    shadowOpacity: 0.19,
+    shadowRadius: 13,
+    shadowOffset: { width: 0, height: 7 },
   },
-  android: { elevation: 2 },
+  android: { elevation: 4 },
   default: {},
 });
