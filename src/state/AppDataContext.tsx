@@ -1,5 +1,5 @@
 import { createContext, type PropsWithChildren, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import type { AboutItem, Agreement, AppSnapshot, ChatMessage, ConflictEntry, JournalEntry, Memory, Mood, Plan } from "@/domain/models";
+import type { AboutItem, Agreement, AppearanceSettings, AppSnapshot, ChatMessage, ConflictEntry, JournalEntry, Memory, Mood, Plan } from "@/domain/models";
 import { BackendError } from "@/services/backendClient";
 import { entryPayload, syncRepository, type EntryKind, type RemoteEntry, type RemotePairData } from "@/services/syncRepository";
 import { useAuth } from "@/state/AuthContext";
@@ -16,6 +16,10 @@ type EditableConflict = Omit<ConflictEntry, "id" | "createdAt">;
 interface AppDataValue {
   snapshot: AppSnapshot;
   isHydrated: boolean;
+  partnerAppearance: AppearanceSettings | null;
+  usePartnerBackground: boolean;
+  effectiveAppearance: AppearanceSettings;
+  setUsePartnerBackground: (value: boolean) => void;
   setCurrentMood: (mood: Mood) => void;
   addPlan: (input: EditablePlan) => void;
   updatePlan: (id: string, input: EditablePlan) => void;
@@ -107,6 +111,8 @@ export function AppDataProvider({ children }: PropsWithChildren) {
   const { isLoading: isPairLoading, pair } = usePair();
   const [snapshot, setSnapshot] = useState(blankSnapshot);
   const [isHydrated, setIsHydrated] = useState(false);
+  const [partnerAppearance, setPartnerAppearance] = useState<AppearanceSettings | null>(null);
+  const [usePartnerBackground, setUsePartnerBackgroundState] = useState(false);
   const identityRef = useRef<string | null>(null);
 
   const withToken = useCallback(async <T,>(operation: (token: string) => Promise<T>) => {
@@ -127,6 +133,8 @@ export function AppDataProvider({ children }: PropsWithChildren) {
     const data = await withToken((token) => syncRepository.loadRemote(token));
     if (identityRef.current !== identity) return;
     setSnapshot((current) => applyRemote(pairSnapshot(pair, user.id, current.appearance), data));
+    const partner = pair.members.find((member) => member.id !== user.id);
+    setPartnerAppearance(partner ? data.appearances[partner.id] ?? null : null);
   }, [pair, user, withToken]);
 
   useEffect(() => {
@@ -137,6 +145,8 @@ export function AppDataProvider({ children }: PropsWithChildren) {
     setIsHydrated(false);
     if (!identity || !pair || !user) {
       setSnapshot(blankSnapshot);
+      setPartnerAppearance(null);
+      setUsePartnerBackgroundState(false);
       setIsHydrated(true);
       return;
     }
@@ -144,9 +154,10 @@ export function AppDataProvider({ children }: PropsWithChildren) {
     setSnapshot(pairSnapshot(pair, user.id));
     void (async () => {
       try {
-        const [cached, appearance] = await Promise.all([
+        const [cached, appearance, usePartner] = await Promise.all([
           syncRepository.readCache(user.id, pair.id).catch(() => null),
           syncRepository.readAppearance(user.id).catch(() => null),
+          syncRepository.readUsePartnerBackground(user.id).catch(() => false),
         ]);
         if (!active || identityRef.current !== identity) return;
         const local = cached && cached.currentMemberId === user.id ? cached : pairSnapshot(pair, user.id);
@@ -158,6 +169,7 @@ export function AppDataProvider({ children }: PropsWithChildren) {
           relationshipStartedAt: base.relationshipStartedAt,
           appearance: base.appearance,
         });
+        setUsePartnerBackgroundState(usePartner);
         await reloadRemote().catch(() => undefined);
       } finally {
         if (active && identityRef.current === identity) setIsHydrated(true);
@@ -173,12 +185,32 @@ export function AppDataProvider({ children }: PropsWithChildren) {
   }, [isHydrated, pair, snapshot, user]);
 
   useEffect(() => {
+    if (!pair || !user || !isHydrated || identityRef.current !== `${user.id}:${pair.id}`) return;
+    const appearance = snapshot.appearance;
+    if (appearance.backgroundKind === "image" && appearance.backgroundValue && !appearance.backgroundValue.startsWith("media:")) {
+      const localUri = appearance.backgroundValue;
+      void withToken(async (token) => {
+        const stored = await syncRepository.uploadImage(token, localUri);
+        setSnapshot((current) => current.appearance.backgroundValue === localUri ? { ...current, appearance: { ...current.appearance, backgroundValue: stored } } : current);
+        await syncRepository.putAppearance(token, { ...appearance, backgroundValue: stored });
+      }).catch(() => undefined);
+      return;
+    }
+    void withToken((token) => syncRepository.putAppearance(token, appearance)).catch(() => undefined);
+  }, [isHydrated, pair, snapshot.appearance, user, withToken]);
+
+  useEffect(() => {
     if (!pair || !user) return;
     const timer = setInterval(() => { void reloadRemote().catch(() => undefined); }, 10_000);
     return () => clearInterval(timer);
   }, [pair, reloadRemote, user]);
 
   const reconcile = useCallback(() => { void reloadRemote().catch(() => undefined); }, [reloadRemote]);
+
+  const setUsePartnerBackground = useCallback((value: boolean) => {
+    setUsePartnerBackgroundState(value);
+    if (user) void syncRepository.writeUsePartnerBackground(user.id, value).catch(() => undefined);
+  }, [user]);
 
   const uploadPayloadImage = useCallback(async (token: string, payload: Record<string, unknown>) => {
     const imageUri = typeof payload.imageUri === "string" ? payload.imageUri : "";
@@ -236,6 +268,10 @@ export function AppDataProvider({ children }: PropsWithChildren) {
     return {
       snapshot,
       isHydrated,
+      partnerAppearance,
+      usePartnerBackground,
+      effectiveAppearance: usePartnerBackground && partnerAppearance ? partnerAppearance : snapshot.appearance,
+      setUsePartnerBackground,
       setCurrentMood: (mood) => {
         const updatedAt = now();
         setSnapshot((current) => ({ ...current, moods: { ...current.moods, [current.currentMemberId]: { memberId: current.currentMemberId, mood, updatedAt } } }));
@@ -273,7 +309,7 @@ export function AppDataProvider({ children }: PropsWithChildren) {
       setBackgroundImage: (uri, luminance) => setSnapshot((current) => ({ ...current, appearance: { backgroundKind: "image", backgroundValue: uri, backgroundLuminance: luminance } })),
       resetBackground: () => setSnapshot((current) => ({ ...current, appearance: { backgroundKind: "default", backgroundValue: null, backgroundLuminance: 0.95 } })),
     };
-  }, [createEntry, deleteEntry, isHydrated, reconcile, snapshot, updateEntry, withToken]);
+  }, [createEntry, deleteEntry, isHydrated, partnerAppearance, reconcile, setUsePartnerBackground, snapshot, updateEntry, usePartnerBackground, withToken]);
 
   return <AppDataContext.Provider value={value}>{children}</AppDataContext.Provider>;
 }

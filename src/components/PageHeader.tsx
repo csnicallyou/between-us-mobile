@@ -10,9 +10,9 @@ interface PageHeaderProps {
 }
 
 export function PageHeader({ title, subtitle, kicker }: PageHeaderProps) {
-  const { snapshot } = useAppData();
-  const palette = paletteForLuminance(snapshot.appearance.backgroundLuminance);
-  const custom = snapshot.appearance.backgroundKind !== "default";
+  const { effectiveAppearance } = useAppData();
+  const palette = paletteForLuminance(effectiveAppearance.backgroundLuminance);
+  const custom = effectiveAppearance.backgroundKind !== "default";
   return (
     <View style={styles.container}>
       {kicker ? <Text style={[styles.kicker, custom && { color: palette.foreground }]}>{kicker}</Text> : null}

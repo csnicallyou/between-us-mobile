@@ -29,6 +29,7 @@ An invite is `{id,token,code,expiresAt,link}` and is only returned at creation. 
 
 - `GET|POST /entries`, `GET|PATCH|DELETE /entries/:id`. Kinds: `plan`, `journal`, `memory`, `about`, `agreement`, `conflict`. Payload is a bounded JSON object; PATCH may include `expectedVersion` for conflict detection.
 - `GET /moods`, `PUT /moods/me` with `{mood}`.
+- `GET /appearance`, `PUT /appearance/me` with `{backgroundKind,backgroundValue,backgroundLuminance}`. Mirrors `/moods`: each member's own background is writable only by them, both members' current background is readable by the pair, so a device can optionally show the partner's background instead of its own.
 - `GET|POST /chat/messages`; lists use `limit` and optional ISO `before` cursor.
 - `POST /feedback` with `{content}` is intentionally write-only and returns a receipt, never content.
 - `POST /media` uses `multipart/form-data` with one file. `GET|DELETE /media/:id` are private pair-scoped operations.

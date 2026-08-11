@@ -79,6 +79,13 @@ paths:
     put:
       requestBody: { required: true, content: { application/json: { schema: { type: object, required: [mood], properties: { mood: { type: [string, 'null'], enum: [calm, happy, tender, anxious, sad, angry, tired, neutral, null] } } } } } }
       responses: { '200': { description: Mood updated } }
+  /appearance:
+    get:
+      responses: { '200': { description: Both members' background appearance } }
+  /appearance/me:
+    put:
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [backgroundKind, backgroundValue, backgroundLuminance], properties: { backgroundKind: { type: string, enum: [default, color, image] }, backgroundValue: { type: [string, 'null'] }, backgroundLuminance: { type: number, minimum: 0, maximum: 1 } } } } } }
+      responses: { '200': { description: Appearance updated } }
   /chat/messages:
     get:
       parameters: [{ $ref: '#/components/parameters/Limit' }, { $ref: '#/components/parameters/Before' }]

@@ -2,9 +2,9 @@ import { useAppData } from "@/state/AppDataContext";
 import { paletteForLuminance } from "./adaptivePalette";
 
 export function useBackgroundPalette() {
-  const { snapshot } = useAppData();
+  const { effectiveAppearance } = useAppData();
   return {
-    custom: snapshot.appearance.backgroundKind !== "default",
-    palette: paletteForLuminance(snapshot.appearance.backgroundLuminance),
+    custom: effectiveAppearance.backgroundKind !== "default",
+    palette: paletteForLuminance(effectiveAppearance.backgroundLuminance),
   };
 }
