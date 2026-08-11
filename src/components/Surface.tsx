@@ -1,7 +1,7 @@
 import type { PropsWithChildren } from "react";
 import { StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
 import { NativeGlassLayer } from "@/components/NativeGlassLayer";
-import { supportsSwiftUILiquidGlass } from "@/platform/glass";
+import { supportsNativeLiquidGlass } from "@/platform/glass";
 import { colors, radius, shadow, spacing } from "@/theme/tokens";
 
 interface SurfaceProps extends PropsWithChildren {
@@ -10,8 +10,8 @@ interface SurfaceProps extends PropsWithChildren {
 
 export function Surface({ children, style }: SurfaceProps) {
   return (
-    <View style={[styles.surface, style, supportsSwiftUILiquidGlass && styles.nativeSurface]}>
-      {supportsSwiftUILiquidGlass ? <NativeGlassLayer cornerRadius={radius.lg} /> : null}
+    <View style={[styles.surface, style, supportsNativeLiquidGlass && styles.nativeSurface]}>
+      {supportsNativeLiquidGlass ? <NativeGlassLayer cornerRadius={radius.lg} /> : null}
       {children}
     </View>
   );

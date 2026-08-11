@@ -37,4 +37,15 @@ for (const path of sourceFiles) {
   if ((await stat(path)).size === 0) throw new Error(`${relative(sourceRoot, path)} is empty`);
 }
 
+const nativeGlassLayer = await readFile(new URL("../src/components/NativeGlassLayer.tsx", import.meta.url), "utf8");
+if (!nativeGlassLayer.includes('from "expo-glass-effect"')) {
+  throw new Error("NativeGlassLayer must use the UIKit-backed expo-glass-effect component");
+}
+if (!nativeGlassLayer.includes('variant = "clear"')) {
+  throw new Error("NativeGlassLayer must default to clear Liquid Glass instead of an opaque material");
+}
+if (nativeGlassLayer.includes("@expo/ui/swift-ui")) {
+  throw new Error("NativeGlassLayer must not wrap an empty SwiftUI shape");
+}
+
 console.log(`Source foundation verified: ${sourceFiles.length} TypeScript files`);

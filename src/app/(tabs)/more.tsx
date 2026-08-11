@@ -5,7 +5,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { NativeGlassLayer } from "@/components/NativeGlassLayer";
 import { Screen } from "@/components/Screen";
 import { Surface } from "@/components/Surface";
-import { glassDiagnostics, supportsSwiftUILiquidGlass } from "@/platform/glass";
+import { glassDiagnostics, supportsNativeLiquidGlass } from "@/platform/glass";
 import { colors, controlShadow, radius, spacing } from "@/theme/tokens";
 
 const sections = [
@@ -52,13 +52,13 @@ export default function MoreScreen() {
           <View style={[styles.probeOrb, styles.probeSea]} />
           <View style={[styles.probeOrb, styles.probeCoral]} />
         </View>
-        {supportsSwiftUILiquidGlass ? <View style={styles.probeGlass}><NativeGlassLayer cornerRadius={41} interactive variant="clear" /></View> : null}
+        {supportsNativeLiquidGlass ? <View style={styles.probeGlass}><NativeGlassLayer cornerRadius={41} interactive variant="clear" /></View> : null}
         <View style={styles.diagnosticsCopy}>
           <Text style={styles.diagnosticsTitle}>Диагностика Liquid Glass</Text>
           <Text style={styles.diagnosticsLine}>iOS: {glassDiagnostics.osVersion}</Text>
           <Text style={styles.diagnosticsLine}>API: {glassDiagnostics.apiAvailable ? "доступен" : "недоступен"}</Text>
           <Text style={styles.diagnosticsLine}>Сборка: {glassDiagnostics.compiledWithLiquidGlass ? "поддерживает" : "не поддерживает"}</Text>
-          <Text style={styles.diagnosticsLine}>SwiftUI Glass: {supportsSwiftUILiquidGlass ? "активен" : "недоступен"}</Text>
+          <Text style={styles.diagnosticsLine}>UIKit GlassView: {supportsNativeLiquidGlass ? "активен" : "недоступен"}</Text>
           <Text style={styles.diagnosticsLine}>Уменьшение прозрачности: {reduceTransparency === null ? "проверяется" : reduceTransparency ? "включено" : "выключено"}</Text>
         </View>
       </View>

@@ -10,6 +10,3 @@ export const glassDiagnostics = {
 
 export const supportsNativeLiquidGlass =
   glassDiagnostics.os === "ios" && glassDiagnostics.apiAvailable && glassDiagnostics.compiledWithLiquidGlass;
-
-export const supportsSwiftUILiquidGlass =
-  Platform.OS === "ios" && Number.parseFloat(String(Platform.Version)) >= 26;
