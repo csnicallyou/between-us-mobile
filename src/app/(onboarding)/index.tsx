@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { AppButton } from "@/components/AppButton";
 import { AuthScaffold } from "@/components/AuthScaffold";
@@ -9,6 +11,10 @@ import { colors, radius, spacing } from "@/theme/tokens";
 
 type SetupMode = "choose" | "create" | "join";
 
+function toIsoDate(value: Date) {
+  return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, "0")}-${String(value.getDate()).padStart(2, "0")}`;
+}
+
 export function PairSetupScreen({ initialSecret = "" }: { initialSecret?: string }) {
   const router = useRouter();
   const { createInvite, createPair, invite, isLoading, joinPair, pair, pendingInvite } = usePair();
@@ -16,7 +22,8 @@ export function PairSetupScreen({ initialSecret = "" }: { initialSecret?: string
   const [mode, setMode] = useState<SetupMode>(effectiveSecret ? "join" : "choose");
   const [secret, setSecret] = useState(effectiveSecret);
   const [name, setName] = useState("Наша пара");
-  const [relationshipStartedOn, setRelationshipStartedOn] = useState("");
+  const [relationshipStartedOn, setRelationshipStartedOn] = useState(toIsoDate(new Date()));
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -28,7 +35,7 @@ export function PairSetupScreen({ initialSecret = "" }: { initialSecret?: string
 
   const submitCreate = async () => {
     if (!name.trim() || !/^\d{4}-\d{2}-\d{2}$/.test(relationshipStartedOn)) {
-      setError("Укажите название и дату в формате ГГГГ-ММ-ДД");
+      setError("Укажите название пары и дату начала отношений");
       return;
     }
     setError(null);
@@ -104,7 +111,23 @@ export function PairSetupScreen({ initialSecret = "" }: { initialSecret?: string
       {mode === "create" ? (
         <View style={styles.group}>
           <TextInput accessibilityLabel="Название пары" maxLength={80} onChangeText={setName} placeholder="Название пары" placeholderTextColor={colors.muted} style={styles.input} value={name} />
-          <TextInput accessibilityLabel="Дата начала отношений" keyboardType="numbers-and-punctuation" maxLength={10} onChangeText={setRelationshipStartedOn} placeholder="ГГГГ-ММ-ДД" placeholderTextColor={colors.muted} style={styles.input} value={relationshipStartedOn} />
+          <Text style={styles.label}>Дата начала отношений</Text>
+          <Pressable accessibilityLabel="Дата начала отношений" onPress={() => setShowDatePicker(true)} style={styles.dateButton}>
+            <Text style={styles.dateText}>{new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long", year: "numeric" }).format(new Date(`${relationshipStartedOn}T12:00:00`))}</Text>
+            <Ionicons color={colors.muted} name="calendar-outline" size={19} />
+          </Pressable>
+          {showDatePicker ? (
+            <DateTimePicker
+              display={Platform.OS === "ios" ? "inline" : "default"}
+              maximumDate={new Date()}
+              mode="date"
+              onChange={(_, date) => {
+                if (Platform.OS !== "ios") setShowDatePicker(false);
+                if (date) setRelationshipStartedOn(toIsoDate(date));
+              }}
+              value={new Date(`${relationshipStartedOn}T12:00:00`)}
+            />
+          ) : null}
           <AppButton disabled={isSubmitting} label={isSubmitting ? "Создаём…" : "Создать и пригласить"} onPress={() => void submitCreate()} />
         </View>
       ) : null}
@@ -130,6 +153,9 @@ const styles = StyleSheet.create({
   group: { gap: spacing.md },
   input: { backgroundColor: colors.surfaceStrong, borderColor: colors.line, borderRadius: radius.md, borderWidth: 1, color: colors.ink, fontSize: 16, minHeight: 52, paddingHorizontal: spacing.lg },
   inviteInput: { minHeight: 82, paddingTop: spacing.lg, textAlignVertical: "top" },
+  label: { color: colors.ink, fontSize: 13, fontWeight: "700" },
+  dateButton: { alignItems: "center", backgroundColor: colors.surfaceStrong, borderColor: colors.line, borderRadius: radius.md, borderWidth: 1, flexDirection: "row", justifyContent: "space-between", minHeight: 52, paddingHorizontal: spacing.lg },
+  dateText: { color: colors.ink, fontSize: 16 },
   error: { color: colors.danger, fontSize: 13, lineHeight: 18 },
   back: { color: colors.sea, fontSize: 14, fontWeight: "600", paddingVertical: spacing.sm, textAlign: "center" },
   memberNames: { color: colors.ink, fontSize: 20, fontWeight: "700", textAlign: "center" },

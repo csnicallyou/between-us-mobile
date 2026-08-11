@@ -9,12 +9,17 @@ import { useAppData } from "@/state/AppDataContext";
 import { colors, radius, spacing, typography } from "@/theme/tokens";
 
 function relationshipDuration(startedAt: string) {
-  const started = new Date(startedAt).getTime();
-  if (Number.isNaN(started)) return "—";
-  const days = Math.max(0, Math.floor((Date.now() - started) / 86_400_000));
-  const months = Math.floor(days / 30.44);
-  const remainingDays = Math.max(0, Math.round(days - months * 30.44));
-  return `${months} мес. и ${remainingDays} дн.`;
+  const started = new Date(startedAt);
+  if (Number.isNaN(started.getTime())) return "—";
+  const now = new Date();
+  let months = (now.getFullYear() - started.getFullYear()) * 12 + (now.getMonth() - started.getMonth());
+  let days = now.getDate() - started.getDate();
+  if (days < 0) {
+    months -= 1;
+    days += new Date(now.getFullYear(), now.getMonth(), 0).getDate();
+  }
+  if (months < 0) { months = 0; days = 0; }
+  return `${months} мес. и ${days} дн.`;
 }
 
 function dateLabel(value: string | null) {
