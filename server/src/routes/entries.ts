@@ -2,12 +2,24 @@ import type { FastifyInstance } from "fastify";
 import type { Pool } from "pg";
 import { z } from "zod";
 import { HttpError, idParams, paginationQuery, parse, requirePair, requireUser } from "../lib/http.js";
+import { sendPushToUser } from "../lib/push.js";
 
 const kinds = z.enum(["plan", "journal", "memory", "about", "agreement", "conflict"]);
 const payload = z.record(z.string().max(100), z.unknown()).refine((value) => Object.keys(value).length <= 50);
 const createBody = z.object({ kind: kinds, payload }).strict();
 const updateBody = z.object({ payload, expectedVersion: z.number().int().positive().optional() }).strict();
 const listQuery = paginationQuery.extend({ kind: kinds.optional() });
+
+// Deliberately no "about"/"conflict" here: those are reference/analysis entries, not
+// the kind of thing that should interrupt a partner's phone the moment they're saved.
+// Bodies stay content-free (no entry title/text) to match "hide sensitive text by
+// default" — richer per-category previews are a future opt-in, not tonight's scope.
+const pushLabelByKind: Partial<Record<z.infer<typeof kinds>, string>> = {
+  plan: "Новый план",
+  journal: "Новая запись в дневнике",
+  memory: "Новое памятное событие",
+  agreement: "Новая договорённость",
+};
 
 const mapEntry = (row: Record<string, unknown>) => ({
   id: row.id, kind: row.kind, payload: row.payload, authorId: row.author_id, version: row.version, createdAt: row.created_at, updatedAt: row.updated_at
@@ -40,7 +52,15 @@ export function registerEntryRoutes(app: FastifyInstance, db: Pool) {
     const pairId = await requirePair(db, userId);
     const body = parse(createBody, request.body);
     const result = await db.query("INSERT INTO entries(pair_id,author_id,kind,payload) VALUES ($1,$2,$3,$4) RETURNING id,kind,payload,author_id,version,created_at,updated_at", [pairId, userId, body.kind, body.payload]);
-    return reply.code(201).send(mapEntry(result.rows[0]!));
+    const entry = mapEntry(result.rows[0]!);
+    const label = pushLabelByKind[body.kind];
+    if (label) {
+      const partner = await db.query<{ user_id: string }>("SELECT user_id FROM pair_members WHERE pair_id=$1 AND user_id<>$2", [pairId, userId]);
+      if (partner.rows[0]) {
+        void sendPushToUser(db, partner.rows[0].user_id, { title: "Между нами", body: label, data: { type: body.kind, entryId: entry.id } }).catch(() => undefined);
+      }
+    }
+    return reply.code(201).send(entry);
   });
 
   app.patch("/entries/:id", async (request) => {
