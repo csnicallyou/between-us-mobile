@@ -19,6 +19,7 @@ interface AppDataValue {
   partnerAppearance: AppearanceSettings | null;
   usePartnerBackground: boolean;
   effectiveAppearance: AppearanceSettings;
+  appearanceSyncError: string | null;
   setUsePartnerBackground: (value: boolean) => void;
   setCurrentMood: (mood: Mood) => void;
   addPlan: (input: EditablePlan) => void;
@@ -113,6 +114,7 @@ export function AppDataProvider({ children }: PropsWithChildren) {
   const [isHydrated, setIsHydrated] = useState(false);
   const [partnerAppearance, setPartnerAppearance] = useState<AppearanceSettings | null>(null);
   const [usePartnerBackground, setUsePartnerBackgroundState] = useState(false);
+  const [appearanceSyncError, setAppearanceSyncError] = useState<string | null>(null);
   const identityRef = useRef<string | null>(null);
 
   const withToken = useCallback(async <T,>(operation: (token: string) => Promise<T>) => {
@@ -187,16 +189,18 @@ export function AppDataProvider({ children }: PropsWithChildren) {
   useEffect(() => {
     if (!pair || !user || !isHydrated || identityRef.current !== `${user.id}:${pair.id}`) return;
     const appearance = snapshot.appearance;
+    const describe = (error: unknown) => error instanceof Error ? `${error.name}: ${error.message}` : String(error);
     if (appearance.backgroundKind === "image" && appearance.backgroundValue && !appearance.backgroundValue.startsWith("media:")) {
       const localUri = appearance.backgroundValue;
       void withToken(async (token) => {
         const stored = await syncRepository.uploadImage(token, localUri);
         setSnapshot((current) => current.appearance.backgroundValue === localUri ? { ...current, appearance: { ...current.appearance, backgroundValue: stored } } : current);
         await syncRepository.putAppearance(token, { ...appearance, backgroundValue: stored });
-      }).catch(() => undefined);
+        setAppearanceSyncError(null);
+      }).catch((error) => setAppearanceSyncError(describe(error)));
       return;
     }
-    void withToken((token) => syncRepository.putAppearance(token, appearance)).catch(() => undefined);
+    void withToken((token) => syncRepository.putAppearance(token, appearance)).then(() => setAppearanceSyncError(null)).catch((error) => setAppearanceSyncError(describe(error)));
   }, [isHydrated, pair, snapshot.appearance, user, withToken]);
 
   useEffect(() => {
@@ -271,6 +275,7 @@ export function AppDataProvider({ children }: PropsWithChildren) {
       partnerAppearance,
       usePartnerBackground,
       effectiveAppearance: usePartnerBackground && partnerAppearance ? partnerAppearance : snapshot.appearance,
+      appearanceSyncError,
       setUsePartnerBackground,
       setCurrentMood: (mood) => {
         const updatedAt = now();
@@ -309,7 +314,7 @@ export function AppDataProvider({ children }: PropsWithChildren) {
       setBackgroundImage: (uri, luminance) => setSnapshot((current) => ({ ...current, appearance: { backgroundKind: "image", backgroundValue: uri, backgroundLuminance: luminance } })),
       resetBackground: () => setSnapshot((current) => ({ ...current, appearance: { backgroundKind: "default", backgroundValue: null, backgroundLuminance: 0.95 } })),
     };
-  }, [createEntry, deleteEntry, isHydrated, partnerAppearance, reconcile, setUsePartnerBackground, snapshot, updateEntry, usePartnerBackground, withToken]);
+  }, [appearanceSyncError, createEntry, deleteEntry, isHydrated, partnerAppearance, reconcile, setUsePartnerBackground, snapshot, updateEntry, usePartnerBackground, withToken]);
 
   return <AppDataContext.Provider value={value}>{children}</AppDataContext.Provider>;
 }
