@@ -67,6 +67,14 @@ src/
 
 Подробности: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
+## Скриншоты
+
+- [Сегодня](docs/screenshots/home.png)
+- [Календарь](docs/screenshots/calendar.png)
+- [Планы](docs/screenshots/plans.png)
+- [Дневник](docs/screenshots/journal.png)
+- [Ещё](docs/screenshots/more.png)
+
 ## Безопасность
 
 - Личные ключи и токены не находятся в исходном коде.
