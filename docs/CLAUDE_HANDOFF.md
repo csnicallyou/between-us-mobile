@@ -32,7 +32,7 @@ Build «Между нами» as a real multi-user iOS/Android product. Anton an
 ## Current release
 
 - Mobile version `0.3.0`; runtime policy is `appVersion` — **no, this was changed tonight to `fingerprint`** (see "What changed overnight"). This is the correct policy going forward; do not revert it.
-- Server: currently deployed release is `/opt/between-us-api/releases/20260812-1` (auth hardening + date fix + appearance sync + upload fix), migrations through `004_push_tokens.sql` applied.
+- Server: currently deployed release is `/opt/between-us-api/releases/20260812-3` (auth hardening + date fix + appearance sync + upload fix), migrations through `004_push_tokens.sql` applied.
 - Mobile: the currently-installed IPA on both phones predates tonight's widget/push native additions. A new build is in flight on `feature/widget-last-journal-entry` (GitHub Actions run, check `gh run list`) — **once it succeeds and the branch is merged, both phones need to reinstall via Sideloadly/AltStore again.** Everything else tonight (auth, date fix, appearance sync, upload fix, calendar picker) already shipped via OTA and needs no reinstall.
 - Free Apple signing normally expires after seven days from whenever it was last (re)installed. OTA updates JS/assets only; native dependency/config changes need a new IPA — this bit the project once tonight already (see incident below), the fix (`runtimeVersion.policy: fingerprint`) prevents it recurring.
 
@@ -77,7 +77,7 @@ Application-only resources:
 
 - `between-us-api.service`; `between-us-edge.service`; PostgreSQL.
 - user/group `between-us`.
-- releases `/opt/between-us-api/releases/`; active symlink `/opt/between-us-api/current` (currently `20260812-1`).
+- releases `/opt/between-us-api/releases/`; active symlink `/opt/between-us-api/current` (currently `20260812-3`).
 - secrets `/etc/between-us-api.env` — never print or copy. Does **not** yet contain `SMTP_URL`/`MAIL_FROM` — add both before real users need email delivery.
 - uploads `/var/lib/between-us-api/uploads`.
 - API `127.0.0.1:3100`; isolated nginx `/etc/between-us-nginx/nginx.conf` (now includes `ReadWritePaths=/var/lib/nginx` in the edge systemd unit — do not remove it, that's the fix from incident #1 above); public TLS `9444`.
@@ -95,7 +95,7 @@ Before/after any approved server mutation follow `server/docs/OPERATIONS.md`. Ca
 
 1. **Merge and verify `feature/widget-last-journal-entry`.** Check the CI build succeeded (`gh run list --branch feature/widget-last-journal-entry`), merge to master, build+deploy the server side (push_tokens migration) same as previous deploys, then get a new IPA onto both phones and confirm: does the widget actually render and update on a home screen? Does a chat-message push notification actually arrive? Neither is proven — code review and CI compilation are not the same as a device confirming it.
 2. **Decide on a real transactional email provider** and set `SMTP_URL`/`MAIL_FROM` in `/etc/between-us-api.env` — needed before anyone besides Anton/Liza can realistically complete email verification or password reset (right now the code goes to the server log).
-3. **Push notification categories beyond chat** (plans, memorable dates, agreements, conflict entries) — only the chat trigger exists tonight. Also: linking `push_tokens` to `refresh_tokens.family_id` so revoking a session via the account screen also revokes that device's push token (currently only explicit sign-out does).
+3. ✅ **Push notification categories**: plan/journal/memory/agreement creation now also push (server-only change, deployed as release `20260812-3`, no new IPA needed). Deliberately excludes "about"/"conflict" entries (reference/analysis content, not urgent-interrupt material). Still unverified on a device, same as chat. Remaining gap: linking `push_tokens` to `refresh_tokens.family_id` so revoking a session via the account screen also revokes that device's push token (currently only explicit sign-out does).
 4. **iOS widget: privacy toggle** — the roadmap's stated requirement ("hide mood/plan text/partner name on lock screen by default") isn't implemented; tonight's widget is a plain proof of concept.
 5. **Android widgets**, once the iOS one is confirmed working on a device.
 6. **TestFlight/App Store, Android validation, backup/restore, monitoring, privacy/legal, dedicated production infrastructure** — unchanged from before, still ahead.
