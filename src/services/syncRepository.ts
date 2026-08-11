@@ -1,3 +1,4 @@
+import { File, UploadType } from "expo-file-system";
 import type { AppearanceSettings, AppSnapshot, ChatMessage, MemberMood, Mood } from "@/domain/models";
 import { BackendError } from "@/services/backendClient";
 
@@ -173,15 +174,15 @@ export const syncRepository = {
     request<RemoteChatMessage>("/chat/messages", token, { method: "POST", body: JSON.stringify({ content }) }),
 
   async uploadImage(token: string, uri: string) {
-    const form = new FormData();
-    form.append("file", { uri, name: "image.jpg", type: "image/jpeg" } as unknown as Blob);
-    const response = await fetch(`${apiBaseUrl()}/v1/media`, {
-      method: "POST",
+    const result = await new File(uri).upload(`${apiBaseUrl()}/v1/media`, {
+      httpMethod: "POST",
+      uploadType: UploadType.MULTIPART,
+      fieldName: "file",
+      mimeType: "image/jpeg",
       headers: { accept: "application/json", authorization: `Bearer ${token}` },
-      body: form,
     });
-    const body = await response.json().catch(() => null) as { id?: string; error?: { message?: string } } | null;
-    if (!response.ok || !body?.id) throw new BackendError(body?.error?.message ?? "Не удалось загрузить изображение", response.status);
+    const body = result.body ? JSON.parse(result.body) as { id?: string; error?: { message?: string } } : null;
+    if (result.status < 200 || result.status >= 300 || !body?.id) throw new BackendError(body?.error?.message ?? "Не удалось загрузить изображение", result.status);
     return `media:${body.id}`;
   },
 
