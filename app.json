@@ -61,7 +61,7 @@
     },
     "owner": "csniacllyou",
     "runtimeVersion": {
-      "policy": "appVersion"
+      "policy": "fingerprint"
     },
     "updates": {
       "url": "https://u.expo.dev/4e2b6915-5b8f-4aea-9f71-e69179ece785",

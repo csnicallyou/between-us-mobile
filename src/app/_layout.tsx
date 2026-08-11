@@ -1,6 +1,7 @@
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AppDataProvider } from "@/state/AppDataContext";
 import { AuthProvider, useAuth } from "@/state/AuthContext";
 import { PairProvider, usePair } from "@/state/PairContext";
@@ -39,7 +40,11 @@ function RootNavigator() {
 }
 
 export default function RootLayout() {
-  return <AuthProvider><PairProvider><AppDataProvider><StatusBar style="dark" /><RootNavigator /></AppDataProvider></PairProvider></AuthProvider>;
+  return (
+    <ErrorBoundary>
+      <AuthProvider><PairProvider><AppDataProvider><StatusBar style="dark" /><RootNavigator /></AppDataProvider></PairProvider></AuthProvider>
+    </ErrorBoundary>
+  );
 }
 
 const styles = StyleSheet.create({ loading: { alignItems: "center", backgroundColor: colors.background, flex: 1, justifyContent: "center" } });
