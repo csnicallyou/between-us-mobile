@@ -12,9 +12,9 @@ interface SubpageHeaderProps {
 
 export function SubpageHeader({ title, subtitle }: SubpageHeaderProps) {
   const router = useRouter();
-  const { snapshot } = useAppData();
-  const palette = paletteForLuminance(snapshot.appearance.backgroundLuminance);
-  const custom = snapshot.appearance.backgroundKind !== "default";
+  const { effectiveAppearance } = useAppData();
+  const palette = paletteForLuminance(effectiveAppearance.backgroundLuminance);
+  const custom = effectiveAppearance.backgroundKind !== "default";
   return (
     <View style={styles.wrapper}>
       <Pressable accessibilityLabel="Назад" onPress={() => router.back()} style={styles.back}><Ionicons color={colors.ink} name="chevron-back" size={22} /></Pressable>

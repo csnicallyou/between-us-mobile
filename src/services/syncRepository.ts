@@ -26,10 +26,19 @@ interface RemoteChatMessage {
   createdAt: string;
 }
 
+interface RemoteAppearance {
+  userId: string;
+  backgroundKind: AppearanceSettings["backgroundKind"];
+  backgroundValue: string | null;
+  backgroundLuminance: number;
+  updatedAt: string | null;
+}
+
 export interface RemotePairData {
   entries: RemoteEntry[];
   moods: Record<string, MemberMood>;
   chat: ChatMessage[];
+  appearances: Record<string, AppearanceSettings>;
 }
 
 const versions = new Map<string, number>();
@@ -85,6 +94,10 @@ function appearanceKey(userId: string) {
   return `between-us.appearance.v1:${userId}`;
 }
 
+function usePartnerBackgroundKey(userId: string) {
+  return `between-us.usePartnerBackground.v1:${userId}`;
+}
+
 type KvStore = { getItemAsync: (key: string) => Promise<string | null>; setItemAsync: (key: string, value: string) => Promise<void> };
 let kvStorePromise: Promise<KvStore | null> | null = null;
 
@@ -103,10 +116,11 @@ function getKvStore(): Promise<KvStore | null> {
 
 export const syncRepository = {
   async loadRemote(token: string): Promise<RemotePairData> {
-    const [entries, moodResponse, chat] = await Promise.all([
+    const [entries, moodResponse, chat, appearanceResponse] = await Promise.all([
       fetchPages<RemoteEntry>("/entries", token),
       request<{ items: RemoteMood[] }>("/moods", token),
       fetchPages<RemoteChatMessage>("/chat/messages", token),
+      request<{ items: RemoteAppearance[] }>("/appearance", token),
     ]);
     versions.clear();
     entries.forEach((entry) => versions.set(entry.id, entry.version));
@@ -120,6 +134,11 @@ export const syncRepository = {
       chat: chat
         .map((message) => ({ id: message.id, author: message.authorId, content: message.content, createdAt: message.createdAt }))
         .sort((left, right) => left.createdAt.localeCompare(right.createdAt)),
+      appearances: Object.fromEntries(appearanceResponse.items.map((item) => [item.userId, {
+        backgroundKind: item.backgroundKind,
+        backgroundValue: item.backgroundValue,
+        backgroundLuminance: item.backgroundLuminance,
+      }])),
     };
   },
 
@@ -146,6 +165,9 @@ export const syncRepository = {
 
   putMood: (token: string, mood: Mood | null) =>
     request<RemoteMood>("/moods/me", token, { method: "PUT", body: JSON.stringify({ mood }) }),
+
+  putAppearance: (token: string, appearance: AppearanceSettings) =>
+    request<RemoteAppearance>("/appearance/me", token, { method: "PUT", body: JSON.stringify(appearance) }),
 
   postChatMessage: (token: string, content: string) =>
     request<RemoteChatMessage>("/chat/messages", token, { method: "POST", body: JSON.stringify({ content }) }),
@@ -204,6 +226,18 @@ export const syncRepository = {
     const store = await getKvStore();
     if (!store) return;
     await store.setItemAsync(appearanceKey(userId), JSON.stringify(appearance));
+  },
+
+  async readUsePartnerBackground(userId: string) {
+    const store = await getKvStore();
+    if (!store) return false;
+    return (await store.getItemAsync(usePartnerBackgroundKey(userId))) === "1";
+  },
+
+  async writeUsePartnerBackground(userId: string, value: boolean) {
+    const store = await getKvStore();
+    if (!store) return;
+    await store.setItemAsync(usePartnerBackgroundKey(userId), value ? "1" : "0");
   },
 
   clearVersions() {

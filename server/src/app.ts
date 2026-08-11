@@ -12,6 +12,7 @@ import { registerUserRoutes } from "./routes/users.js";
 import { registerPairRoutes } from "./routes/pairs.js";
 import { registerEntryRoutes } from "./routes/entries.js";
 import { registerMoodRoutes } from "./routes/moods.js";
+import { registerAppearanceRoutes } from "./routes/appearance.js";
 import { registerChatRoutes } from "./routes/chat.js";
 import { registerFeedbackRoutes } from "./routes/feedback.js";
 import { registerMediaRoutes } from "./routes/media.js";
@@ -51,6 +52,7 @@ export function buildApp(config: AppConfig, db: Pool) {
     registerPairRoutes(api, db);
     registerEntryRoutes(api, db);
     registerMoodRoutes(api, db);
+    registerAppearanceRoutes(api, db);
     registerChatRoutes(api, db);
     registerFeedbackRoutes(api, db, config);
     registerMediaRoutes(api, db, config);

@@ -12,8 +12,8 @@ interface SurfaceProps extends PropsWithChildren {
 }
 
 export function Surface({ children, glassTintColor, glassVariant = "regular", style }: SurfaceProps) {
-  const { snapshot } = useAppData();
-  const customDark = snapshot.appearance.backgroundKind !== "default" && snapshot.appearance.backgroundLuminance < 0.36;
+  const { effectiveAppearance } = useAppData();
+  const customDark = effectiveAppearance.backgroundKind !== "default" && effectiveAppearance.backgroundLuminance < 0.36;
   const adaptiveTint = customDark ? "rgba(255,255,255,0.54)" : glassTintColor;
   return (
     <View style={[styles.surface, customDark && styles.darkBackgroundSurface, style, supportsNativeLiquidGlass && styles.nativeSurface]}>
