@@ -1,4 +1,3 @@
-import Storage from "expo-sqlite/kv-store";
 import type { AppearanceSettings, AppSnapshot, ChatMessage, MemberMood, Mood } from "@/domain/models";
 import { BackendError } from "@/services/backendClient";
 
@@ -86,6 +85,22 @@ function appearanceKey(userId: string) {
   return `between-us.appearance.v1:${userId}`;
 }
 
+type KvStore = { getItemAsync: (key: string) => Promise<string | null>; setItemAsync: (key: string, value: string) => Promise<void> };
+let kvStorePromise: Promise<KvStore | null> | null = null;
+
+// expo-sqlite is a native module: an app binary built before it was added does not have it
+// compiled in, and OTA can still ship JS that references it (same runtimeVersion). Loading it
+// lazily and swallowing the failure keeps the app usable (without local cache) instead of a
+// hard crash on launch. See docs/CLAUDE_HANDOFF.md native-dependency note.
+function getKvStore(): Promise<KvStore | null> {
+  if (!kvStorePromise) {
+    kvStorePromise = import("expo-sqlite/kv-store")
+      .then((module) => (module.default ?? module) as unknown as KvStore)
+      .catch(() => null);
+  }
+  return kvStorePromise;
+}
+
 export const syncRepository = {
   async loadRemote(token: string): Promise<RemotePairData> {
     const [entries, moodResponse, chat] = await Promise.all([
@@ -154,7 +169,9 @@ export const syncRepository = {
   },
 
   async readCache(userId: string, pairId: string) {
-    const value = await Storage.getItemAsync(cacheKey(userId, pairId));
+    const store = await getKvStore();
+    if (!store) return null;
+    const value = await store.getItemAsync(cacheKey(userId, pairId));
     if (!value) return null;
     try {
       return JSON.parse(value) as AppSnapshot;
@@ -164,13 +181,17 @@ export const syncRepository = {
   },
 
   async writeCache(userId: string, pairId: string, snapshot: AppSnapshot) {
+    const store = await getKvStore();
+    if (!store) return;
     const serialized = JSON.stringify(snapshot);
-    cacheQueue = cacheQueue.catch(() => undefined).then(() => Storage.setItemAsync(cacheKey(userId, pairId), serialized));
+    cacheQueue = cacheQueue.catch(() => undefined).then(() => store.setItemAsync(cacheKey(userId, pairId), serialized));
     await cacheQueue;
   },
 
   async readAppearance(userId: string) {
-    const value = await Storage.getItemAsync(appearanceKey(userId));
+    const store = await getKvStore();
+    if (!store) return null;
+    const value = await store.getItemAsync(appearanceKey(userId));
     if (!value) return null;
     try {
       return JSON.parse(value) as AppearanceSettings;
@@ -180,7 +201,9 @@ export const syncRepository = {
   },
 
   async writeAppearance(userId: string, appearance: AppearanceSettings) {
-    await Storage.setItemAsync(appearanceKey(userId), JSON.stringify(appearance));
+    const store = await getKvStore();
+    if (!store) return;
+    await store.setItemAsync(appearanceKey(userId), JSON.stringify(appearance));
   },
 
   clearVersions() {
