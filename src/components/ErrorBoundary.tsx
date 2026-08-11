@@ -29,6 +29,7 @@ export class ErrorBoundary extends Component<PropsWithChildren, State> {
       <View style={styles.container}>
         <Text style={styles.title}>Что-то пошло не так</Text>
         <Text style={styles.message}>Приложение столкнулось с ошибкой и не может продолжить. Попробуйте перезапустить.</Text>
+        <Text selectable style={styles.diagnostic}>{this.state.error.name}: {this.state.error.message}</Text>
         <AppButton label="Перезапустить" onPress={this.handleRetry} />
       </View>
     );
@@ -39,4 +40,5 @@ const styles = StyleSheet.create({
   container: { alignItems: "center", backgroundColor: colors.background, flex: 1, gap: spacing.lg, justifyContent: "center", padding: spacing.xl },
   title: { color: colors.ink, fontFamily: typography.display, fontSize: 24, textAlign: "center" },
   message: { color: colors.muted, fontSize: 14, lineHeight: 21, textAlign: "center" },
+  diagnostic: { color: colors.danger, fontSize: 12, lineHeight: 18, textAlign: "center" },
 });
