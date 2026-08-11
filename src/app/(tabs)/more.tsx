@@ -10,6 +10,7 @@ import { glassDiagnostics, supportsNativeLiquidGlass } from "@/platform/glass";
 import { colors, controlShadow, radius, spacing } from "@/theme/tokens";
 
 const sections = [
+  { icon: "person-circle-outline", title: "Аккаунт и пара", subtitle: "Профиль и синхронизация", href: "/account" },
   { icon: "color-palette-outline", title: "Фон и контраст", subtitle: "Персональное оформление", href: "/appearance" },
   { icon: "time-outline", title: "Наша история", subtitle: "Памятные события", href: "/memories" },
   { icon: "heart-outline", title: "Важное о нас", subtitle: "Поддержка и границы", href: "/about" },
@@ -48,7 +49,7 @@ export default function MoreScreen() {
       </Surface>
       <Surface style={styles.foundation}>
         <Text style={styles.foundationTitle}>Мобильная основа готова</Text>
-        <Text style={styles.foundationText}>Следующий этап — авторизация пары, синхронизация с новым API и полноценные формы добавления данных.</Text>
+        <Text style={styles.foundationText}>Аккаунты пары и общие данные синхронизируются с сервером. Следующий этап — ИИ-посредник, уведомления и виджеты.</Text>
       </Surface>
       <View style={styles.diagnostics}>
         <View pointerEvents="none" style={styles.probeBackdrop}>

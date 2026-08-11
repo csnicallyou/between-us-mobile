@@ -1,21 +1,21 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { NativeGlassLayer } from "@/components/NativeGlassLayer";
-import { memberLabels, moodLabels } from "@/domain/labels";
-import type { MemberId, MemberMood, Mood } from "@/domain/models";
+import { memberName, moodLabels } from "@/domain/labels";
+import type { AppSnapshot, Mood } from "@/domain/models";
 import { supportsNativeLiquidGlass } from "@/platform/glass";
 import { colors, controlShadow, radius, spacing, typography } from "@/theme/tokens";
 import { useBackgroundPalette } from "@/theme/useBackgroundPalette";
 
 interface MoodPanelProps {
-  currentMemberId: MemberId;
-  moods: Record<MemberId, MemberMood>;
+  snapshot: AppSnapshot;
   onChangeMood: (mood: Mood) => void;
 }
 
 const quickMoods: Mood[] = ["calm", "happy", "tender", "anxious", "tired"];
 
-export function MoodPanel({ currentMemberId, moods, onChangeMood }: MoodPanelProps) {
+export function MoodPanel({ snapshot, onChangeMood }: MoodPanelProps) {
   const { custom, palette } = useBackgroundPalette();
+  const currentMood = snapshot.moods[snapshot.currentMemberId]?.mood ?? null;
   return (
     <View style={styles.container}>
       <View style={styles.heading}>
@@ -23,24 +23,26 @@ export function MoodPanel({ currentMemberId, moods, onChangeMood }: MoodPanelPro
         <Text style={[styles.caption, custom && { color: palette.mutedForeground }]}>Каждый меняет только своё состояние</Text>
       </View>
       <View style={styles.people}>
-        {(["anton", "lisa"] as const).map((memberId) => (
-          <View key={memberId} style={[styles.person, memberId === "lisa" && styles.lisaPerson, supportsNativeLiquidGlass && styles.nativeGlass]}>
+        {snapshot.members.map((member, index) => {
+          const name = memberName(snapshot, member.id);
+          const mood = snapshot.moods[member.id]?.mood ?? null;
+          return <View key={member.id} style={[styles.person, index % 2 === 1 && styles.partnerPerson, supportsNativeLiquidGlass && styles.nativeGlass]}>
             {supportsNativeLiquidGlass ? (
               <NativeGlassLayer
                 cornerRadius={radius.lg}
-                tintColor={memberId === "lisa" ? "rgba(104,89,172,0.11)" : "rgba(209,100,87,0.10)"}
+                tintColor={index % 2 === 1 ? "rgba(104,89,172,0.11)" : "rgba(209,100,87,0.10)"}
               />
             ) : null}
-            <View style={[styles.avatar, memberId === "lisa" && styles.lisaAvatar]}><Text style={styles.avatarText}>{memberLabels[memberId][0]}</Text></View>
-            <Text style={styles.name}>{memberLabels[memberId]}</Text>
-            <Text style={styles.value}>{moods[memberId].mood ? moodLabels[moods[memberId].mood] : "Не выбрано"}</Text>
+            <View style={[styles.avatar, index % 2 === 1 && styles.partnerAvatar]}><Text style={styles.avatarText}>{name[0]}</Text></View>
+            <Text style={styles.name}>{name}</Text>
+            <Text style={styles.value}>{mood ? moodLabels[mood] : "Не выбрано"}</Text>
           </View>
-        ))}
+        })}
       </View>
       <Text style={[styles.selectLabel, custom && { color: palette.mutedForeground }]}>Моё настроение</Text>
       <View style={styles.options}>
         {quickMoods.map((mood) => {
-          const active = moods[currentMemberId].mood === mood;
+          const active = currentMood === mood;
           return (
             <Pressable key={mood} onPress={() => onChangeMood(mood)} style={[styles.option, active && styles.activeOption, supportsNativeLiquidGlass && styles.nativeGlass]}>
               {supportsNativeLiquidGlass ? (
@@ -67,9 +69,9 @@ const styles = StyleSheet.create({
   caption: { color: colors.muted, fontSize: 12, marginTop: 2 },
   people: { flexDirection: "row", gap: spacing.md },
   person: { backgroundColor: colors.coralSoft, borderColor: colors.glassLine, borderRadius: radius.lg, borderWidth: 1, flex: 1, padding: spacing.md, ...controlShadow },
-  lisaPerson: { backgroundColor: colors.violetSoft },
+  partnerPerson: { backgroundColor: colors.violetSoft },
   avatar: { alignItems: "center", backgroundColor: colors.coral, borderRadius: radius.pill, height: 34, justifyContent: "center", width: 34 },
-  lisaAvatar: { backgroundColor: colors.violet },
+  partnerAvatar: { backgroundColor: colors.violet },
   avatarText: { color: colors.white, fontSize: 14, fontWeight: "700" },
   name: { color: colors.ink, fontSize: 13, fontWeight: "700", marginTop: spacing.sm },
   value: { color: colors.muted, fontSize: 12, marginTop: 2 },

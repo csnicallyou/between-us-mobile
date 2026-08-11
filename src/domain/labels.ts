@@ -1,9 +1,8 @@
-import type { JournalKind, MemberId, Mood, PlanKind, PlanStatus } from "./models";
+import type { AppSnapshot, JournalKind, MemberId, Mood, PlanKind, PlanStatus } from "./models";
 
-export const memberLabels: Record<MemberId, string> = {
-  anton: "Антон",
-  lisa: "Лиза",
-};
+export function memberName(snapshot: Pick<AppSnapshot, "members">, memberId: MemberId) {
+  return snapshot.members.find((member) => member.id === memberId)?.displayName ?? "Участник";
+}
 
 export const moodLabels: Record<Mood, string> = {
   calm: "Спокойно",

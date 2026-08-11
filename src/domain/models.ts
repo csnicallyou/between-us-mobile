@@ -1,4 +1,9 @@
-export type MemberId = "anton" | "lisa";
+export type MemberId = string;
+
+export interface MemberProfile {
+  id: MemberId;
+  displayName: string;
+}
 
 export type Mood =
   | "calm"
@@ -78,7 +83,7 @@ export interface Agreement {
   id: string;
   title: string;
   description: string;
-  acceptedBy: Record<MemberId, boolean>;
+  acceptedBy: Record<string, boolean>;
   authorId: MemberId;
   createdAt: string;
   updatedAt: string;
@@ -116,8 +121,9 @@ export interface CalendarItem {
 
 export interface AppSnapshot {
   currentMemberId: MemberId;
+  members: MemberProfile[];
   relationshipStartedAt: string;
-  moods: Record<MemberId, MemberMood>;
+  moods: Record<string, MemberMood>;
   plans: Plan[];
   journal: JournalEntry[];
   memories: Memory[];

@@ -4,7 +4,7 @@ import { AppButton } from "@/components/AppButton";
 import { Screen } from "@/components/Screen";
 import { SubpageHeader } from "@/components/SubpageHeader";
 import { Surface } from "@/components/Surface";
-import { memberLabels } from "@/domain/labels";
+import { memberName } from "@/domain/labels";
 import { useAppData } from "@/state/AppDataContext";
 import { colors, radius, spacing } from "@/theme/tokens";
 
@@ -13,7 +13,7 @@ export default function ChatScreen() {
   const send = () => { if (!text.trim()) return; addChatMessage(text.trim()); setText(""); };
   return <Screen header={<SubpageHeader title="Чат втроём" subtitle="Общий разговор пары и будущего ИИ-посредника." />}>
     <Surface style={styles.notice}><Text style={styles.noticeTitle}>ИИ пока не подключён</Text><Text style={styles.noticeText}>Сообщения работают локально как прототип. После серверного этапа ИИ сможет по подтверждённой просьбе добавлять планы, события и договорённости.</Text></Surface>
-    <View style={styles.messages}>{snapshot.chat.length ? snapshot.chat.map((message) => <View key={message.id} style={[styles.bubble, message.author === snapshot.currentMemberId && styles.mine]}><Text style={styles.author}>{message.author === "ai" ? "ИИ-посредник" : memberLabels[message.author]}</Text><Text style={styles.message}>{message.content}</Text><Text style={styles.time}>{new Intl.DateTimeFormat("ru-RU", { hour: "2-digit", minute: "2-digit" }).format(new Date(message.createdAt))}</Text></View>) : <Text style={styles.empty}>Начните общий разговор.</Text>}</View>
+    <View style={styles.messages}>{snapshot.chat.length ? snapshot.chat.map((message) => <View key={message.id} style={[styles.bubble, message.author === snapshot.currentMemberId && styles.mine]}><Text style={styles.author}>{message.author === "ai" ? "ИИ-посредник" : memberName(snapshot, message.author)}</Text><Text style={styles.message}>{message.content}</Text><Text style={styles.time}>{new Intl.DateTimeFormat("ru-RU", { hour: "2-digit", minute: "2-digit" }).format(new Date(message.createdAt))}</Text></View>) : <Text style={styles.empty}>Начните общий разговор.</Text>}</View>
     <Surface style={styles.composer}><TextInput multiline onChangeText={setText} placeholder="Сообщение для общего чата" placeholderTextColor={colors.muted} style={styles.input} value={text} /><AppButton label="Отправить" onPress={send} /></Surface>
   </Screen>;
 }

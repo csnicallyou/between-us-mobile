@@ -1,0 +1,22 @@
+[Unit]
+Description=Between Us isolated TLS edge
+After=network-online.target between-us-api.service
+Wants=network-online.target
+Requires=between-us-api.service
+
+[Service]
+Type=simple
+ExecStartPre=/usr/sbin/nginx -t -c /etc/between-us-nginx/nginx.conf
+ExecStart=/usr/sbin/nginx -c /etc/between-us-nginx/nginx.conf -g "daemon off;"
+Restart=on-failure
+RestartSec=5
+MemoryMax=64M
+RuntimeDirectory=between-us-nginx
+RuntimeDirectoryMode=0755
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target

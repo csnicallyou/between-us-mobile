@@ -11,11 +11,14 @@ import { useAppData } from "@/state/AppDataContext";
 import { colors, radius, spacing, typography } from "@/theme/tokens";
 import { useBackgroundPalette } from "@/theme/useBackgroundPalette";
 import { deleteStoredImage, selectAndStoreImage } from "@/services/imageService";
+import { privateImageSource } from "@/services/backendClient";
+import { useAuth } from "@/state/AuthContext";
 
 const statuses: PlanStatus[] = ["idea", "planned", "done"];
 const emptyForm: Record<string, FormValue> = { title: "", description: "", date: "", kind: "other", status: "idea", showInCalendar: true, imageUri: "" };
 
 export default function PlansScreen() {
+  const { accessToken } = useAuth();
   const { snapshot, addPlan, updatePlan, deletePlan } = useAppData();
   const { custom, palette } = useBackgroundPalette();
   const [editing, setEditing] = useState<Plan | null>(null);
@@ -53,7 +56,7 @@ export default function PlansScreen() {
               <Surface style={styles.card}>
                 <View style={styles.cardTop}><Text style={styles.kind}>{planKindLabels[plan.kind]}</Text><Text style={styles.date}>{plan.date ? new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long", year: "numeric" }).format(new Date(`${plan.date}T12:00:00`)) : "Без даты"}</Text></View>
                 <Text style={styles.title}>{plan.title}</Text>
-                {plan.imageUri ? <Image resizeMode="contain" source={{ uri: plan.imageUri }} style={styles.planImage} /> : null}
+                {plan.imageUri ? <Image resizeMode="contain" source={privateImageSource(plan.imageUri, accessToken)} style={styles.planImage} /> : null}
                 {plan.description ? <Text style={styles.description}>{plan.description}</Text> : null}
                 <Text style={styles.hint}>Нажмите для изменения, удерживайте для удаления</Text>
               </Surface>

@@ -1,6 +1,6 @@
 {
   "name": "between-us-mobile",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "main": "expo-router/entry",
   "scripts": {
@@ -37,8 +37,10 @@
     "react-dom": "19.2.3",
     "react-native": "0.85.3",
     "react-native-image-colors": "^2.4.0",
+    "react-native-qrcode-svg": "^6.3.21",
     "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "~4.26.0",
+    "react-native-svg": "15.15.4",
     "react-native-web": "~0.21.2"
   },
   "devDependencies": {

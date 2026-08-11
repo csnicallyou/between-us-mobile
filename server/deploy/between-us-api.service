@@ -1,0 +1,30 @@
+[Unit]
+Description=Between Us private beta API
+After=network-online.target postgresql.service
+Wants=network-online.target
+Requires=postgresql.service
+
+[Service]
+Type=simple
+User=between-us
+Group=between-us
+WorkingDirectory=/opt/between-us-api/current
+EnvironmentFile=/etc/between-us-api.env
+Environment=NODE_OPTIONS=--max-old-space-size=160
+ExecStart=/usr/bin/node dist/index.js
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=20
+MemoryMax=240M
+CPUQuota=40%
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+ReadWritePaths=/var/lib/between-us-api/uploads
+
+[Install]
+WantedBy=multi-user.target

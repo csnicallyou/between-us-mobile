@@ -5,6 +5,8 @@ import { ActivityIndicator, Image, Modal, Platform, Pressable, ScrollView, Style
 import { AppButton } from "@/components/AppButton";
 import { Surface } from "@/components/Surface";
 import { colors, radius, spacing } from "@/theme/tokens";
+import { privateImageSource } from "@/services/backendClient";
+import { useAuth } from "@/state/AuthContext";
 
 export type FormValue = string | boolean;
 
@@ -37,6 +39,7 @@ interface EntryFormModalProps {
 }
 
 export function EntryFormModal({ visible, title, fields, values, onChange, onClose, onSave, saveLabel = "Сохранить", imageUri, onPickImage, pickingImage = false }: EntryFormModalProps) {
+  const { accessToken } = useAuth();
   const [activeDateKey, setActiveDateKey] = useState<string | null>(null);
   const dateValue = (key: string) => {
     const value = String(values[key] ?? "");
@@ -92,7 +95,7 @@ export function EntryFormModal({ visible, title, fields, values, onChange, onClo
                 )}
               </View>
             ))}
-            {onPickImage ? <View style={styles.field}><Text style={styles.label}>Изображение</Text>{imageUri ? <Image resizeMode="contain" source={{ uri: imageUri }} style={styles.imagePreview} /> : null}{pickingImage ? <ActivityIndicator color={colors.sea} /> : <AppButton label={imageUri ? "Заменить изображение" : "Добавить изображение"} onPress={onPickImage} variant="secondary" />}</View> : null}
+            {onPickImage ? <View style={styles.field}><Text style={styles.label}>Изображение</Text>{imageUri ? <Image resizeMode="contain" source={privateImageSource(imageUri, accessToken)} style={styles.imagePreview} /> : null}{pickingImage ? <ActivityIndicator color={colors.sea} /> : <AppButton label={imageUri ? "Заменить изображение" : "Добавить изображение"} onPress={onPickImage} variant="secondary" />}</View> : null}
           </Surface>
           <View style={styles.actions}>
             <AppButton label="Отмена" onPress={onClose} style={styles.action} variant="secondary" />

@@ -3,11 +3,15 @@ import type { AppSnapshot } from "@/domain/models";
 const now = new Date().toISOString();
 
 export const seedSnapshot: AppSnapshot = {
-  currentMemberId: "anton",
+  currentMemberId: "demo-self",
+  members: [
+    { id: "demo-self", displayName: "Антон" },
+    { id: "demo-partner", displayName: "Лиза" },
+  ],
   relationshipStartedAt: "2026-02-10T00:00:00+03:00",
   moods: {
-    anton: { memberId: "anton", mood: "calm", updatedAt: now },
-    lisa: { memberId: "lisa", mood: "tender", updatedAt: now },
+    "demo-self": { memberId: "demo-self", mood: "calm", updatedAt: now },
+    "demo-partner": { memberId: "demo-partner", mood: "tender", updatedAt: now },
   },
   plans: [
     {
@@ -17,7 +21,7 @@ export const seedSnapshot: AppSnapshot = {
       date: "2026-09-20",
       kind: "trip",
       status: "planned",
-      authorId: "anton",
+      authorId: "demo-self",
       createdAt: now,
       updatedAt: now,
       imageUri: null,
@@ -31,7 +35,7 @@ export const seedSnapshot: AppSnapshot = {
       content: "Здесь появятся ваши мысли, благодарности и вопросы друг другу.",
       kind: "reflection",
       mood: "calm",
-      authorId: "anton",
+      authorId: "demo-self",
       createdAt: now,
       updatedAt: now,
       replyToId: null,

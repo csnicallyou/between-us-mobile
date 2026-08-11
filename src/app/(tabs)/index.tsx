@@ -20,6 +20,10 @@ function dateLabel(value: string | null) {
   return new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long" }).format(new Date(`${value}T12:00:00`));
 }
 
+function relationshipStartLabel(value: string) {
+  return new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long", year: "numeric" }).format(new Date(value));
+}
+
 export default function HomeScreen() {
   const { snapshot, setCurrentMood } = useAppData();
   const nextPlan = snapshot.plans.find((plan) => plan.status === "planned") ?? snapshot.plans[0];
@@ -28,12 +32,12 @@ export default function HomeScreen() {
   return (
     <Screen header={<PageHeader kicker="Наше общее место" title="Между нами" subtitle="Важные события, планы и мысли — в одном защищённом пространстве." />}>
       <Surface glassTintColor="rgba(255,255,255,0.08)" style={styles.timer}>
-        <Text style={styles.timerLabel}>Вместе с 10 февраля 2026 года</Text>
+        <Text style={styles.timerLabel}>Вместе с {relationshipStartLabel(snapshot.relationshipStartedAt)}</Text>
         <Text style={styles.timerValue}>{relationshipDuration(snapshot.relationshipStartedAt)}</Text>
         <Text style={styles.timerCaption}>Таймер обновляется автоматически</Text>
       </Surface>
 
-      <MoodPanel currentMemberId={snapshot.currentMemberId} moods={snapshot.moods} onChangeMood={setCurrentMood} />
+      <MoodPanel snapshot={snapshot} onChangeMood={setCurrentMood} />
 
       <Surface glassTintColor="rgba(51,123,116,0.10)" style={styles.nextPlan}>
         <View style={styles.sectionRow}><Text style={styles.sectionLabel}>Ближайшее важное</Text><Text style={styles.date}>{dateLabel(nextPlan?.date ?? null)}</Text></View>

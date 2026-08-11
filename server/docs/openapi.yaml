@@ -1,0 +1,154 @@
+openapi: 3.1.0
+info:
+  title: Between Us API
+  version: 0.1.0
+servers:
+  - url: https://api.example.invalid/v1
+security:
+  - bearerAuth: []
+paths:
+  /auth/register:
+    post:
+      security: []
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/Register' } } } }
+      responses: { '201': { description: Registered, content: { application/json: { schema: { $ref: '#/components/schemas/Session' } } } }, '400': { $ref: '#/components/responses/Error' }, '409': { $ref: '#/components/responses/Error' } }
+  /auth/login:
+    post:
+      security: []
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/Login' } } } }
+      responses: { '200': { description: Authenticated, content: { application/json: { schema: { $ref: '#/components/schemas/Session' } } } }, '401': { $ref: '#/components/responses/Error' } }
+  /auth/refresh:
+    post:
+      security: []
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/Refresh' } } } }
+      responses: { '200': { description: Rotated tokens, content: { application/json: { schema: { type: object, required: [accessToken, refreshToken], properties: { accessToken: { type: string }, refreshToken: { type: string } } } } } }, '401': { $ref: '#/components/responses/Error' } }
+  /auth/logout:
+    post:
+      security: []
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/Refresh' } } } }
+      responses: { '204': { description: Logged out } }
+  /auth/me:
+    get:
+      responses: { '200': { description: Current user, content: { application/json: { schema: { $ref: '#/components/schemas/User' } } } }, '401': { $ref: '#/components/responses/Error' } }
+  /users/me:
+    get:
+      responses: { '200': { description: Current profile, content: { application/json: { schema: { $ref: '#/components/schemas/User' } } } } }
+    patch:
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [displayName], properties: { displayName: { type: string, minLength: 1, maxLength: 80 } } } } } }
+      responses: { '200': { description: Updated profile, content: { application/json: { schema: { $ref: '#/components/schemas/User' } } } } }
+  /pairs/me:
+    get:
+      responses: { '200': { description: Active pair or null, content: { application/json: { schema: { type: object, required: [pair], properties: { pair: { oneOf: [{ $ref: '#/components/schemas/Pair' }, { type: 'null' }] } } } } } } }
+  /pairs:
+    post:
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [name], properties: { name: { type: string, maxLength: 80 }, relationshipStartedOn: { type: [string, 'null'], format: date } } } } } }
+      responses: { '201': { description: Pair and first invite, content: { application/json: { schema: { type: object, properties: { pair: { $ref: '#/components/schemas/Pair' }, invite: { $ref: '#/components/schemas/Invite' } } } } } }, '409': { $ref: '#/components/responses/Error' } }
+  /pairs/invites:
+    post:
+      responses: { '201': { description: One-time invite secret, content: { application/json: { schema: { type: object, properties: { invite: { $ref: '#/components/schemas/Invite' } } } } } }, '409': { $ref: '#/components/responses/Error' } }
+  /pairs/invites/{id}:
+    delete:
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses: { '204': { description: Revoked }, '404': { $ref: '#/components/responses/Error' } }
+  /pairs/join:
+    post:
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [secret], properties: { secret: { type: string } } } } } }
+      responses: { '200': { description: Joined, content: { application/json: { schema: { type: object, properties: { pair: { $ref: '#/components/schemas/Pair' } } } } } }, '404': { $ref: '#/components/responses/Error' }, '409': { $ref: '#/components/responses/Error' } }
+  /entries:
+    get:
+      parameters: [{ $ref: '#/components/parameters/Limit' }, { $ref: '#/components/parameters/Before' }, { name: kind, in: query, schema: { $ref: '#/components/schemas/EntryKind' } }]
+      responses: { '200': { description: Entries } }
+    post:
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [kind, payload], properties: { kind: { $ref: '#/components/schemas/EntryKind' }, payload: { type: object } } } } } }
+      responses: { '201': { description: Created, content: { application/json: { schema: { $ref: '#/components/schemas/Entry' } } } } }
+  /entries/{id}:
+    get:
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses: { '200': { description: Entry, content: { application/json: { schema: { $ref: '#/components/schemas/Entry' } } } }, '404': { $ref: '#/components/responses/Error' } }
+    patch:
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [payload], properties: { payload: { type: object }, expectedVersion: { type: integer, minimum: 1 } } } } } }
+      responses: { '200': { description: Updated }, '409': { $ref: '#/components/responses/Error' } }
+    delete:
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses: { '204': { description: Deleted } }
+  /moods:
+    get:
+      responses: { '200': { description: Both members' moods } }
+  /moods/me:
+    put:
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [mood], properties: { mood: { type: [string, 'null'], enum: [calm, happy, tender, anxious, sad, angry, tired, neutral, null] } } } } } }
+      responses: { '200': { description: Mood updated } }
+  /chat/messages:
+    get:
+      parameters: [{ $ref: '#/components/parameters/Limit' }, { $ref: '#/components/parameters/Before' }]
+      responses: { '200': { description: Messages } }
+    post:
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [content], properties: { content: { type: string, minLength: 1, maxLength: 4000 } } } } } }
+      responses: { '201': { description: Message created } }
+  /feedback:
+    post:
+      description: Write-only private feedback. No read endpoint exists.
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [content], properties: { content: { type: string, minLength: 1, maxLength: 10000 } } } } } }
+      responses: { '202': { description: Encrypted feedback accepted } }
+  /media:
+    post:
+      requestBody: { required: true, content: { multipart/form-data: { schema: { type: object, required: [file], properties: { file: { type: string, format: binary } } } } } }
+      responses: { '201': { description: Private media created }, '413': { $ref: '#/components/responses/Error' }, '415': { $ref: '#/components/responses/Error' } }
+  /media/{id}:
+    get:
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses: { '200': { description: Private media bytes }, '404': { $ref: '#/components/responses/Error' } }
+    delete:
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses: { '204': { description: Deleted } }
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+  parameters:
+    Id: { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    Limit: { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 50 } }
+    Before: { name: before, in: query, schema: { type: string, format: date-time } }
+  responses:
+    Error:
+      description: Standard error
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+  schemas:
+    Register:
+      type: object
+      required: [email, password, displayName]
+      properties: { email: { type: string, format: email }, password: { type: string, minLength: 10, maxLength: 200 }, displayName: { type: string, minLength: 1, maxLength: 80 } }
+    Login:
+      type: object
+      required: [email, password]
+      properties: { email: { type: string, format: email }, password: { type: string } }
+    Refresh:
+      type: object
+      required: [refreshToken]
+      properties: { refreshToken: { type: string } }
+    User:
+      type: object
+      required: [id, email, displayName]
+      properties: { id: { type: string, format: uuid }, email: { type: string, format: email }, displayName: { type: string }, createdAt: { type: string, format: date-time } }
+    Session:
+      type: object
+      required: [user, accessToken, refreshToken]
+      properties: { user: { $ref: '#/components/schemas/User' }, accessToken: { type: string }, refreshToken: { type: string } }
+    Member:
+      type: object
+      properties: { id: { type: string, format: uuid }, displayName: { type: string }, memberSlot: { type: string, enum: [owner, partner] }, joinedAt: { type: string, format: date-time } }
+    Pair:
+      type: object
+      properties: { id: { type: string, format: uuid }, name: { type: string }, relationshipStartedOn: { type: [string, 'null'], format: date }, createdAt: { type: string, format: date-time }, members: { type: array, maxItems: 2, items: { $ref: '#/components/schemas/Member' } } }
+    Invite:
+      type: object
+      description: Raw token and code are returned only once.
+      properties: { id: { type: string, format: uuid }, token: { type: string }, code: { type: string, pattern: '^[A-Z2-9]{12}$' }, expiresAt: { type: string, format: date-time }, link: { type: string } }
+    EntryKind: { type: string, enum: [plan, journal, memory, about, agreement, conflict] }
+    Entry:
+      type: object
+      properties: { id: { type: string, format: uuid }, kind: { $ref: '#/components/schemas/EntryKind' }, payload: { type: object }, authorId: { type: string, format: uuid }, version: { type: integer }, createdAt: { type: string, format: date-time }, updatedAt: { type: string, format: date-time } }
+    Error:
+      type: object
+      required: [error]
+      properties: { error: { type: object, required: [code, message], properties: { code: { type: string }, message: { type: string } } } }

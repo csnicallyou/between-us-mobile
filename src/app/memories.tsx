@@ -9,11 +9,14 @@ import type { Memory, MemoryKind } from "@/domain/models";
 import { useAppData } from "@/state/AppDataContext";
 import { colors, radius, spacing, typography } from "@/theme/tokens";
 import { deleteStoredImage, selectAndStoreImage } from "@/services/imageService";
+import { privateImageSource } from "@/services/backendClient";
+import { useAuth } from "@/state/AuthContext";
 
 const kinds: Record<MemoryKind, string> = { anniversary: "Важная дата", trip: "Поездка", first: "Впервые", gift: "Подарок", everyday: "Обычный день", other: "Другое" };
 const empty: Record<string, FormValue> = { title: "", description: "", date: new Date().toISOString().slice(0, 10), kind: "other", showInCalendar: true, imageUri: "" };
 
 export default function MemoriesScreen() {
+  const { accessToken } = useAuth();
   const { snapshot, addMemory, updateMemory, deleteMemory } = useAppData();
   const [editing, setEditing] = useState<Memory | null>(null); const [open, setOpen] = useState(false); const [form, setForm] = useState<Record<string, FormValue>>(empty); const [pickingImage, setPickingImage] = useState(false);
   const begin = (item?: Memory) => { setEditing(item ?? null); setForm(item ? { title: item.title, description: item.description, date: item.date, kind: item.kind, showInCalendar: item.showInCalendar, imageUri: item.imageUri ?? "" } : empty); setOpen(true); };
@@ -24,7 +27,7 @@ export default function MemoriesScreen() {
   return <Screen header={<SubpageHeader title="Наша история" subtitle="Памятные события, фотографии и маленькие моменты, которые хочется сохранить." />}>
     <AppButton label="Добавить момент" onPress={() => begin()} />
     <View style={styles.list}>{snapshot.memories.length ? snapshot.memories.map((item) => <Pressable key={item.id} onLongPress={() => remove(item)} onPress={() => begin(item)}><Surface>
-      <Text style={styles.meta}>{kinds[item.kind]} · {new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long", year: "numeric" }).format(new Date(`${item.date}T12:00:00`))}</Text><Text style={styles.title}>{item.title}</Text>{item.imageUri ? <Image resizeMode="contain" source={{ uri: item.imageUri }} style={styles.memoryImage} /> : null}{item.description ? <Text style={styles.copy}>{item.description}</Text> : null}<Text style={styles.hint}>{item.showInCalendar ? "Отображается в календаре" : "Скрыто из календаря"}</Text>
+      <Text style={styles.meta}>{kinds[item.kind]} · {new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long", year: "numeric" }).format(new Date(`${item.date}T12:00:00`))}</Text><Text style={styles.title}>{item.title}</Text>{item.imageUri ? <Image resizeMode="contain" source={privateImageSource(item.imageUri, accessToken)} style={styles.memoryImage} /> : null}{item.description ? <Text style={styles.copy}>{item.description}</Text> : null}<Text style={styles.hint}>{item.showInCalendar ? "Отображается в календаре" : "Скрыто из календаря"}</Text>
     </Surface></Pressable>) : <Surface><Text style={styles.empty}>Добавьте первый общий момент.</Text></Surface>}</View>
     <EntryFormModal visible={open} title={editing ? "Изменить момент" : "Новый момент"} values={form} onChange={(key, value) => setForm((current) => ({ ...current, [key]: value }))} onClose={close} onSave={save} fields={[
       { key: "title", label: "Название", placeholder: "Что произошло" }, { key: "description", label: "Описание", placeholder: "Почему этот момент важен", multiline: true }, { key: "date", label: "Дата", type: "date" }, { key: "kind", label: "Тип", choices: Object.entries(kinds).map(([value, label]) => ({ value, label })) }, { key: "showInCalendar", label: "Показывать в календаре", type: "switch" },

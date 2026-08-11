@@ -24,6 +24,8 @@ jobs:
     name: Build for USB sideloading
     runs-on: macos-26
     timeout-minutes: 45
+    env:
+      EXPO_PUBLIC_API_BASE_URL: https://186.246.45.4.nip.io:9444
 
     steps:
       - name: Check out repository
