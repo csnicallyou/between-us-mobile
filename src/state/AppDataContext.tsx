@@ -1,9 +1,12 @@
 import { createContext, type PropsWithChildren, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { Platform } from "react-native";
 import type { AboutItem, Agreement, AppearanceSettings, AppSnapshot, ChatMessage, ConflictEntry, JournalEntry, Memory, Mood, Plan } from "@/domain/models";
+import { memberName } from "@/domain/labels";
 import { BackendError } from "@/services/backendClient";
 import { entryPayload, syncRepository, type EntryKind, type RemoteEntry, type RemotePairData } from "@/services/syncRepository";
 import { useAuth } from "@/state/AuthContext";
 import { usePair } from "@/state/PairContext";
+import { pushLastJournalEntrySnapshot } from "@/widgets/LastJournalEntryWidget";
 import { seedSnapshot } from "./seed";
 
 type EditablePlan = Omit<Plan, "id" | "authorId" | "createdAt" | "updatedAt">;
@@ -208,6 +211,17 @@ export function AppDataProvider({ children }: PropsWithChildren) {
     const timer = setInterval(() => { void reloadRemote().catch(() => undefined); }, 10_000);
     return () => clearInterval(timer);
   }, [pair, reloadRemote, user]);
+
+  useEffect(() => {
+    if (Platform.OS !== "ios" || !isHydrated) return;
+    const latest = [...snapshot.journal].sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
+    pushLastJournalEntrySnapshot(latest ? {
+      authorName: memberName(snapshot, latest.authorId),
+      dateLabel: new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "short" }).format(new Date(latest.createdAt)),
+      title: latest.title,
+      excerpt: latest.content,
+    } : null);
+  }, [isHydrated, snapshot]);
 
   const reconcile = useCallback(() => { void reloadRemote().catch(() => undefined); }, [reloadRemote]);
 
