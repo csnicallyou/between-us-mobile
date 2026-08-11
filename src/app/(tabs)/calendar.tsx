@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { Screen } from "@/components/Screen";
 import { Surface } from "@/components/Surface";
 import { useAppData } from "@/state/AppDataContext";
-import { colors, radius, spacing, typography } from "@/theme/tokens";
+import { colors, controlShadow, radius, spacing, typography } from "@/theme/tokens";
 
 const weekdays = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
 
@@ -65,15 +65,15 @@ export default function CalendarScreen() {
 }
 
 const styles = StyleSheet.create({
-  calendar: { padding: spacing.md },
+  calendar: { backgroundColor: "rgba(255,255,255,0.66)", padding: spacing.md },
   monthRow: { alignItems: "center", flexDirection: "row", justifyContent: "space-between", marginBottom: spacing.lg },
-  arrow: { alignItems: "center", backgroundColor: colors.surfaceStrong, borderRadius: radius.md, height: 42, justifyContent: "center", width: 42 },
+  arrow: { alignItems: "center", backgroundColor: "rgba(255,255,255,0.76)", borderColor: colors.glassLine, borderRadius: radius.md, borderWidth: StyleSheet.hairlineWidth, height: 44, justifyContent: "center", width: 44, ...controlShadow },
   month: { color: colors.ink, fontFamily: typography.display, fontSize: 24, textTransform: "capitalize" },
   weekRow: { flexDirection: "row" },
   weekday: { color: colors.muted, flex: 1, fontSize: 10, fontWeight: "600", paddingVertical: spacing.sm, textAlign: "center" },
   grid: { flexDirection: "row", flexWrap: "wrap" },
   day: { alignItems: "center", aspectRatio: 1, justifyContent: "center", padding: 2, width: "14.2857%" },
-  activeDay: { backgroundColor: colors.ink, borderRadius: radius.md },
+  activeDay: { backgroundColor: colors.sea, borderColor: "rgba(255,255,255,0.8)", borderRadius: radius.md, borderWidth: StyleSheet.hairlineWidth, ...controlShadow },
   dayText: { color: colors.ink, fontSize: 13 },
   outsideText: { color: "#AAB8BC" },
   activeDayText: { color: colors.white, fontWeight: "700" },

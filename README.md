@@ -65,7 +65,7 @@ src/
 └── theme/         Цвета, типографика, интервалы и платформенные тени
 ```
 
-Подробности: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+Подробности: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) и [docs/DESIGN.md](docs/DESIGN.md).
 
 ## Скриншоты
 

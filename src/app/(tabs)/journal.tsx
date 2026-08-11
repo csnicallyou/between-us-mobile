@@ -48,7 +48,7 @@ const styles = StyleSheet.create({
   kind: { color: colors.sea, fontSize: 11, fontWeight: "700", marginTop: spacing.lg },
   title: { color: colors.ink, fontFamily: typography.display, fontSize: 28, lineHeight: 32, marginTop: spacing.sm },
   content: { color: colors.muted, fontSize: 14, lineHeight: 21, marginTop: spacing.md },
-  prompt: { backgroundColor: colors.ink, marginTop: spacing.xl },
-  promptTitle: { color: colors.sunSoft, fontSize: 12, fontWeight: "700" },
-  promptText: { color: colors.white, fontFamily: typography.display, fontSize: 27, lineHeight: 31, marginBottom: spacing.xl, marginTop: spacing.md },
+  prompt: { backgroundColor: colors.violetSoft, borderColor: colors.glassLine, marginTop: spacing.xl },
+  promptTitle: { color: colors.violet, fontSize: 12, fontWeight: "700" },
+  promptText: { color: colors.ink, fontFamily: typography.display, fontSize: 27, lineHeight: 31, marginBottom: spacing.xl, marginTop: spacing.md },
 });

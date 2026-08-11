@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { memberLabels, moodLabels } from "@/domain/labels";
 import type { MemberId, MemberMood, Mood } from "@/domain/models";
-import { colors, radius, spacing, typography } from "@/theme/tokens";
+import { colors, controlShadow, radius, spacing, typography } from "@/theme/tokens";
 
 interface MoodPanelProps {
   currentMemberId: MemberId;
@@ -48,7 +48,7 @@ const styles = StyleSheet.create({
   title: { color: colors.ink, fontFamily: typography.display, fontSize: 26 },
   caption: { color: colors.muted, fontSize: 12, marginTop: 2 },
   people: { flexDirection: "row", gap: spacing.md },
-  person: { backgroundColor: colors.coralSoft, borderRadius: radius.md, flex: 1, padding: spacing.md },
+  person: { backgroundColor: colors.coralSoft, borderColor: "rgba(255,255,255,0.82)", borderRadius: radius.lg, borderWidth: StyleSheet.hairlineWidth, flex: 1, padding: spacing.md, ...controlShadow },
   lisaPerson: { backgroundColor: colors.violetSoft },
   avatar: { alignItems: "center", backgroundColor: colors.coral, borderRadius: radius.pill, height: 34, justifyContent: "center", width: 34 },
   lisaAvatar: { backgroundColor: colors.violet },
@@ -57,8 +57,8 @@ const styles = StyleSheet.create({
   value: { color: colors.muted, fontSize: 12, marginTop: 2 },
   selectLabel: { color: colors.muted, fontSize: 12, marginBottom: spacing.sm, marginTop: spacing.lg },
   options: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
-  option: { backgroundColor: colors.surfaceStrong, borderColor: colors.line, borderRadius: radius.pill, borderWidth: StyleSheet.hairlineWidth, paddingHorizontal: spacing.md, paddingVertical: 9 },
-  activeOption: { backgroundColor: colors.seaSoft, borderColor: colors.sea },
+  option: { backgroundColor: "rgba(255,255,255,0.72)", borderColor: colors.glassLine, borderRadius: radius.pill, borderWidth: StyleSheet.hairlineWidth, minHeight: 38, paddingHorizontal: spacing.md, paddingVertical: 10, ...controlShadow },
+  activeOption: { backgroundColor: colors.seaSoft, borderColor: "rgba(51,123,116,0.34)" },
   optionText: { color: colors.muted, fontFamily: typography.body, fontSize: 12 },
   activeOptionText: { color: colors.sea, fontWeight: "700" },
 });

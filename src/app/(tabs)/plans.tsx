@@ -42,11 +42,11 @@ const styles = StyleSheet.create({
   heading: { alignItems: "center", flexDirection: "row", justifyContent: "space-between" },
   headingTitle: { color: colors.ink, fontFamily: typography.display, fontSize: 27 },
   count: { backgroundColor: colors.seaSoft, borderRadius: radius.pill, color: colors.sea, minWidth: 30, overflow: "hidden", paddingHorizontal: spacing.sm, paddingVertical: spacing.xs, textAlign: "center" },
-  card: { marginBottom: spacing.xs },
+  card: { backgroundColor: "rgba(255,255,255,0.68)", marginBottom: spacing.xs },
   cardTop: { alignItems: "center", flexDirection: "row", justifyContent: "space-between" },
   kind: { color: colors.violet, fontSize: 11, fontWeight: "700" },
   date: { color: colors.muted, fontSize: 11 },
   title: { color: colors.ink, fontSize: 17, fontWeight: "700", marginTop: spacing.md },
   description: { color: colors.muted, fontSize: 14, lineHeight: 20, marginTop: spacing.sm },
-  empty: { backgroundColor: colors.surface, borderRadius: radius.md, color: colors.muted, overflow: "hidden", padding: spacing.lg, textAlign: "center" },
+  empty: { backgroundColor: "rgba(255,255,255,0.46)", borderColor: colors.glassLine, borderRadius: radius.md, borderWidth: StyleSheet.hairlineWidth, color: colors.muted, overflow: "hidden", padding: spacing.lg, textAlign: "center" },
 });

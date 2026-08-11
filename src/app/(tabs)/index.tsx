@@ -53,18 +53,18 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  timer: { marginBottom: spacing.xl },
+  timer: { backgroundColor: "rgba(255,255,255,0.7)", marginBottom: spacing.xl },
   timerLabel: { color: colors.sea, fontSize: 12, fontWeight: "700" },
   timerValue: { color: colors.ink, fontFamily: typography.display, fontSize: 34, marginTop: spacing.sm },
   timerCaption: { color: colors.muted, fontSize: 12, marginTop: 2 },
-  nextPlan: { backgroundColor: colors.ink, marginBottom: spacing.lg },
+  nextPlan: { backgroundColor: "rgba(222,243,240,0.62)", borderColor: "rgba(255,255,255,0.92)", marginBottom: spacing.lg },
   sectionRow: { alignItems: "center", flexDirection: "row", justifyContent: "space-between" },
   sectionLabel: { color: colors.sea, fontSize: 12, fontWeight: "700" },
-  date: { color: colors.sunSoft, fontSize: 12 },
-  cardTitle: { color: colors.white, fontFamily: typography.display, fontSize: 29, lineHeight: 33, marginTop: spacing.xl },
+  date: { color: colors.sea, fontSize: 12, fontWeight: "600" },
+  cardTitle: { color: colors.ink, fontFamily: typography.display, fontSize: 29, lineHeight: 33, marginTop: spacing.xl },
   cardBody: { color: colors.muted, fontSize: 14, lineHeight: 21, marginBottom: spacing.lg, marginTop: spacing.sm },
-  nextPlanBody: { color: "#CBD7DA", fontSize: 14, lineHeight: 21, marginBottom: spacing.lg, marginTop: spacing.sm },
-  tag: { alignSelf: "flex-start", backgroundColor: colors.sunSoft, borderRadius: radius.pill, color: colors.sun, fontSize: 12, overflow: "hidden", paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
-  message: { marginBottom: spacing.lg },
+  nextPlanBody: { color: colors.muted, fontSize: 14, lineHeight: 21, marginBottom: spacing.lg, marginTop: spacing.sm },
+  tag: { alignSelf: "flex-start", backgroundColor: "rgba(255,255,255,0.72)", borderColor: colors.glassLine, borderRadius: radius.pill, borderWidth: StyleSheet.hairlineWidth, color: colors.sea, fontSize: 12, overflow: "hidden", paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
+  message: { backgroundColor: "rgba(255,255,255,0.68)", marginBottom: spacing.lg },
   messageTitle: { color: colors.ink, fontFamily: typography.display, fontSize: 27, lineHeight: 31, marginTop: spacing.lg },
 });
