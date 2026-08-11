@@ -1,180 +1,68 @@
-# Ruflo — Claude Code Configuration
+# Claude Code project guide
 
-## Rules
+## Mission
 
-- Do what has been asked; nothing more, nothing less
-- NEVER create files unless absolutely necessary — prefer editing existing files
-- NEVER create documentation files unless explicitly requested
-- NEVER save working files or tests to root — use `/src`, `/tests`, `/docs`, `/config`, `/scripts`
-- ALWAYS read a file before editing it
-- NEVER commit secrets, credentials, or .env files
-- NEVER add a `Co-Authored-By` trailer to user commits unless this project's `.claude/settings.json` has `attribution.commit` set (#2078). The Claude Code Bash tool may suggest one in its default commit-message template — ignore it. `Co-Authored-By` is semantic authorship attribution under git/GitHub convention; the tool is the facilitator, not a co-author.
-- Keep files under 500 lines
-- Validate input at system boundaries
+«Между нами» is a private relationship workspace that will grow into a public iOS/Android product. Anton and Liza are the first real beta pair. The product stores shared plans, calendar events, memories, journal entries, moods, agreements, conflict reviews, chat, media, and private feedback for a future AI mediator.
 
-## Agent Comms (SendMessage-First Coordination)
+Read before changing code:
 
-Named agents coordinate via `SendMessage`, not polling or shared state.
+1. `docs/CLAUDE_HANDOFF.md` — current machine, release, server, and unfinished-work state.
+2. `docs/ROADMAP.md` — ordered roadmap and immediate queue.
+3. `README.md` — verified capabilities and local commands.
+4. `docs/PRODUCT.md` and `docs/ARCHITECTURE.md` — product and architecture.
+5. `server/docs/API.md` and `server/docs/OPERATIONS.md` for backend work.
 
-```
-Lead (you) ←→ architect ←→ developer ←→ tester ←→ reviewer
-              (named agents message each other directly)
-```
+## Repository map
 
-### Spawning a Coordinated Team
-
-```javascript
-// ALL agents in ONE message, each knows WHO to message next
-Agent({ prompt: "Research the codebase. SendMessage findings to 'architect'.",
-  subagent_type: "researcher", name: "researcher", run_in_background: true })
-Agent({ prompt: "Wait for 'researcher'. Design solution. SendMessage to 'coder'.",
-  subagent_type: "system-architect", name: "architect", run_in_background: true })
-Agent({ prompt: "Wait for 'architect'. Implement it. SendMessage to 'tester'.",
-  subagent_type: "coder", name: "coder", run_in_background: true })
-Agent({ prompt: "Wait for 'coder'. Write tests. SendMessage results to 'reviewer'.",
-  subagent_type: "tester", name: "tester", run_in_background: true })
-Agent({ prompt: "Wait for 'tester'. Review code quality and security.",
-  subagent_type: "reviewer", name: "reviewer", run_in_background: true })
-
-// Kick off the pipeline
-SendMessage({ to: "researcher", summary: "Start", message: "[task context]" })
+```text
+src/app/          Expo Router screens: auth, onboarding, tabs, features
+src/components/   shared mobile UI, forms, Liquid Glass surfaces
+src/domain/       platform-neutral domain types and labels
+src/services/     API client, SecureStore, cache/sync, media processing
+src/state/        auth, pair, appearance and shared-data providers
+server/           Fastify + PostgreSQL API and migrations
+docs/             product, architecture, operations and handoff docs
+.github/workflows iOS IPA build and Expo OTA publication
 ```
 
-### Patterns
+## Non-negotiable constraints
 
-| Pattern | Flow | Use When |
-|---------|------|----------|
-| **Pipeline** | A → B → C → D | Sequential dependencies (feature dev) |
-| **Fan-out** | Lead → A, B, C → Lead | Independent parallel work (research) |
-| **Supervisor** | Lead ↔ workers | Ongoing coordination (complex refactor) |
+- Never commit passwords, access tokens, Apple credentials, Expo tokens, `.env` files, private keys, Telegram exports, private feedback, or raw relationship correspondence.
+- Do not modify, restart, reconfigure, or reuse ports of the VPN stack. The app is isolated. Read `D:\claude\vpn\HANDOFF.md` only when server access is necessary; it contains secrets and must never be copied into this repository or output.
+- Before dependency installation, deployment, migration, database change, server mutation, or external publication, show the exact action and obtain Anton's approval.
+- Preserve data and backward compatibility. Migrations must be additive, tested, and reversible where practical.
+- Pair authorization is enforced on the server, never only in the UI. Secrets are hashed; sessions remain in SecureStore/Keychain/Keystore.
+- Quiet Channel source text must never be readable by the partner. AI must not reveal or closely paraphrase it.
+- AI changes require preview, confirmation, audit log, and undo.
+- Custom backgrounds are per-user; shared data is per relationship space.
+- Use no emoji in product UI. Maintain Android compatibility even for iOS-first work.
 
-### Rules
+## Working method
 
-- ALWAYS name agents — `name: "role"` makes them addressable
-- ALWAYS include comms instructions in prompts — who to message, what to send
-- Spawn ALL agents in ONE message with `run_in_background: true`
-- After spawning: STOP, tell user what's running, wait for results
-- NEVER poll status — agents message back or complete automatically
+- Read before editing and preserve unrelated changes.
+- Use a meaningful feature branch for behavior changes; do not commit auth work directly to `master`.
+- Prefer existing components and typed contracts. Keep files under roughly 500 lines.
+- Validate external input with Zod or an equivalent typed boundary.
+- Add focused backend/auth/security tests and exercise the real integration path where practical.
+- Do not claim QR, push, widgets, email delivery, OTA, or an IPA works until verified on the relevant device/live service.
 
-## Swarm & Routing
+## Verification
 
-### Config
-- **Topology**: hierarchical-mesh (anti-drift)
-- **Max Agents**: 15
-- **Memory**: hybrid
-- **HNSW**: Enabled
-- **Neural**: Enabled
+```powershell
+cd D:\between-us-mobile
+npm run typecheck
+npm run check:source
+npm run doctor
+npm run export:web
 
-```bash
-npx @claude-flow/cli@latest swarm init --topology hierarchical --max-agents 8 --strategy specialized
+cd D:\between-us-mobile\server
+npm run build
+npm test
+npm audit
+
+Invoke-RestMethod https://186.246.45.4.nip.io:9444/health
 ```
 
-### Agent Routing
+## Current priority
 
-| Task | Agents | Topology |
-|------|--------|----------|
-| Bug Fix | researcher, coder, tester | hierarchical |
-| Feature | architect, coder, tester, reviewer | hierarchical |
-| Refactor | architect, coder, reviewer | hierarchical |
-| Performance | perf-engineer, coder | hierarchical |
-| Security | security-architect, auditor | hierarchical |
-
-### When to Swarm
-- **YES**: 3+ files, new features, cross-module refactoring, API changes, security, performance
-- **NO**: single file edits, 1-2 line fixes, docs updates, config changes, questions
-
-### 3-Tier Model Routing
-
-| Tier | Handler | Use Cases |
-|------|---------|-----------|
-| 1 | Agent Booster (WASM) | Simple transforms — skip LLM, use Edit directly |
-| 2 | Haiku | Simple tasks, low complexity |
-| 3 | Sonnet/Opus | Architecture, security, complex reasoning |
-
-## Memory & Learning
-
-### Before Any Task
-```bash
-npx @claude-flow/cli@latest memory search --query "[task keywords]" --namespace patterns
-npx @claude-flow/cli@latest hooks route --task "[task description]"
-```
-
-### After Success
-```bash
-npx @claude-flow/cli@latest memory store --namespace patterns --key "[name]" --value "[what worked]"
-npx @claude-flow/cli@latest hooks post-task --task-id "[id]" --success true --store-results true
-```
-
-### MCP Tools (use `ToolSearch("keyword")` to discover)
-
-| Category | Key Tools |
-|----------|-----------|
-| **Memory** | `memory_store`, `memory_search`, `memory_search_unified` |
-| **Bridge** | `memory_import_claude`, `memory_bridge_status` |
-| **Swarm** | `swarm_init`, `swarm_status`, `swarm_health` |
-| **Agents** | `agent_spawn`, `agent_list`, `agent_status` |
-| **Hooks** | `hooks_route`, `hooks_post-task`, `hooks_worker-dispatch` |
-| **Security** | `aidefence_scan`, `aidefence_is_safe`, `aidefence_has_pii` |
-| **Hive-Mind** | `hive-mind_init`, `hive-mind_consensus`, `hive-mind_spawn` |
-
-### Background Workers
-
-| Worker | When |
-|--------|------|
-| `audit` | After security changes |
-| `optimize` | After performance work |
-| `testgaps` | After adding features |
-| `map` | Every 5+ file changes |
-| `document` | After API changes |
-
-```bash
-npx @claude-flow/cli@latest hooks worker dispatch --trigger audit
-```
-
-## Agents
-
-**Core**: `coder`, `reviewer`, `tester`, `planner`, `researcher`
-**Architecture**: `system-architect`, `backend-dev`, `mobile-dev`
-**Security**: `security-architect`, `security-auditor`
-**Performance**: `performance-engineer`, `perf-analyzer`
-**Coordination**: `hierarchical-coordinator`, `mesh-coordinator`, `adaptive-coordinator`
-**GitHub**: `pr-manager`, `code-review-swarm`, `issue-tracker`, `release-manager`
-
-Any string works as a custom agent type.
-
-## Build & Test
-
-- ALWAYS run tests after code changes
-- ALWAYS verify build succeeds before committing
-
-```bash
-npm run build && npm test
-```
-
-## CLI Quick Reference
-
-```bash
-npx @claude-flow/cli@latest init --wizard           # Setup
-npx @claude-flow/cli@latest swarm init --v3-mode     # Start swarm
-npx @claude-flow/cli@latest memory search --query "" # Vector search
-npx @claude-flow/cli@latest hooks route --task ""    # Route to agent
-npx @claude-flow/cli@latest doctor --fix             # Diagnostics
-npx @claude-flow/cli@latest security scan            # Security scan
-npx @claude-flow/cli@latest performance benchmark    # Benchmarks
-```
-
-26 commands, 140+ subcommands. Use `--help` on any command for details.
-
-## Setup
-
-```bash
-claude mcp add claude-flow -- npx -y ruflo@latest mcp start
-npx ruflo@latest doctor --fix
-```
-
-> The background `daemon` is optional. It runs interval workers that each spawn
-> a headless `claude` session, so it consumes tokens continuously. Start it only
-> if you want those sweeps: `npx ruflo@latest daemon start` (self-stops after 12h
-> by default; `--ttl 0` to disable, `daemon status --all` to audit running daemons).
-
-**Agent tool** handles execution (agents, files, code, git). **MCP tools** handle coordination (swarm, memory, hooks). **CLI** is the same via Bash.
+Continue from `docs/CLAUDE_HANDOFF.md`. First verify two-iPhone registration and QR/deep-link joining. Then implement email verification and calendar/structured relationship-date input. After both users join the same pair, perform the idempotent import in `docs/LEGACY_IMPORT.md`. Notifications and widgets follow after reliable account/device identity.
