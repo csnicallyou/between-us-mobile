@@ -1,0 +1,90 @@
+import { useMemo, useState } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import { AppButton } from "@/components/AppButton";
+import { PageHeader } from "@/components/PageHeader";
+import { Screen } from "@/components/Screen";
+import { Surface } from "@/components/Surface";
+import { useAppData } from "@/state/AppDataContext";
+import { colors, radius, spacing, typography } from "@/theme/tokens";
+
+const weekdays = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
+
+function isoDate(date: Date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+export default function CalendarScreen() {
+  const { snapshot } = useAppData();
+  const now = new Date();
+  const [cursor, setCursor] = useState(new Date(now.getFullYear(), now.getMonth(), 1));
+  const [selected, setSelected] = useState(isoDate(now));
+
+  const days = useMemo(() => {
+    const first = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
+    const offset = (first.getDay() + 6) % 7;
+    const start = new Date(cursor.getFullYear(), cursor.getMonth(), 1 - offset);
+    return Array.from({ length: 42 }, (_, index) => {
+      const date = new Date(start);
+      date.setDate(start.getDate() + index);
+      return date;
+    });
+  }, [cursor]);
+
+  const selectedItems = snapshot.calendar.filter((item) => item.date === selected);
+
+  return (
+    <Screen header={<PageHeader kicker="Всё важное по датам" title="Календарь" subtitle="Планы, поездки и памятные события собираются в общей хронологии." />}>
+      <Surface style={styles.calendar}>
+        <View style={styles.monthRow}>
+          <Pressable accessibilityLabel="Предыдущий месяц" onPress={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1))} style={styles.arrow}><Ionicons color={colors.ink} name="chevron-back" size={22} /></Pressable>
+          <Text style={styles.month}>{new Intl.DateTimeFormat("ru-RU", { month: "long", year: "numeric" }).format(cursor)}</Text>
+          <Pressable accessibilityLabel="Следующий месяц" onPress={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1))} style={styles.arrow}><Ionicons color={colors.ink} name="chevron-forward" size={22} /></Pressable>
+        </View>
+        <View style={styles.weekRow}>{weekdays.map((day) => <Text key={day} style={styles.weekday}>{day}</Text>)}</View>
+        <View style={styles.grid}>
+          {days.map((date) => {
+            const value = isoDate(date);
+            const active = value === selected;
+            const outside = date.getMonth() !== cursor.getMonth();
+            const hasItem = snapshot.calendar.some((item) => item.date === value);
+            return (
+              <Pressable key={value} onPress={() => setSelected(value)} style={[styles.day, active && styles.activeDay]}>
+                <Text style={[styles.dayText, outside && styles.outsideText, active && styles.activeDayText]}>{date.getDate()}</Text>
+                {hasItem ? <View style={styles.dot} /> : null}
+              </Pressable>
+            );
+          })}
+        </View>
+      </Surface>
+      <View style={styles.agendaHeader}><Text style={styles.agendaTitle}>Выбранный день</Text><Text style={styles.agendaDate}>{new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long" }).format(new Date(`${selected}T12:00:00`))}</Text></View>
+      {selectedItems.length ? selectedItems.map((item) => <Surface key={item.id} style={styles.item}><Text style={styles.itemSource}>{item.source === "plan" ? "План" : "Событие"}</Text><Text style={styles.itemTitle}>{item.title}</Text></Surface>) : <Text style={styles.empty}>На этот день пока ничего не добавлено.</Text>}
+      <View style={styles.actions}><AppButton label="Добавить событие" variant="secondary" style={styles.action} /><AppButton label="Новый план" style={styles.action} /></View>
+    </Screen>
+  );
+}
+
+const styles = StyleSheet.create({
+  calendar: { padding: spacing.md },
+  monthRow: { alignItems: "center", flexDirection: "row", justifyContent: "space-between", marginBottom: spacing.lg },
+  arrow: { alignItems: "center", backgroundColor: colors.surfaceStrong, borderRadius: radius.md, height: 42, justifyContent: "center", width: 42 },
+  month: { color: colors.ink, fontFamily: typography.display, fontSize: 24, textTransform: "capitalize" },
+  weekRow: { flexDirection: "row" },
+  weekday: { color: colors.muted, flex: 1, fontSize: 10, fontWeight: "600", paddingVertical: spacing.sm, textAlign: "center" },
+  grid: { flexDirection: "row", flexWrap: "wrap" },
+  day: { alignItems: "center", aspectRatio: 1, justifyContent: "center", padding: 2, width: "14.2857%" },
+  activeDay: { backgroundColor: colors.ink, borderRadius: radius.md },
+  dayText: { color: colors.ink, fontSize: 13 },
+  outsideText: { color: "#AAB8BC" },
+  activeDayText: { color: colors.white, fontWeight: "700" },
+  dot: { backgroundColor: colors.coral, borderRadius: radius.pill, height: 4, marginTop: 3, width: 4 },
+  agendaHeader: { alignItems: "baseline", flexDirection: "row", justifyContent: "space-between", marginBottom: spacing.md, marginTop: spacing.xl },
+  agendaTitle: { color: colors.ink, fontFamily: typography.display, fontSize: 26 },
+  agendaDate: { color: colors.muted, fontSize: 12 },
+  item: { marginBottom: spacing.md },
+  itemSource: { color: colors.sea, fontSize: 11, fontWeight: "700" },
+  itemTitle: { color: colors.ink, fontSize: 15, fontWeight: "600", marginTop: spacing.sm },
+  empty: { color: colors.muted, fontSize: 14, paddingVertical: spacing.xl, textAlign: "center" },
+  actions: { flexDirection: "row", gap: spacing.md, marginTop: spacing.lg },
+  action: { flex: 1 },
+});
