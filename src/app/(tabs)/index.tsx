@@ -9,7 +9,9 @@ import { useAppData } from "@/state/AppDataContext";
 import { colors, radius, spacing, typography } from "@/theme/tokens";
 
 function relationshipDuration(startedAt: string) {
-  const days = Math.max(0, Math.floor((Date.now() - new Date(startedAt).getTime()) / 86_400_000));
+  const started = new Date(startedAt).getTime();
+  if (Number.isNaN(started)) return "—";
+  const days = Math.max(0, Math.floor((Date.now() - started) / 86_400_000));
   const months = Math.floor(days / 30.44);
   const remainingDays = Math.max(0, Math.round(days - months * 30.44));
   return `${months} мес. и ${remainingDays} дн.`;
@@ -17,11 +19,15 @@ function relationshipDuration(startedAt: string) {
 
 function dateLabel(value: string | null) {
   if (!value) return "Дата не выбрана";
-  return new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long" }).format(new Date(`${value}T12:00:00`));
+  const parsed = new Date(`${value}T12:00:00`);
+  if (Number.isNaN(parsed.getTime())) return "Дата не выбрана";
+  return new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long" }).format(parsed);
 }
 
 function relationshipStartLabel(value: string) {
-  return new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long", year: "numeric" }).format(new Date(value));
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return "неизвестной даты";
+  return new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long", year: "numeric" }).format(parsed);
 }
 
 export default function HomeScreen() {
