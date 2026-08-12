@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 350 116" width="350" height="116" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="sk" x1="0" y1="0" x2="0.2" y2="1">
+      <stop offset="0"   stop-color="#E8DCEA"/>
+      <stop offset="0.5" stop-color="#F2DED4"/>
+      <stop offset="1"   stop-color="#F7E8D6"/>
+    </linearGradient>
+    <linearGradient id="h1" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#C7B9CE"/><stop offset="1" stop-color="#B3A8BE"/>
+    </linearGradient>
+    <linearGradient id="h2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#A8B6AE"/><stop offset="1" stop-color="#8E9E97"/>
+    </linearGradient>
+    <linearGradient id="h3" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7C8A84"/><stop offset="1" stop-color="#66736F"/>
+    </linearGradient>
+    <radialGradient id="sn" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#FFF2DC" stop-opacity="0.95"/>
+      <stop offset="1" stop-color="#FFF2DC" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="b1"><feGaussianBlur stdDeviation="1.1"/></filter>
+  </defs>
+
+  <rect width="350" height="116" fill="url(#sk)"/>
+  <circle cx="252" cy="44" r="46" fill="url(#sn)"/>
+  <circle cx="252" cy="44" r="11" fill="#FFF6E6" opacity="0.9"/>
+
+  <g filter="url(#b1)">
+    <path d="M0 74 L52 52 L104 70 L150 46 L206 72 L262 54 L318 74 L350 62 L350 116 L0 116 Z" fill="url(#h1)" opacity="0.85"/>
+    <path d="M0 88 L46 72 L96 88 L156 68 L212 88 L268 74 L330 90 L350 82 L350 116 L0 116 Z" fill="url(#h2)" opacity="0.9"/>
+  </g>
+  <path d="M0 100 L58 88 L118 102 L182 88 L244 102 L306 92 L350 100 L350 116 L0 116 Z" fill="url(#h3)"/>
+</svg>

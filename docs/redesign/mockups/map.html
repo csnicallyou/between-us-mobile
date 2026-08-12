@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Между нами — структура</title>
+<link rel="stylesheet" href="light.css">
+<style>
+html,body{width:780px}
+body{font-family:'GolosText',system-ui,sans-serif;padding:44px 40px 48px;overflow:visible}
+
+.head{position:relative;z-index:2;margin-bottom:30px;padding-left:4px}
+.head h1{font-size:35px;font-weight:600;letter-spacing:-.032em;color:var(--t1)}
+.head p{font-size:15px;font-weight:430;color:var(--t2);margin-top:9px;letter-spacing:-.008em;max-width:600px;line-height:1.5}
+
+.stack{display:flex;flex-direction:column;gap:16px;position:relative;z-index:2}
+
+.node{position:relative;--r:28px;padding:22px 24px}
+
+.node__top{display:flex;align-items:center;gap:13px}
+.badge{
+  width:30px;height:30px;border-radius:15px;flex:none;
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:640;color:var(--t2);
+  background:rgba(255,255,255,.5);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,1), inset 0 0 0 .5px rgba(40,30,62,.07);
+}
+.badge--dot{font-size:0;position:relative}
+.badge--dot::after{content:'';width:7px;height:7px;border-radius:50%;background:rgba(33,30,41,.32)}
+
+.node h2{font-size:20px;font-weight:600;letter-spacing:-.024em;color:var(--t1)}
+.node .role{font-size:13px;font-weight:450;color:var(--t3);margin-left:auto;letter-spacing:-.006em}
+
+.items{margin-top:16px;padding-top:2px}
+.row{display:flex;align-items:baseline;gap:11px;padding:7px 0}
+.row + .row{border-top:1px solid rgba(33,30,41,.07)}
+.tick{width:5px;height:5px;border-radius:50%;flex:none;background:rgba(33,30,41,.22);transform:translateY(-3px)}
+.row span{font-size:14.5px;font-weight:450;color:var(--t1);letter-spacing:-.011em;line-height:1.45}
+.row em{font-style:normal;color:var(--t2);font-weight:420}
+
+.note{
+  margin-top:15px;padding:11px 14px;border-radius:14px;
+  background:rgba(255,255,255,.34);
+  box-shadow:inset 0 0 0 .5px rgba(40,30,62,.07);
+  font-size:13px;line-height:1.5;font-weight:430;color:var(--t2);letter-spacing:-.006em;
+}
+
+.sep{
+  position:relative;z-index:2;
+  display:flex;align-items:center;gap:14px;
+  margin:12px 2px 2px;
+}
+.sep::before,.sep::after{content:'';height:1px;flex:1;background:rgba(33,30,41,.12)}
+.sep span{
+  font-size:10.5px;font-weight:640;letter-spacing:.2em;text-transform:uppercase;color:var(--t3);
+}
+</style>
+</head>
+<body>
+
+<div class="head">
+  <h1>Структура приложения</h1>
+  <p>Пять вкладок в нижнем слое управления. Ни один экран и ни одно действие не удалены — «Ещё» перестаёт быть свалкой и превращается в раздел «Мы», а настройки уходят из вкладки в шапку.</p>
+</div>
+
+<div class="stack">
+
+  <div class="glass node">
+    <div class="glass__lens"></div><div class="glass__tint"></div><div class="glass__rim"></div>
+    <div class="glass__body">
+      <div class="node__top"><div class="badge">1</div><h2>Сегодня</h2><div class="role">сводка</div></div>
+      <div class="items">
+        <div class="row"><i class="tick"></i><span>Таймер «вместе» и дата начала отношений</span></div>
+        <div class="row"><i class="tick"></i><span>Настроения обоих — <em>переключение своего прямо здесь</em></span></div>
+        <div class="row"><i class="tick"></i><span>Ближайший план с типом и датой</span></div>
+        <div class="row"><i class="tick"></i><span>Последняя запись партнёра и переход к ответу</span></div>
+        <div class="row"><i class="tick"></i><span>Поиск по всем разделам — <em>иконка в шапке</em></span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="glass node">
+    <div class="glass__lens"></div><div class="glass__tint"></div><div class="glass__rim"></div>
+    <div class="glass__body">
+      <div class="node__top"><div class="badge">2</div><h2>Календарь</h2><div class="role">по датам</div></div>
+      <div class="items">
+        <div class="row"><i class="tick"></i><span>Общая хронология планов и памятных дат</span></div>
+        <div class="row"><i class="tick"></i><span>Добавить событие</span></div>
+        <div class="row"><i class="tick"></i><span>Новый план</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="glass node">
+    <div class="glass__lens"></div><div class="glass__tint"></div><div class="glass__rim"></div>
+    <div class="glass__body">
+      <div class="node__top"><div class="badge">3</div><h2>Планы</h2><div class="role">намерения</div></div>
+      <div class="items">
+        <div class="row"><i class="tick"></i><span>Идея → Запланировано → Сделано</span></div>
+        <div class="row"><i class="tick"></i><span>Создание, изменение, удаление</span></div>
+        <div class="row"><i class="tick"></i><span>Фотография плана</span></div>
+        <div class="row"><i class="tick"></i><span>Флаг «показывать в календаре»</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="glass node">
+    <div class="glass__lens"></div><div class="glass__tint"></div><div class="glass__rim"></div>
+    <div class="glass__body">
+      <div class="node__top"><div class="badge">4</div><h2>Дневник</h2><div class="role">мысли</div></div>
+      <div class="items">
+        <div class="row"><i class="tick"></i><span>Общая лента записей пары</span></div>
+        <div class="row"><i class="tick"></i><span>Тип записи и настроение</span></div>
+        <div class="row"><i class="tick"></i><span>Ответы на записи партнёра</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="glass node">
+    <div class="glass__lens"></div><div class="glass__tint"></div><div class="glass__rim"></div>
+    <div class="glass__body">
+      <div class="node__top"><div class="badge">5</div><h2>Мы</h2><div class="role">вместо «Ещё»</div></div>
+      <div class="items">
+        <div class="row"><i class="tick"></i><span>Наша история — <em>памятные события с фото</em></span></div>
+        <div class="row"><i class="tick"></i><span>Важное о нас — <em>поддержка, границы, самочувствие</em></span></div>
+        <div class="row"><i class="tick"></i><span>Договорённости — <em>с подтверждением от каждого</em></span></div>
+        <div class="row"><i class="tick"></i><span>Разбор ссор — <em>эпизоды, темы, выводы</em></span></div>
+        <div class="row"><i class="tick"></i><span>Тихий канал — <em>партнёр не видит текст</em></span></div>
+        <div class="row"><i class="tick"></i><span>Чат втроём — <em>пара и будущий ИИ-посредник</em></span></div>
+      </div>
+      <div class="note">Шесть разделов вместо одиннадцати: остались только те, что про сами отношения. Служебное ушло в настройки.</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="sep"><span>Вне нижних вкладок</span></div>
+
+<div class="stack" style="margin-top:14px">
+
+  <div class="glass node">
+    <div class="glass__lens"></div><div class="glass__tint"></div><div class="glass__rim"></div>
+    <div class="glass__body">
+      <div class="node__top"><div class="badge badge--dot"></div><h2>Настройки</h2><div class="role">из шапки</div></div>
+      <div class="items">
+        <div class="row"><i class="tick"></i><span>Аккаунт и пара — <em>профиль, участники, синхронизация, выход</em></span></div>
+        <div class="row"><i class="tick"></i><span>Уведомления — <em>категории и тихие часы</em></span></div>
+        <div class="row"><i class="tick"></i><span>Фон и контраст — <em>цвет, фотография, фон партнёра</em></span></div>
+        <div class="row"><i class="tick"></i><span>Экспорт данных — <em>с согласия обоих</em></span></div>
+        <div class="row"><i class="tick"></i><span>Диагностика Liquid Glass — <em>служебное</em></span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="glass node">
+    <div class="glass__lens"></div><div class="glass__tint"></div><div class="glass__rim"></div>
+    <div class="glass__body">
+      <div class="node__top"><div class="badge badge--dot"></div><h2>Вход и подключение пары</h2><div class="role">до входа</div></div>
+      <div class="items">
+        <div class="row"><i class="tick"></i><span>Регистрация и вход</span></div>
+        <div class="row"><i class="tick"></i><span>Подтверждение email кодом</span></div>
+        <div class="row"><i class="tick"></i><span>Восстановление и сброс пароля</span></div>
+        <div class="row"><i class="tick"></i><span>Создание пары и дата начала отношений</span></div>
+        <div class="row"><i class="tick"></i><span>Присоединение по коду, QR или ссылке</span></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>
