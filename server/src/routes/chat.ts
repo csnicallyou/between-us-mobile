@@ -24,6 +24,7 @@ export function registerChatRoutes(app: FastifyInstance, db: Pool) {
       void sendPushToUser(db, partner.rows[0].user_id, {
         title: "Между нами",
         body: "Новое сообщение в общем чате",
+        category: "chat",
         data: { type: "chat" },
       }).catch(() => undefined);
     }

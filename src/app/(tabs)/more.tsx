@@ -11,6 +11,7 @@ import { colors, controlShadow, radius, spacing } from "@/theme/tokens";
 
 const sections = [
   { icon: "person-circle-outline", title: "Аккаунт и пара", subtitle: "Профиль и синхронизация", href: "/account" },
+  { icon: "notifications-outline", title: "Уведомления", subtitle: "Категории и тихие часы", href: "/notifications" },
   { icon: "color-palette-outline", title: "Фон и контраст", subtitle: "Персональное оформление", href: "/appearance" },
   { icon: "time-outline", title: "Наша история", subtitle: "Памятные события", href: "/memories" },
   { icon: "heart-outline", title: "Важное о нас", subtitle: "Поддержка и границы", href: "/about" },
@@ -18,6 +19,7 @@ const sections = [
   { icon: "chatbubbles-outline", title: "Разбор ссор", subtitle: "Эпизоды и выводы", href: "/conflicts" },
   { icon: "people-outline", title: "Договорённости", subtitle: "Общие правила", href: "/agreements" },
   { icon: "sparkles-outline", title: "Чат втроём", subtitle: "Локальный прототип", href: "/chat" },
+  { icon: "download-outline", title: "Экспорт данных", subtitle: "С согласия обоих", href: "/data-export" },
 ] as const;
 
 export default function MoreScreen() {

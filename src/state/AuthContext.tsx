@@ -57,8 +57,11 @@ export function AuthProvider({ children }: PropsWithChildren) {
         const tokens = await backendClient.refresh(session.refreshToken);
         if (authEpochRef.current !== epoch) return null;
         return await applySession({ ...tokens, user: session.user });
-      } catch {
-        if (authEpochRef.current === epoch) {
+      } catch (error) {
+        // Only a definitive "this refresh token is invalid" (401) means the session is
+        // actually dead. A network blip or 5xx here must not sign the user out — the
+        // stored refresh token is still good, this attempt just failed to reach the server.
+        if (authEpochRef.current === epoch && error instanceof BackendError && error.status === 401) {
           await clearSession();
           setSession(null);
         }
@@ -88,8 +91,13 @@ export function AuthProvider({ children }: PropsWithChildren) {
             const refreshed = { ...(await backendClient.refresh(stored.refreshToken)), user: stored.user };
             await writeSession(refreshed);
             if (active) setSession(refreshed);
-          } catch {
-            await clearSession();
+          } catch (refreshError) {
+            // Same rule as above: only a confirmed-invalid refresh token signs the user out.
+            if (refreshError instanceof BackendError && refreshError.status === 401) {
+              await clearSession();
+            } else if (active) {
+              setSession(stored);
+            }
           }
         } else {
           // Keep a valid local session during temporary network outages.
