@@ -61,6 +61,15 @@ function BetweenUsLayout(props: BetweenUsWidgetProps, environment: WidgetEnviron
 
 export const BetweenUsWidget = createWidget<BetweenUsWidgetProps>("BetweenUs", BetweenUsLayout);
 
+// updateSnapshot() is a synchronous native (JSI) call. If the widget extension's App
+// Group isn't actually provisioned on this build — a known rough edge for free/personal-
+// team signing, and this is the first build with a widget at all — it can throw a raw
+// "Exception in HostFunction" that would otherwise crash the whole app on every launch,
+// since AppDataContext calls this from a useEffect that fires immediately on hydration.
 export function pushBetweenUsSnapshot(props: BetweenUsWidgetProps | null) {
-  BetweenUsWidget.updateSnapshot(props ?? placeholderProps);
+  try {
+    BetweenUsWidget.updateSnapshot(props ?? placeholderProps);
+  } catch (error) {
+    console.warn("Failed to update the BetweenUs widget snapshot", error);
+  }
 }
