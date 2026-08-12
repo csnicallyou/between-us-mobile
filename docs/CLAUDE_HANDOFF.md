@@ -5,7 +5,7 @@ title: "Between Us mobile handoff for Claude Code"
 summary: "Complete local, GitHub, Expo, iOS beta, backend, and next-work context for continuing development on the same PC."
 keywords: ["between-us", "expo", "ios", "fastify", "postgresql", "claude-code"]
 cwd: "D:\\between-us-mobile"
-resume_focus: "Confirm the widget/push IPA on both physical iPhones, decide on a real SMTP provider, keep working the roadmap queue below."
+resume_focus: "Widget confirmed NOT working on free-signed IPA (Sideloadly bundle-ID mangling breaks the extension's parent-bundle link) — deferred until a paid Apple Developer account. Push/notification-settings/export/search/reminders/offline-queue all shipped and live via OTA, awaiting real-device retest. SMTP still pending Anton's Gmail App Password. Repository is now PUBLIC (GitHub Actions billing failure, no paid card available — see note below)."
 repository: "between-us-mobile"
 branch: "master"
 worktree_path: "D:\\between-us-mobile"
@@ -21,7 +21,7 @@ Build «Между нами» as a real multi-user iOS/Android product. Anton an
 
 - Repository: `D:\between-us-mobile`
 - Private GitHub remote: `https://github.com/csnicallyou/between-us-mobile.git`
-- Default branch: `master`. Overnight work landed as three merged PRs (#4 date/appearance fixes, #5 calendar+diagnostics, #6 upload fix, #7 auth hardening) plus one open feature branch `feature/widget-last-journal-entry` (widget + push notifications) awaiting a build check before merge.
+- Default branch: `master`, now on PR #14 (see "Repository visibility" below — the repo is public). All feature branches through #14 are merged; none open. `feature/widget-last-journal-entry` was superseded by `feature/widget-adaptive-sizes` (PR #12, merged) which replaced the journal-only widget with one size-adaptive `BetweenUsWidget` — moot regardless, see item 1 in "Unfinished work."
 - GitHub auth is configured on this PC. Verify with `gh auth status`; never print credentials.
 - Expo account: `csniacllyou`; project ID `4e2b6915-5b8f-4aea-9f71-e69179ece785` in `app.json`.
 - Verify Expo with `npx eas whoami` — as of this handoff, `npx eas whoami` failed locally ("could not determine executable to run" / "Not logged in" via `npx eas-cli`); OTA publishing this session went through the GitHub Actions workflow's own `EXPO_TOKEN` secret instead, which works fine. If you need the local CLI, log in first.
@@ -32,7 +32,7 @@ Build «Между нами» as a real multi-user iOS/Android product. Anton an
 ## Current release
 
 - Mobile version `0.3.0`; runtime policy is `appVersion` — **no, this was changed tonight to `fingerprint`** (see "What changed overnight"). This is the correct policy going forward; do not revert it.
-- Server: currently deployed release is `/opt/between-us-api/releases/20260812-3` (auth hardening + date fix + appearance sync + upload fix), migrations through `004_push_tokens.sql` applied.
+- Server: currently deployed release is `/opt/between-us-api/releases/20260812-5` (auth hardening + date fix + appearance sync + upload fix), migrations through `004_push_tokens.sql` applied.
 - Mobile: the currently-installed IPA on both phones predates tonight's widget/push native additions. A new build is in flight on `feature/widget-last-journal-entry` (GitHub Actions run, check `gh run list`) — **once it succeeds and the branch is merged, both phones need to reinstall via Sideloadly/AltStore again.** Everything else tonight (auth, date fix, appearance sync, upload fix, calendar picker) already shipped via OTA and needs no reinstall.
 - Free Apple signing normally expires after seven days from whenever it was last (re)installed. OTA updates JS/assets only; native dependency/config changes need a new IPA — this bit the project once tonight already (see incident below), the fix (`runtimeVersion.policy: fingerprint`) prevents it recurring.
 
@@ -61,7 +61,8 @@ Items 9 and 10 are bundled into one native-dependency branch (`feature/widget-la
 - Plans, calendar, memories, journal, about-us, agreements, conflict archive, chat, moods, custom personal **or partner-shared** backgrounds (color and photo), compressed images.
 - Quiet Channel payload encrypted at rest with no partner-readable endpoint.
 - Fastify/PostgreSQL backend with rate limits, Helmet, Argon2id, JWT, refresh rotation, parameterized SQL, media validation, pair membership checks, and now email verification/password-reset/session-management endpoints.
-- Push notification registration pipeline and a first iOS widget exist in code; neither is confirmed working on a physical device yet.
+- Push notification registration pipeline (categories, quiet hours, chat/entry/reminder triggers) exists in code; delivery is unconfirmed. The iOS widget is confirmed **not** working under free signing (see "Unfinished work" #1) — deferred, not a code problem.
+- Notification settings screen (`/notifications`), data export with mutual pair consent (`/data-export`), client-side search across all entry kinds (`/search`), server-side agreement/anniversary push reminders, and a persistent offline mutation queue with a UI banner for pending/conflicted syncs — all added today, all live via OTA, all pending a real device retest.
 
 ## Shared VPN VPS: application access and isolation
 
@@ -77,7 +78,7 @@ Application-only resources:
 
 - `between-us-api.service`; `between-us-edge.service`; PostgreSQL.
 - user/group `between-us`.
-- releases `/opt/between-us-api/releases/`; active symlink `/opt/between-us-api/current` (currently `20260812-3`).
+- releases `/opt/between-us-api/releases/`; active symlink `/opt/between-us-api/current` (currently `20260812-5`).
 - secrets `/etc/between-us-api.env` — never print or copy. Does **not** yet contain `SMTP_URL`/`MAIL_FROM` — add both before real users need email delivery.
 - uploads `/var/lib/between-us-api/uploads`.
 - API `127.0.0.1:3100`; isolated nginx `/etc/between-us-nginx/nginx.conf` (now includes `ReadWritePaths=/var/lib/nginx` in the edge systemd unit — do not remove it, that's the fix from incident #1 above); public TLS `9444`.
@@ -93,12 +94,17 @@ Before/after any approved server mutation follow `server/docs/OPERATIONS.md`. Ca
 
 ## Unfinished work in priority order
 
-1. **Merge and verify `feature/widget-last-journal-entry`.** Check the CI build succeeded (`gh run list --branch feature/widget-last-journal-entry`), merge to master, build+deploy the server side (push_tokens migration) same as previous deploys, then get a new IPA onto both phones and confirm: does the widget actually render and update on a home screen? Does a chat-message push notification actually arrive? Neither is proven — code review and CI compilation are not the same as a device confirming it.
-2. **Decide on a real transactional email provider** and set `SMTP_URL`/`MAIL_FROM` in `/etc/between-us-api.env` — needed before anyone besides Anton/Liza can realistically complete email verification or password reset (right now the code goes to the server log).
-3. ✅ **Push notification categories**: plan/journal/memory/agreement creation now also push (server-only change, deployed as release `20260812-3`, no new IPA needed). Deliberately excludes "about"/"conflict" entries (reference/analysis content, not urgent-interrupt material). Still unverified on a device, same as chat. Remaining gap: linking `push_tokens` to `refresh_tokens.family_id` so revoking a session via the account screen also revokes that device's push token (currently only explicit sign-out does).
-4. **iOS widget: privacy toggle** — the roadmap's stated requirement ("hide mood/plan text/partner name on lock screen by default") isn't implemented; tonight's widget is a plain proof of concept.
-5. **Android widgets**, once the iOS one is confirmed working on a device.
-6. **TestFlight/App Store, Android validation, backup/restore, monitoring, privacy/legal, dedicated production infrastructure** — unchanged from before, still ahead.
+1. **iOS widget is confirmed NOT working — root-caused, deferred.** Live device test (screenshot + Sideloadly log from Anton): the widget extension (`ExpoWidgetsTarget.appex`) is correctly built into the IPA — verified directly by unzipping it and checking `Info.plist` (bundle ID `com.betweenus.mobile.widgets`, `group.com.betweenus.mobile`, `com.apple.widgetkit-extension` all correct). Sideloadly's own log shows `iOS version 26.1, will mangle bundleID` — free/personal-team signing rewrites the **main app's** bundle ID to work around Apple's free-account App ID limits, but the widget extension's Info.plist still declares itself as a fixed child of the *original* `com.betweenus.mobile`, so iOS silently refuses to register the extension once the parent ID no longer matches. Tried forcing a fixed bundle ID in Sideloadly's Advanced Options → `Use automatic bundle ID` unchecked → Apple rejected it outright: *"An App ID with Identifier 'com.betweenus.mobile' is not available. Please enter a different string."* This is very likely not fixable without a paid ($99/yr) Apple Developer account — Anton doesn't have the money for that right now. **Do not spend more time on this until that changes.** Also found and fixed along the way: `pushBetweenUsSnapshot()` had no error handling around the native `updateSnapshot()` JSI call, which crashed the whole app on every launch (`Exception in HostFunction`) once the widget-enabled build was installed — wrapped in try/catch, shipped via OTA, confirmed fixed.
+2. **Decide on a real transactional email provider** — deliberately last on Anton's own instruction ("почту откладываем на самый конец"). Gmail was tentatively chosen (App Password over SMTP, `mailer.ts` already supports any standard SMTP server) but Anton hasn't sent the app password yet. Until then, verification/reset codes only land in the server log.
+3. **Push notifications** — code (registration, quiet hours, categories, chat/entries/reminder triggers) is all live and deployed, but **still not confirmed to actually arrive** on a device. Anton said he'd test with Liza later. Also worth checking whether the Apple Push entitlement even works on a free-signed IPA at all (unverified, same class of risk as the widget's App Group problem) once he does test.
+4. **Android** — explicitly deferred by Anton ("разберёмся позже"), nothing Android-specific attempted.
+5. ✅ Done today, all shipped via OTA (no reinstall needed), all pending live retest: notification settings screen (categories + quiet hours, and fixed a real bug where quiet hours silently reset to null on every routine token re-registration), data export with mutual pair consent, client-side search, agreement/anniversary push reminders (server-side sweep, no new dependency), and the offline mutation queue (`src/services/offlineQueue.ts` — see "What changed today" below for the real gap this closes and its one documented known limitation).
+6. **Full visual redesign** — Anton's explicit next planned phase once the above list is done ("визуал мне не нравится, а вот функционал хороший"). Not started. When picked up: the domain/state/service layers are already UI-agnostic (see ARCHITECTURE.md), so this should be a `src/components` + `src/theme` + per-screen JSX rewrite without touching business logic — confirm that assumption still holds before starting.
+7. **TestFlight/App Store, Android validation, backup/restore, monitoring, privacy/legal, dedicated production infrastructure** — unchanged from before, still ahead.
+
+### Repository visibility: now PUBLIC
+
+GitHub Actions failed today with *"recent account payments have failed or your spending limit needs to be increased"* — a real billing/card problem Anton confirmed he can't currently pay (`"у меня нет денег"`). Public repos get unlimited free Actions minutes on standard runners (including macOS), so with Anton's explicit go-ahead the repo was flipped to public (`gh repo edit ... --visibility public`) after a full git-history secret scan (checked for `.env`/`.pem`/`JWT_SECRET`/`DATABASE_URL` literals — only `.env.example` placeholders and shell-generated secrets in `deploy/install-beta.sh` were found, nothing real). No user data is in git — it lives in the VPS Postgres/uploads, never committed. Flip back to private any time via repo Settings → Danger Zone once billing is sorted; nothing here depends on it being public.
 
 ## Verification baseline
 
