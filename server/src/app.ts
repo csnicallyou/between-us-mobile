@@ -18,6 +18,7 @@ import { registerChatRoutes } from "./routes/chat.js";
 import { registerDeviceRoutes } from "./routes/devices.js";
 import { registerFeedbackRoutes } from "./routes/feedback.js";
 import { registerMediaRoutes } from "./routes/media.js";
+import { registerExportRoutes } from "./routes/exports.js";
 
 export function buildApp(config: AppConfig, db: Pool) {
   const app = Fastify({
@@ -61,6 +62,7 @@ export function buildApp(config: AppConfig, db: Pool) {
     registerDeviceRoutes(api, db);
     registerFeedbackRoutes(api, db, config);
     registerMediaRoutes(api, db, config);
+    registerExportRoutes(api, db);
   }, { prefix: "/v1" });
 
   app.setNotFoundHandler((_request, reply) => reply.code(404).send({ error: { code: "NOT_FOUND", message: "Resource not found" } }));

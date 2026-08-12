@@ -15,6 +15,15 @@ export interface SessionSummaryDto {
   current: boolean;
 }
 
+export interface ExportRequestDto {
+  id: string;
+  requestedBy: string;
+  status: "pending" | "approved" | "denied";
+  expiresAt: string;
+  createdAt: string;
+  isRequester: boolean;
+}
+
 export interface AuthSessionDto {
   accessToken: string;
   refreshToken: string;
@@ -126,10 +135,18 @@ export const backendClient = {
     (await request<{ items: SessionSummaryDto[] }>("/auth/sessions", {}, accessToken)).items,
   revokeSession: (familyId: string, accessToken: string) =>
     request<void>(`/auth/sessions/${encodeURIComponent(familyId)}`, { method: "DELETE" }, accessToken),
-  registerPushToken: (input: { expoPushToken: string; platform: "ios" | "android"; timezone?: string; quietHoursStart?: number | null; quietHoursEnd?: number | null }, accessToken: string) =>
+  registerPushToken: (input: { expoPushToken: string; platform: "ios" | "android"; timezone?: string; quietHoursStart?: number | null; quietHoursEnd?: number | null; categories?: string[] }, accessToken: string) =>
     request<void>("/devices/push-token", { method: "PUT", body: JSON.stringify(input) }, accessToken),
   unregisterPushToken: (expoPushToken: string, accessToken: string) =>
     request<void>("/devices/push-token", { method: "DELETE", body: JSON.stringify({ expoPushToken }) }, accessToken),
+  exportStatus: async (accessToken: string) =>
+    (await request<{ request: ExportRequestDto | null }>("/exports/status", {}, accessToken)).request,
+  requestExport: (accessToken: string) =>
+    request<{ id: string }>("/exports/request", { method: "POST" }, accessToken),
+  decideExport: (id: string, approve: boolean, accessToken: string) =>
+    request<void>(`/exports/${encodeURIComponent(id)}/decide`, { method: "POST", body: JSON.stringify({ approve }) }, accessToken),
+  downloadExport: (id: string, accessToken: string) =>
+    request<Record<string, unknown>>(`/exports/${encodeURIComponent(id)}/download`, {}, accessToken),
   getPair: async (accessToken: string) => (await request<{ pair: PairDto | null }>("/pairs/me", {}, accessToken)).pair,
   createPair: (input: { name: string; relationshipStartedOn: string }, accessToken: string) =>
     request<{ pair: PairDto; invite: PairInviteDto }>("/pairs", { method: "POST", body: JSON.stringify(input) }, accessToken),

@@ -57,7 +57,7 @@ export function registerEntryRoutes(app: FastifyInstance, db: Pool) {
     if (label) {
       const partner = await db.query<{ user_id: string }>("SELECT user_id FROM pair_members WHERE pair_id=$1 AND user_id<>$2", [pairId, userId]);
       if (partner.rows[0]) {
-        void sendPushToUser(db, partner.rows[0].user_id, { title: "Между нами", body: label, data: { type: body.kind, entryId: entry.id } }).catch(() => undefined);
+        void sendPushToUser(db, partner.rows[0].user_id, { title: "Между нами", body: label, category: body.kind, data: { type: body.kind, entryId: entry.id } }).catch(() => undefined);
       }
     }
     return reply.code(201).send(entry);

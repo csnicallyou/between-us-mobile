@@ -2,6 +2,7 @@ import Constants from "expo-constants";
 import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
 import { backendClient } from "@/services/backendClient";
+import { readNotificationPrefs } from "@/services/notificationPrefs";
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -28,7 +29,15 @@ export async function registerPushToken(accessToken: string): Promise<string | n
     if (!id) return null;
     const { data: expoPushToken } = await Notifications.getExpoPushTokenAsync({ projectId: id });
     const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    await backendClient.registerPushToken({ expoPushToken, platform: Platform.OS, timezone }, accessToken);
+    const prefs = await readNotificationPrefs();
+    await backendClient.registerPushToken({
+      expoPushToken,
+      platform: Platform.OS,
+      timezone,
+      quietHoursStart: prefs.quietHoursStart,
+      quietHoursEnd: prefs.quietHoursEnd,
+      categories: prefs.categories,
+    }, accessToken);
     return expoPushToken;
   } catch {
     return null;
