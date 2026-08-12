@@ -1,12 +1,13 @@
 import { createContext, type PropsWithChildren, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Platform } from "react-native";
 import type { AboutItem, Agreement, AppearanceSettings, AppSnapshot, ChatMessage, ConflictEntry, JournalEntry, Memory, Mood, Plan } from "@/domain/models";
-import { memberName } from "@/domain/labels";
+import { memberName, moodLabels } from "@/domain/labels";
+import { relationshipDuration } from "@/domain/relationshipDuration";
 import { BackendError } from "@/services/backendClient";
 import { entryPayload, syncRepository, type EntryKind, type RemoteEntry, type RemotePairData } from "@/services/syncRepository";
 import { useAuth } from "@/state/AuthContext";
 import { usePair } from "@/state/PairContext";
-import { pushLastJournalEntrySnapshot } from "@/widgets/LastJournalEntryWidget";
+import { pushBetweenUsSnapshot } from "@/widgets/BetweenUsWidget";
 import { seedSnapshot } from "./seed";
 
 type EditablePlan = Omit<Plan, "id" | "authorId" | "createdAt" | "updatedAt">;
@@ -214,13 +215,25 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 
   useEffect(() => {
     if (Platform.OS !== "ios" || !isHydrated) return;
-    const latest = [...snapshot.journal].sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
-    pushLastJournalEntrySnapshot(latest ? {
-      authorName: memberName(snapshot, latest.authorId),
-      dateLabel: new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "short" }).format(new Date(latest.createdAt)),
-      title: latest.title,
-      excerpt: latest.content,
-    } : null);
+    const latestJournal = [...snapshot.journal].sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
+    const nextPlan = snapshot.plans.find((plan) => plan.status === "planned") ?? snapshot.plans[0];
+    const moodSummary = snapshot.members
+      .map((member) => {
+        const mood = snapshot.moods[member.id]?.mood;
+        return mood ? `${memberName(snapshot, member.id)}: ${moodLabels[mood]}` : null;
+      })
+      .filter((line): line is string => !!line)
+      .join(" · ") || null;
+    pushBetweenUsSnapshot({
+      durationLabel: `${relationshipDuration(snapshot.relationshipStartedAt)} вместе`,
+      moodSummary,
+      nextPlanTitle: nextPlan?.title ?? null,
+      nextPlanDateLabel: nextPlan?.date ? new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "short" }).format(new Date(`${nextPlan.date}T12:00:00`)) : null,
+      journalAuthorName: latestJournal ? memberName(snapshot, latestJournal.authorId) : null,
+      journalDateLabel: latestJournal ? new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "short" }).format(new Date(latestJournal.createdAt)) : null,
+      journalTitle: latestJournal?.title ?? null,
+      journalExcerpt: latestJournal?.content ?? null,
+    });
   }, [isHydrated, snapshot]);
 
   const reconcile = useCallback(() => { void reloadRemote().catch(() => undefined); }, [reloadRemote]);

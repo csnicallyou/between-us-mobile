@@ -41,10 +41,10 @@
           "groupIdentifier": "group.com.betweenus.mobile",
           "widgets": [
             {
-              "name": "LastJournalEntry",
-              "displayName": "Последняя запись дневника",
-              "description": "Показывает заголовок и начало последней общей записи дневника.",
-              "supportedFamilies": ["systemSmall", "systemMedium"],
+              "name": "BetweenUs",
+              "displayName": "Между нами",
+              "description": "Время вместе, настроение, ближайший план и последняя запись дневника — по размеру виджета.",
+              "supportedFamilies": ["systemSmall", "systemMedium", "systemLarge"],
               "contentMarginsDisabled": false
             }
           ]
