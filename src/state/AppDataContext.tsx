@@ -4,7 +4,8 @@ import type { AboutItem, Agreement, AppearanceSettings, AppSnapshot, ChatMessage
 import { memberName, moodLabels } from "@/domain/labels";
 import { relationshipDuration } from "@/domain/relationshipDuration";
 import { BackendError } from "@/services/backendClient";
-import { entryPayload, syncRepository, type EntryKind, type RemoteEntry, type RemotePairData } from "@/services/syncRepository";
+import { entryPayload, isNetworkError, syncRepository, type EntryKind, type RemoteEntry, type RemotePairData } from "@/services/syncRepository";
+import { offlineQueue, type NewQueuedOperation } from "@/services/offlineQueue";
 import { useAuth } from "@/state/AuthContext";
 import { usePair } from "@/state/PairContext";
 import { pushBetweenUsSnapshot } from "@/widgets/BetweenUsWidget";
@@ -24,6 +25,8 @@ interface AppDataValue {
   usePartnerBackground: boolean;
   effectiveAppearance: AppearanceSettings;
   appearanceSyncError: string | null;
+  pendingSyncCount: number;
+  syncConflictMessage: string | null;
   setUsePartnerBackground: (value: boolean) => void;
   setCurrentMood: (mood: Mood) => void;
   addPlan: (input: EditablePlan) => void;
@@ -83,6 +86,12 @@ function pairSnapshot(pair: NonNullable<ReturnType<typeof usePair>["pair"]>, cur
   };
 }
 
+async function resolvePayloadImage(token: string, payload: Record<string, unknown>) {
+  const imageUri = typeof payload.imageUri === "string" ? payload.imageUri : "";
+  if (!imageUri || imageUri.startsWith("media:")) return payload;
+  return { ...payload, imageUri: await syncRepository.uploadImage(token, imageUri) };
+}
+
 function domainEntry(entry: RemoteEntry) {
   return { ...entry.payload, id: entry.id, authorId: entry.authorId, createdAt: entry.createdAt, updatedAt: entry.updatedAt };
 }
@@ -119,6 +128,8 @@ export function AppDataProvider({ children }: PropsWithChildren) {
   const [partnerAppearance, setPartnerAppearance] = useState<AppearanceSettings | null>(null);
   const [usePartnerBackground, setUsePartnerBackgroundState] = useState(false);
   const [appearanceSyncError, setAppearanceSyncError] = useState<string | null>(null);
+  const [pendingSyncCount, setPendingSyncCount] = useState(0);
+  const [syncConflictMessage, setSyncConflictMessage] = useState<string | null>(null);
   const identityRef = useRef<string | null>(null);
 
   const withToken = useCallback(async <T,>(operation: (token: string) => Promise<T>) => {
@@ -153,6 +164,8 @@ export function AppDataProvider({ children }: PropsWithChildren) {
       setSnapshot(blankSnapshot);
       setPartnerAppearance(null);
       setUsePartnerBackgroundState(false);
+      setPendingSyncCount(0);
+      setSyncConflictMessage(null);
       setIsHydrated(true);
       return;
     }
@@ -160,11 +173,13 @@ export function AppDataProvider({ children }: PropsWithChildren) {
     setSnapshot(pairSnapshot(pair, user.id));
     void (async () => {
       try {
-        const [cached, appearance, usePartner] = await Promise.all([
+        const [cached, appearance, usePartner, queuedCount] = await Promise.all([
           syncRepository.readCache(user.id, pair.id).catch(() => null),
           syncRepository.readAppearance(user.id).catch(() => null),
           syncRepository.readUsePartnerBackground(user.id).catch(() => false),
+          offlineQueue.count(user.id, pair.id).catch(() => 0),
         ]);
+        setPendingSyncCount(queuedCount);
         if (!active || identityRef.current !== identity) return;
         const local = cached && cached.currentMemberId === user.id ? cached : pairSnapshot(pair, user.id);
         const base = pairSnapshot(pair, user.id, appearance ?? local.appearance);
@@ -208,10 +223,10 @@ export function AppDataProvider({ children }: PropsWithChildren) {
   }, [isHydrated, pair, snapshot.appearance, user, withToken]);
 
   useEffect(() => {
-    if (!pair || !user) return;
-    const timer = setInterval(() => { void reloadRemote().catch(() => undefined); }, 10_000);
-    return () => clearInterval(timer);
-  }, [pair, reloadRemote, user]);
+    if (!syncConflictMessage) return;
+    const timer = setTimeout(() => setSyncConflictMessage(null), 8_000);
+    return () => clearTimeout(timer);
+  }, [syncConflictMessage]);
 
   useEffect(() => {
     if (Platform.OS !== "ios" || !isHydrated) return;
@@ -243,11 +258,60 @@ export function AppDataProvider({ children }: PropsWithChildren) {
     if (user) void syncRepository.writeUsePartnerBackground(user.id, value).catch(() => undefined);
   }, [user]);
 
-  const uploadPayloadImage = useCallback(async (token: string, payload: Record<string, unknown>) => {
-    const imageUri = typeof payload.imageUri === "string" ? payload.imageUri : "";
-    if (!imageUri || imageUri.startsWith("media:")) return payload;
-    return { ...payload, imageUri: await syncRepository.uploadImage(token, imageUri) };
-  }, []);
+  const uploadPayloadImage = useCallback(resolvePayloadImage, []);
+
+  const flushQueue = useCallback(async () => {
+    if (!user || !pair) return;
+    const queue = await offlineQueue.readQueue(user.id, pair.id);
+    if (!queue.length) { setPendingSyncCount(0); return; }
+    let conflicted = false;
+    for (const op of queue) {
+      try {
+        if (op.type === "createEntry") {
+          await withToken(async (token) => syncRepository.createEntry(token, op.kind, await resolvePayloadImage(token, op.payload)));
+        } else if (op.type === "updateEntry") {
+          await withToken(async (token) => syncRepository.updateEntry(token, op.entryId, await resolvePayloadImage(token, op.payload)));
+        } else if (op.type === "deleteEntry") {
+          await withToken((token) => syncRepository.deleteEntry(token, op.entryId));
+        } else if (op.type === "setMood") {
+          await withToken((token) => syncRepository.putMood(token, op.mood));
+        } else if (op.type === "sendChat") {
+          await withToken((token) => syncRepository.postChatMessage(token, op.content));
+        }
+        await offlineQueue.dequeue(user.id, pair.id, op.id);
+      } catch (error) {
+        if (isNetworkError(error)) break;
+        // A real rejection (the partner changed/removed the same entry while we were
+        // offline, etc.) can't be replayed as-is — drop it and pull fresh state instead
+        // of retrying forever or silently overwriting what they did.
+        await offlineQueue.dequeue(user.id, pair.id, op.id);
+        conflicted = true;
+      }
+    }
+    setPendingSyncCount(await offlineQueue.count(user.id, pair.id));
+    if (conflicted) {
+      setSyncConflictMessage("Часть изменений, сделанных офлайн, не удалось применить — партнёр изменил те же записи. Обновляем данные.");
+      void reloadRemote().catch(() => undefined);
+    }
+  }, [pair, reloadRemote, user, withToken]);
+
+  useEffect(() => {
+    if (!pair || !user) return;
+    const timer = setInterval(() => { void flushQueue().then(() => reloadRemote()).catch(() => undefined); }, 10_000);
+    return () => clearInterval(timer);
+  }, [flushQueue, pair, reloadRemote, user]);
+
+  // A failed mutation is either a real server rejection (reconcile: pull the truth and
+  // let the optimistic edit be corrected/reverted) or a network failure (queue it — the
+  // optimistic local state already reflects the edit, so there's nothing to revert; the
+  // 10s tick above will replay it once connectivity returns).
+  const handleMutationFailure = useCallback((error: unknown, op: NewQueuedOperation) => {
+    if (isNetworkError(error) && user && pair) {
+      void offlineQueue.enqueue(user.id, pair.id, op).then(() => offlineQueue.count(user.id, pair.id)).then(setPendingSyncCount);
+      return;
+    }
+    reconcile();
+  }, [pair, reconcile, user]);
 
   const createEntry = useCallback((kind: EntryKind, optimistic: Record<string, unknown>) => {
     const key = collectionByKind[kind];
@@ -262,8 +326,8 @@ export function AppDataProvider({ children }: PropsWithChildren) {
         if (items.some((item) => item.id === remote.id)) return current;
         return { ...current, [key]: items.some((item) => item.id === localId) ? items.map((item) => item.id === localId ? stored : item) : [stored, ...items] };
       });
-    }).catch(reconcile);
-  }, [reconcile, uploadPayloadImage, withToken]);
+    }).catch((error) => handleMutationFailure(error, { type: "createEntry", kind, localId, payload: entryPayload(optimistic) }));
+  }, [handleMutationFailure, uploadPayloadImage, withToken]);
 
   const updateEntry = useCallback((kind: EntryKind, id: string, optimistic: Record<string, unknown>) => {
     const key = collectionByKind[kind];
@@ -281,8 +345,8 @@ export function AppDataProvider({ children }: PropsWithChildren) {
       if (identityRef.current !== identity) return;
       const stored = domainEntry(remote);
       setSnapshot((current) => ({ ...current, [key]: (current[key] as unknown as Array<{ id: string }>).map((item) => item.id === id ? stored : item) }));
-    }).catch(reconcile);
-  }, [reconcile, snapshot, uploadPayloadImage, withToken]);
+    }).catch((error) => handleMutationFailure(error, { type: "updateEntry", entryId: id, payload: entryPayload(optimistic) }));
+  }, [handleMutationFailure, snapshot, uploadPayloadImage, withToken]);
 
   const deleteEntry = useCallback((kind: EntryKind, id: string) => {
     const key = collectionByKind[kind];
@@ -291,8 +355,8 @@ export function AppDataProvider({ children }: PropsWithChildren) {
     void withToken(async (token) => {
       await syncRepository.deleteEntry(token, id);
       if (removed?.imageUri?.startsWith("media:")) await syncRepository.deleteMedia(token, removed.imageUri).catch(() => undefined);
-    }).catch(reconcile);
-  }, [reconcile, snapshot, withToken]);
+    }).catch((error) => handleMutationFailure(error, { type: "deleteEntry", entryId: id }));
+  }, [handleMutationFailure, snapshot, withToken]);
 
   const value = useMemo<AppDataValue>(() => {
     const now = () => new Date().toISOString();
@@ -303,11 +367,13 @@ export function AppDataProvider({ children }: PropsWithChildren) {
       usePartnerBackground,
       effectiveAppearance: usePartnerBackground && partnerAppearance ? partnerAppearance : snapshot.appearance,
       appearanceSyncError,
+      pendingSyncCount,
+      syncConflictMessage,
       setUsePartnerBackground,
       setCurrentMood: (mood) => {
         const updatedAt = now();
         setSnapshot((current) => ({ ...current, moods: { ...current.moods, [current.currentMemberId]: { memberId: current.currentMemberId, mood, updatedAt } } }));
-        void withToken((token) => syncRepository.putMood(token, mood)).catch(reconcile);
+        void withToken((token) => syncRepository.putMood(token, mood)).catch((error) => handleMutationFailure(error, { type: "setMood", mood }));
       },
       addPlan: (input) => createEntry("plan", { ...input, id: makeId("plan"), authorId: snapshot.currentMemberId, createdAt: now(), updatedAt: now() }),
       updatePlan: (id, input) => { const item = snapshot.plans.find((value) => value.id === id); if (item) updateEntry("plan", id, { ...item, ...input, updatedAt: now() }); },
@@ -335,13 +401,13 @@ export function AppDataProvider({ children }: PropsWithChildren) {
         void withToken((token) => syncRepository.postChatMessage(token, content)).then((message) => {
           if (identityRef.current !== identity) return;
           setSnapshot((current) => ({ ...current, chat: current.chat.map((item) => item.id === localId ? { id: message.id, author: message.authorId, content: message.content, createdAt: message.createdAt } : item) }));
-        }).catch(reconcile);
+        }).catch((error) => handleMutationFailure(error, { type: "sendChat", localId, content }));
       },
       setBackgroundColor: (color, luminance) => setSnapshot((current) => ({ ...current, appearance: { backgroundKind: "color", backgroundValue: color, backgroundLuminance: luminance } })),
       setBackgroundImage: (uri, luminance) => setSnapshot((current) => ({ ...current, appearance: { backgroundKind: "image", backgroundValue: uri, backgroundLuminance: luminance } })),
       resetBackground: () => setSnapshot((current) => ({ ...current, appearance: { backgroundKind: "default", backgroundValue: null, backgroundLuminance: 0.95 } })),
     };
-  }, [appearanceSyncError, createEntry, deleteEntry, isHydrated, partnerAppearance, reconcile, setUsePartnerBackground, snapshot, updateEntry, usePartnerBackground, withToken]);
+  }, [appearanceSyncError, createEntry, deleteEntry, handleMutationFailure, isHydrated, partnerAppearance, pendingSyncCount, setUsePartnerBackground, snapshot, syncConflictMessage, updateEntry, usePartnerBackground, withToken]);
 
   return <AppDataContext.Provider value={value}>{children}</AppDataContext.Provider>;
 }

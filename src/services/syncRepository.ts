@@ -75,6 +75,15 @@ async function request<T>(path: string, token: string, init: RequestInit = {}): 
   }
 }
 
+// A BackendError means the server actually answered — we're online, and the request was
+// rejected for a real reason (bad input, conflict, gone). Anything else (fetch's own
+// TypeError, our own 408-timeout wrapper above) means the request never got a real answer,
+// which is the signal to queue-and-retry instead of surfacing/discarding the change.
+export function isNetworkError(error: unknown): boolean {
+  if (error instanceof BackendError) return error.status === 408;
+  return true;
+}
+
 async function fetchPages<T>(path: string, token: string): Promise<T[]> {
   const result: T[] = [];
   let before: string | null = null;
@@ -99,14 +108,14 @@ function usePartnerBackgroundKey(userId: string) {
   return `between-us.usePartnerBackground.v1:${userId}`;
 }
 
-type KvStore = { getItemAsync: (key: string) => Promise<string | null>; setItemAsync: (key: string, value: string) => Promise<void> };
+export type KvStore = { getItemAsync: (key: string) => Promise<string | null>; setItemAsync: (key: string, value: string) => Promise<void> };
 let kvStorePromise: Promise<KvStore | null> | null = null;
 
 // expo-sqlite is a native module: an app binary built before it was added does not have it
 // compiled in, and OTA can still ship JS that references it (same runtimeVersion). Loading it
 // lazily and swallowing the failure keeps the app usable (without local cache) instead of a
 // hard crash on launch. See docs/CLAUDE_HANDOFF.md native-dependency note.
-function getKvStore(): Promise<KvStore | null> {
+export function getKvStore(): Promise<KvStore | null> {
   if (!kvStorePromise) {
     kvStorePromise = import("expo-sqlite/kv-store")
       .then((module) => (module.default ?? module) as unknown as KvStore)

@@ -11,6 +11,7 @@ import { colors, controlShadow, radius, spacing } from "@/theme/tokens";
 
 const sections = [
   { icon: "person-circle-outline", title: "Аккаунт и пара", subtitle: "Профиль и синхронизация", href: "/account" },
+  { icon: "search-outline", title: "Поиск", subtitle: "По всем общим записям", href: "/search" },
   { icon: "notifications-outline", title: "Уведомления", subtitle: "Категории и тихие часы", href: "/notifications" },
   { icon: "color-palette-outline", title: "Фон и контраст", subtitle: "Персональное оформление", href: "/appearance" },
   { icon: "time-outline", title: "Наша история", subtitle: "Памятные события", href: "/memories" },

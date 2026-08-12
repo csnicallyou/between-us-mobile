@@ -8,6 +8,7 @@ import type { Pool } from "pg";
 import type { AppConfig } from "./config.js";
 import { HttpError } from "./lib/http.js";
 import { createMailer } from "./lib/mailer.js";
+import { startReminderScheduler } from "./lib/reminders.js";
 import { registerAuthRoutes } from "./routes/auth.js";
 import { registerUserRoutes } from "./routes/users.js";
 import { registerPairRoutes } from "./routes/pairs.js";
@@ -74,6 +75,7 @@ export function buildApp(config: AppConfig, db: Pool) {
     reply.code(status).send({ error: { code, message: error instanceof HttpError ? error.message : status === 429 ? "Too many requests" : status < 500 ? "Invalid request" : "Internal server error" } });
   });
 
-  app.addHook("onClose", async () => db.end());
+  const stopReminders = config.NODE_ENV === "test" ? null : startReminderScheduler(db, app);
+  app.addHook("onClose", async () => { stopReminders?.(); await db.end(); });
   return app;
 }
