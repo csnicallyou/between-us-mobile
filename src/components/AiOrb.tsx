@@ -8,7 +8,7 @@ interface AiOrbProps {
   active?: boolean;
 }
 
-const NODE_COUNT = 16;
+const NODE_COUNT = 30;
 /** Кадров на один оборот. Интерполяция периодическая, шов не виден. */
 const SAMPLES = 36;
 const PALETTE = ["#FFFFFF", "#FFFFFF", "#EDEAF2", "#221E2A", "#221E2A", "#3B3644"] as const;
@@ -94,7 +94,7 @@ export function AiOrb({ active = false, size = 62 }: AiOrbProps) {
   }, [breath, phase]);
 
   const radius = size / 2;
-  const dot = Math.max(2.4, size * 0.055);
+  const dot = Math.max(1.35, size * 0.031);
 
   const nodes = useMemo(
     () =>

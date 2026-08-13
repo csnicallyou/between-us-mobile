@@ -7,7 +7,7 @@ import { privateImageSource } from "@/services/backendClient";
 import { useAppData } from "@/state/AppDataContext";
 import { useAuth } from "@/state/AuthContext";
 import { paletteForLuminance } from "@/theme/adaptivePalette";
-import { colors, spacing } from "@/theme/tokens";
+import { colors, spacing, typography } from "@/theme/tokens";
 
 interface ScreenProps extends PropsWithChildren {
   header?: ReactNode;
@@ -55,9 +55,9 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: "#F4F1F6" },
   ambient: { bottom: 0, left: 0, overflow: "hidden", position: "absolute", right: 0, top: 0 },
   scrollContent: { flexGrow: 1 },
-  content: { flex: 1, paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: 120 },
+  content: { flex: 1, paddingHorizontal: 20, paddingTop: spacing.xs, paddingBottom: 120 },
   loading: { alignItems: "center", justifyContent: "center" },
   banner: { backgroundColor: colors.sunSoft, borderRadius: 12, marginBottom: spacing.md, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
   bannerConflict: { backgroundColor: colors.coralSoft },
-  bannerText: { color: colors.ink, fontSize: 12, fontWeight: "600" },
+  bannerText: { color: colors.ink, fontFamily: typography.body, fontSize: 12, fontWeight: "600" },
 });

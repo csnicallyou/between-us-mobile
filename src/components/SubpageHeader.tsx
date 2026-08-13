@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { fill, ink, materialSpacing, rim } from "@/theme/material";
+import { fill, ink, materialSpacing, materialType, rim } from "@/theme/material";
 import { useAppData } from "@/state/AppDataContext";
 import { paletteForLuminance } from "@/theme/adaptivePalette";
 
@@ -51,7 +51,7 @@ const styles = StyleSheet.create({
     width: 38,
   },
   headings: { flex: 1 },
-  kicker: { color: ink.faint, fontSize: 10, fontWeight: "600", letterSpacing: 1.5, marginBottom: 4, textTransform: "uppercase" },
-  title: { color: ink.strong, fontSize: 25, fontWeight: "600", letterSpacing: -0.8 },
-  subtitle: { color: ink.muted, fontSize: 13.5, lineHeight: 20, marginTop: 12 },
+  kicker: { color: ink.faint, marginBottom: 4, ...materialType.kicker },
+  title: { color: ink.strong, ...materialType.title, fontSize: 25 },
+  subtitle: { color: ink.muted, marginTop: 12, ...materialType.body },
 });

@@ -7,7 +7,8 @@ import { SubpageHeader } from "@/components/SubpageHeader";
 import { Surface } from "@/components/Surface";
 import { backendClient, type ExportRequestDto } from "@/services/backendClient";
 import { useAuth } from "@/state/AuthContext";
-import { colors, spacing } from "@/theme/tokens";
+import { ink, materialSpacing, materialType } from "@/theme/material";
+import { colors } from "@/theme/tokens";
 
 export default function DataExportScreen() {
   const { accessToken } = useAuth();
@@ -56,11 +57,11 @@ export default function DataExportScreen() {
   });
 
   if (request === undefined) {
-    return <Screen header={<SubpageHeader title="Экспорт данных" subtitle="Выгрузка общих записей требует согласия обоих." />}><ActivityIndicator color={colors.sea} /></Screen>;
+    return <Screen header={<SubpageHeader kicker="Приложение" title="Экспорт данных" subtitle="Выгрузка общих записей требует согласия обоих." />}><ActivityIndicator color={colors.sea} /></Screen>;
   }
 
   return (
-    <Screen header={<SubpageHeader title="Экспорт данных" subtitle="Выгрузка общих записей требует согласия обоих." />}>
+    <Screen header={<SubpageHeader kicker="Приложение" title="Экспорт данных" subtitle="Выгрузка общих записей требует согласия обоих." />}>
       <Surface style={styles.section}>
         <Text style={styles.body}>
           Экспорт включает планы, дневник, памятные события, договорённости, чат и настроения — всё общее пространство пары.
@@ -94,8 +95,8 @@ export default function DataExportScreen() {
 }
 
 const styles = StyleSheet.create({
-  section: { gap: spacing.md },
-  body: { color: colors.muted, fontSize: 14, lineHeight: 21 },
-  status: { color: colors.ink, fontSize: 15, fontWeight: "600" },
-  error: { color: colors.danger, fontSize: 13, lineHeight: 18 },
+  section: { gap: materialSpacing.md },
+  body: { color: ink.muted, ...materialType.body, fontSize: 14 },
+  status: { color: ink.strong, fontFamily: "GolosText", fontSize: 15, fontWeight: "600" },
+  error: { color: colors.danger, ...materialType.body },
 });

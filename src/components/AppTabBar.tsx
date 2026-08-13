@@ -5,7 +5,7 @@ import { useRouter, usePathname } from "expo-router";
 import type { Href } from "expo-router";
 import { AiOrb } from "@/components/AiOrb";
 import { GlassPanel } from "@/components/GlassPanel";
-import { fill, ink, materialRadius, rim } from "@/theme/material";
+import { fill, ink, materialRadius, materialType, rim } from "@/theme/material";
 
 type IconName = keyof typeof Ionicons.glyphMap;
 
@@ -102,7 +102,7 @@ const styles = StyleSheet.create({
   row: { alignItems: "center", flex: 1, flexDirection: "row" },
   tab: { alignItems: "center", borderRadius: 19, flex: 1, gap: 3, height: 52, justifyContent: "center" },
   tabActive: { backgroundColor: fill.selected, borderColor: rim.hair, borderWidth: StyleSheet.hairlineWidth },
-  label: { color: ink.faint, fontSize: 9.5, fontWeight: "500" },
+  label: { color: ink.faint, fontFamily: materialType.label.fontFamily, fontSize: 9.5, fontWeight: "500" },
   labelActive: { color: ink.strong },
   core: { alignItems: "center", height: 62, justifyContent: "center", marginHorizontal: 4, transform: [{ translateY: -7 }], width: 62 },
 });
