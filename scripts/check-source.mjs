@@ -51,4 +51,32 @@ if (nativeGlassLayer.includes("@expo/ui/swift-ui")) {
   throw new Error("NativeGlassLayer must not wrap an empty SwiftUI shape");
 }
 
+const rootLayout = await readFile(new URL("src/app/_layout.tsx", root), "utf8");
+const pairGuardStart = rootLayout.indexOf('<Stack.Protected guard={isAuthenticated && pairReady}>');
+const pairGuardEnd = rootLayout.indexOf("</Stack.Protected>", pairGuardStart);
+if (pairGuardStart === -1 || pairGuardEnd === -1) {
+  throw new Error("The authenticated pair route guard is missing");
+}
+const pairGuard = rootLayout.slice(pairGuardStart, pairGuardEnd);
+const pairProtectedScreens = [
+  "about",
+  "account",
+  "agreements",
+  "ai",
+  "appearance",
+  "chat",
+  "conflicts",
+  "data-export",
+  "memories",
+  "notifications",
+  "quiet",
+  "search",
+  "settings",
+];
+for (const screen of pairProtectedScreens) {
+  if (!pairGuard.includes(`<Stack.Screen name="${screen}" />`)) {
+    throw new Error(`${screen} must remain inside the authenticated pair route guard`);
+  }
+}
+
 console.log(`Source foundation verified: ${sourceFiles.length} TypeScript files`);

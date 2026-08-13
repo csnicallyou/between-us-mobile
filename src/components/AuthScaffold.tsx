@@ -5,6 +5,7 @@ import { StatusBar } from "expo-status-bar";
 import { AmbientBackground } from "@/components/AmbientBackground";
 import { GlassPanel } from "@/components/GlassPanel";
 import { ink, materialRadius, materialSpacing, rim } from "@/theme/material";
+import { typography } from "@/theme/tokens";
 
 interface AuthScaffoldProps extends PropsWithChildren {
   title: string;
@@ -69,9 +70,9 @@ const styles = StyleSheet.create({
   },
   markLeft: { left: 0 },
   markRight: { right: 0 },
-  kicker: { color: ink.faint, fontSize: 10, fontWeight: "600", letterSpacing: 1.9, textAlign: "center", textTransform: "uppercase" },
-  title: { color: ink.strong, fontSize: 28, fontWeight: "600", letterSpacing: -0.9, lineHeight: 33, marginTop: 9, textAlign: "center" },
-  subtitle: { color: ink.muted, fontSize: 14.5, lineHeight: 21, marginTop: 11, textAlign: "center" },
+  kicker: { color: ink.faint, fontFamily: typography.body, fontSize: 10, letterSpacing: 1.9, textAlign: "center", textTransform: "uppercase" },
+  title: { color: ink.strong, fontFamily: typography.display, fontSize: 28, letterSpacing: -0.9, lineHeight: 33, marginTop: 9, textAlign: "center" },
+  subtitle: { color: ink.muted, fontFamily: typography.body, fontSize: 14.5, lineHeight: 21, marginTop: 11, textAlign: "center" },
   card: { gap: materialSpacing.md, marginTop: 26, padding: 18 },
   cardBody: { gap: materialSpacing.md },
   steps: { alignItems: "center", flexDirection: "row", gap: 6, justifyContent: "center", marginTop: materialSpacing.xl },

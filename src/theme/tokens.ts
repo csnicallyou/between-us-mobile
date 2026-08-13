@@ -38,8 +38,8 @@ export const radius = {
 } as const;
 
 export const typography = {
-  display: Platform.select({ ios: "System", android: "sans-serif", default: "sans-serif" }),
-  body: Platform.select({ ios: "System", android: "sans-serif", default: "sans-serif" }),
+  display: "GolosText",
+  body: "GolosText",
 } as const;
 
 export const shadow = Platform.select({
