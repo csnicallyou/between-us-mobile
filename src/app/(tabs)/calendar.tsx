@@ -63,7 +63,7 @@ export default function CalendarScreen() {
         <RoundButton dark icon="add-outline" label="Добавить план" onPress={() => router.push("/(tabs)/entries?filter=plans" as Href)} />
       </View>
 
-      <V2Glass radius={30} style={styles.monthCard}>
+      <V2Glass depth="pronounced" nativeApple radius={30} style={styles.monthCard}>
         <View style={styles.monthHeader}>
           <RoundButton compact icon="chevron-back" label="Предыдущий месяц" onPress={() => moveMonth(-1)} />
           <Text style={styles.monthName}>{new Intl.DateTimeFormat("ru-RU", { month: "long", year: "numeric" }).format(cursor).replace(" г.", "")}</Text>
@@ -90,7 +90,7 @@ export default function CalendarScreen() {
       </V2Glass>
 
       <View style={styles.agendaHeader}><Text style={styles.agendaDate}>{new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long" }).format(selectedDate)}</Text><Text style={styles.agendaDay}>{new Intl.DateTimeFormat("ru-RU", { weekday: "long" }).format(selectedDate)}</Text></View>
-      <View style={styles.agendaItems}>{selectedItems.length ? selectedItems.map((item) => <Pressable key={item.id} onPress={() => router.push(item.source === "plan" ? "/(tabs)/entries?filter=plans" as Href : "/memories" as Href)}><V2Glass radius={22} style={styles.agendaItem}><View style={[styles.itemBar, item.source === "plan" ? styles.planBar : styles.memoryBar]} /><View style={styles.itemCopy}><Text style={styles.itemMeta}>{item.source === "plan" ? `План · ${item.meta}` : item.meta}</Text><Text style={styles.itemTitle}>{item.title}</Text></View><Ionicons color={colors.faint} name="chevron-forward" size={16} /></V2Glass></Pressable>) : <V2Glass radius={22} style={styles.empty}><Text style={styles.emptyText}>На этот день пока ничего не добавлено.</Text></V2Glass>}</View>
+      <View style={styles.agendaItems}>{selectedItems.length ? selectedItems.map((item) => <Pressable key={item.id} onPress={() => router.push(item.source === "plan" ? "/(tabs)/entries?filter=plans" as Href : "/memories" as Href)}><V2Glass depth="pronounced" nativeApple radius={22} style={styles.agendaItem}><View style={[styles.itemBar, item.source === "plan" ? styles.planBar : styles.memoryBar]} /><View style={styles.itemCopy}><Text style={styles.itemMeta}>{item.source === "plan" ? `План · ${item.meta}` : item.meta}</Text><Text style={styles.itemTitle}>{item.title}</Text></View><Ionicons color={colors.faint} name="chevron-forward" size={16} /></V2Glass></Pressable>) : <V2Glass depth="pronounced" nativeApple radius={22} style={styles.empty}><Text style={styles.emptyText}>На этот день пока ничего не добавлено.</Text></V2Glass>}</View>
     </V2Screen>
   );
 }

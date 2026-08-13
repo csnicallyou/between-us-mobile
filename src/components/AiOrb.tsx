@@ -16,8 +16,8 @@ interface NodePoint {
   color: string;
 }
 
-const NODE_COUNT = 16;
-const LINK_DISTANCE = 0.82;
+const NODE_COUNT = 28;
+const LINK_DISTANCE = 0.58;
 const PALETTE = ["#FFFFFF", "#FFFFFF", "#EDEAF2", "#221E2A", "#221E2A", "#3B3644"] as const;
 
 function createNetwork() {
@@ -38,7 +38,7 @@ function createNetwork() {
       x: radius * side * Math.cos(theta),
       y: radius * side * Math.sin(theta),
       z,
-      radius: 1.05 + 1.85 * depth,
+      radius: 0.58 + 1.12 * depth,
       color: PALETTE[index % PALETTE.length]!,
     };
   });

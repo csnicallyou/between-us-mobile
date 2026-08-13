@@ -90,7 +90,7 @@ export function PairSetupScreen({ initialSecret = "" }: { initialSecret?: string
     );
   }
 
-  if (!user?.emailVerified) {
+  if (!user?.emailVerified && !__DEV__) {
     return <AuthScaffold step={1} subtitle="Прежде чем создать или присоединиться к паре, подтвердите почту." title="Почти готово"><EmailVerificationPanel /></AuthScaffold>;
   }
 
