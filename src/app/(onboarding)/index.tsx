@@ -158,12 +158,12 @@ export default function PairSetupRoute() {
 
 const styles = StyleSheet.create({
   group: { gap: spacing.md },
-  input: { backgroundColor: colors.surfaceStrong, borderColor: colors.line, borderRadius: radius.md, borderWidth: 1, color: colors.ink, fontSize: 16, minHeight: 52, paddingHorizontal: spacing.lg },
+  input: { backgroundColor: "rgba(255,255,255,0.30)", borderColor: "rgba(255,255,255,0.46)", borderRadius: 16, borderWidth: StyleSheet.hairlineWidth, color: "rgba(33,30,41,0.94)", fontSize: 15, minHeight: 50, paddingHorizontal: 15 },
   inviteInput: { minHeight: 82, paddingTop: spacing.lg, textAlignVertical: "top" },
-  label: { color: colors.ink, fontSize: 13, fontWeight: "700" },
-  dateButton: { alignItems: "center", backgroundColor: colors.surfaceStrong, borderColor: colors.line, borderRadius: radius.md, borderWidth: 1, flexDirection: "row", justifyContent: "space-between", minHeight: 52, paddingHorizontal: spacing.lg },
-  dateText: { color: colors.ink, fontSize: 16 },
+  label: { color: "rgba(33,30,41,0.94)", fontSize: 12.5, fontWeight: "600" },
+  dateButton: { alignItems: "center", backgroundColor: "rgba(255,255,255,0.30)", borderColor: "rgba(255,255,255,0.46)", borderRadius: 16, borderWidth: StyleSheet.hairlineWidth, flexDirection: "row", justifyContent: "space-between", minHeight: 50, paddingHorizontal: 15 },
+  dateText: { color: "rgba(33,30,41,0.94)", fontSize: 15 },
   error: { color: colors.danger, fontSize: 13, lineHeight: 18 },
-  back: { color: colors.sea, fontSize: 14, fontWeight: "600", paddingVertical: spacing.sm, textAlign: "center" },
-  memberNames: { color: colors.ink, fontSize: 20, fontWeight: "700", textAlign: "center" },
+  back: { color: "rgba(33,30,41,0.60)", fontSize: 14, fontWeight: "600", paddingVertical: spacing.sm, textAlign: "center" },
+  memberNames: { color: "rgba(33,30,41,0.94)", fontSize: 18, fontWeight: "600", textAlign: "center" },
 });
