@@ -1,0 +1,626 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Между нами — Записи</title>
+<link rel="stylesheet" href="light.css">
+<style>
+html,body{width:390px}
+body{font-family:'GolosText',system-ui,sans-serif}
+
+.sheet{position:absolute;left:0;top:0;width:390px;padding:52px 20px 0;z-index:2}
+
+/* ---- шапка ---- */
+.top{display:flex;align-items:flex-start;gap:12px}
+.top__copy{flex:1}
+.h1{font-size:29px;font-weight:600;letter-spacing:-.032em;color:var(--t1);margin-top:7px}
+.tool{
+  position:relative;width:40px;height:40px;border-radius:20px;flex:none;margin-top:5px;
+  display:flex;align-items:center;justify-content:center;color:var(--t1);
+  backdrop-filter:blur(9px) saturate(185%) brightness(1.03);
+  -webkit-backdrop-filter:blur(9px) saturate(185%) brightness(1.03);
+  background:rgba(255,255,255,.12);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.95), inset 0 0 0 .5px rgba(40,30,62,.07), 0 2px 6px -2px rgba(60,50,84,.14);
+}
+.tool svg{width:19px;height:19px}
+.kicker{font-size:10px;font-weight:640;letter-spacing:.15em;text-transform:uppercase;color:var(--t3)}
+
+/* ---- фильтр ---- */
+.toolrow{display:flex;align-items:center;gap:9px;margin-top:18px}
+.filter{--r:21px;position:relative;height:42px;padding:4px;flex:1}
+.filter .glass__body{display:flex;gap:2px;height:100%;width:100%}
+.fseg{
+  flex:1;min-width:0;border-radius:17px;
+  display:flex;align-items:center;justify-content:center;
+  white-space:nowrap;
+  font-size:12.5px;font-weight:530;letter-spacing:-.012em;color:var(--t2);
+}
+.fseg--on{
+  color:var(--t1);background:rgba(255,255,255,.22);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,1), inset 0 0 0 .5px rgba(40,30,62,.05), 0 2px 6px -2px rgba(60,50,84,.18);
+}
+.add{
+  width:42px;height:42px;border-radius:21px;flex:none;
+  display:flex;align-items:center;justify-content:center;color:#FFF;
+  background:linear-gradient(168deg,var(--anchor-hi) 0%,var(--anchor-lo) 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.20), 0 1px 2px rgba(38,32,50,.24), 0 8px 18px -10px rgba(38,32,50,.5);
+}
+.add svg{width:19px;height:19px}
+
+.blk{position:relative}
+.chips{display:flex;gap:6px;margin-top:12px;flex-wrap:wrap;align-items:center}
+.chip{
+  height:25px;padding:0 10px;border-radius:12.5px;
+  display:flex;align-items:center;gap:6px;
+  font-size:11.5px;font-weight:520;letter-spacing:-.008em;color:var(--t2);
+  background:rgba(255,255,255,.14);
+  box-shadow:inset 0 0 0 .5px rgba(40,30,62,.07), inset 0 1px 0 rgba(255,255,255,.85);
+}
+.chip--on{color:var(--t1);background:rgba(255,255,255,.28)}
+.chip i{width:6px;height:6px;border-radius:50%;background:currentColor;flex:none}
+.chip--muted{margin-left:auto;color:var(--t3);background:transparent;box-shadow:none;padding:0}
+
+/* ================= ВИД 1: ВСЁ — ТАЙМЛАЙН ================= */
+.rail{position:relative;padding-left:42px;margin-top:6px}
+.rail__line{position:absolute;left:9px;top:14px;bottom:14px;width:1px;background:rgba(33,30,41,.14)}
+.tl__label{
+  position:relative;margin:20px 0 11px;
+  font-size:10px;font-weight:640;letter-spacing:.16em;text-transform:uppercase;color:var(--t3);
+}
+.tl__label:first-child{margin-top:4px}
+.node{
+  position:absolute;left:-37.5px;top:50%;transform:translateY(-50%);
+  width:10px;height:10px;border-radius:50%;
+  background:rgba(255,255,255,.92);
+  box-shadow:0 0 0 3.5px rgba(255,255,255,.42), inset 0 0 0 .5px rgba(40,30,62,.22);
+}
+.node--now{background:var(--anchor-lo);box-shadow:0 0 0 3.5px rgba(255,255,255,.5)}
+.tl__item + .tl__item{margin-top:11px}
+
+.note{--r:24px;padding:15px 16px}
+.note__head{display:flex;align-items:center;gap:8px}
+.avatar{
+  width:25px;height:25px;border-radius:12.5px;flex:none;
+  display:flex;align-items:center;justify-content:center;
+  font-size:10.5px;font-weight:640;color:var(--t1);
+  background:rgba(255,255,255,.30);
+  box-shadow:inset 0 0 0 .5px rgba(40,30,62,.08), inset 0 1px 0 rgba(255,255,255,.95);
+}
+.note__title{font-size:17px;font-weight:600;letter-spacing:-.024em;color:var(--t1);margin-top:10px;line-height:1.24}
+.note__text{font-size:12.5px;font-weight:430;color:var(--t2);margin-top:5px;line-height:1.45;letter-spacing:-.006em}
+
+.plan{--r:26px;padding:8px 8px 15px}
+.plan__photo{
+  height:104px;border-radius:19px;overflow:hidden;position:relative;
+  background:url('photo.svg') center/cover no-repeat;
+  box-shadow:inset 0 0 0 .5px rgba(40,30,62,.10);
+}
+.plan__badge{
+  position:absolute;left:10px;top:10px;height:25px;padding:0 12px;border-radius:12.5px;
+  display:flex;align-items:center;white-space:nowrap;
+  font-size:11px;font-weight:560;color:rgba(255,255,255,.98);letter-spacing:-.004em;
+  background:rgba(38,32,48,.42);
+  backdrop-filter:blur(10px) saturate(160%);
+  -webkit-backdrop-filter:blur(10px) saturate(160%);
+  box-shadow:inset 0 0 0 .5px rgba(255,255,255,.24), inset 0 1px 0 rgba(255,255,255,.28);
+}
+.plan__body{padding:13px 10px 0}
+.btitle{font-size:19px;font-weight:600;letter-spacing:-.026em;color:var(--t1);line-height:1.22}
+.btext{font-size:12.5px;font-weight:430;color:var(--t2);margin-top:5px;line-height:1.45}
+
+.pair{display:flex;gap:10px}
+.tile{--r:20px;flex:1;padding:13px 14px}
+.tile__kind{font-size:9.5px;font-weight:640;letter-spacing:.14em;text-transform:uppercase;color:var(--t3)}
+.tile__title{font-size:14.5px;font-weight:600;letter-spacing:-.02em;color:var(--t1);margin-top:8px;line-height:1.28}
+.tile__meta{font-size:10.5px;font-weight:450;color:var(--t3);margin-top:6px}
+
+/* ================= ВИД 2: ПЛАНЫ — ПО СТАТУСАМ ================= */
+.sect{display:flex;align-items:center;gap:9px;margin:22px 2px 10px}
+.sect span{font-size:10px;font-weight:640;letter-spacing:.16em;text-transform:uppercase;color:var(--t3)}
+.sect b{
+  min-width:19px;height:19px;padding:0 6px;border-radius:9.5px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:10.5px;font-weight:620;color:var(--t2);
+  background:rgba(255,255,255,.22);
+  box-shadow:inset 0 0 0 .5px rgba(40,30,62,.07);
+}
+.sect::after{content:'';flex:1;height:1px;background:rgba(33,30,41,.10)}
+.rows{display:flex;flex-direction:column;gap:9px}
+.row{--r:20px;padding:9px;display:flex;gap:12px;align-items:center}
+.row .glass__body{display:flex;gap:12px;align-items:center;width:100%}
+.row__thumb{
+  width:62px;height:62px;border-radius:15px;flex:none;position:relative;
+  background:url('photo.svg') center/cover no-repeat;
+  box-shadow:inset 0 0 0 .5px rgba(40,30,62,.10);
+}
+.row__thumb--empty{
+  background:rgba(255,255,255,.16);
+  display:flex;align-items:center;justify-content:center;color:var(--t3);
+  box-shadow:inset 0 0 0 .5px rgba(40,30,62,.07), inset 0 1px 0 rgba(255,255,255,.8);
+}
+.row__thumb--empty svg{width:21px;height:21px}
+.row__info{flex:1;min-width:0}
+.row__title{font-size:15px;font-weight:600;letter-spacing:-.02em;color:var(--t1);line-height:1.25}
+.row__meta{font-size:11.5px;font-weight:450;color:var(--t2);margin-top:4px;letter-spacing:-.004em}
+.row__tags{display:flex;gap:5px;margin-top:7px}
+.tag{
+  height:20px;padding:0 8px;border-radius:10px;
+  display:flex;align-items:center;gap:5px;
+  font-size:10px;font-weight:530;color:var(--t2);letter-spacing:-.004em;
+  background:rgba(255,255,255,.16);
+  box-shadow:inset 0 0 0 .5px rgba(40,30,62,.06);
+}
+.tag i{width:5px;height:5px;border-radius:50%;background:currentColor}
+.row__go{color:var(--t3);flex:none;padding-right:4px}
+.row__go svg{width:16px;height:16px;display:block}
+.row--done .row__title{color:var(--t2)}
+
+/* карусель запланированного: незацикленная, с подглядыванием следующей */
+.carousel{display:flex;align-items:center;gap:7px;margin-top:2px}
+.carr{
+  width:34px;height:34px;border-radius:17px;flex:none;
+  display:flex;align-items:center;justify-content:center;color:var(--t2);
+  backdrop-filter:blur(9px) saturate(185%) brightness(1.03);
+  -webkit-backdrop-filter:blur(9px) saturate(185%) brightness(1.03);
+  background:rgba(255,255,255,.14);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.95), inset 0 0 0 .5px rgba(40,30,62,.07), 0 2px 6px -2px rgba(60,50,84,.14);
+}
+.carr svg{width:16px;height:16px;display:block}
+.carr--off{opacity:.32}
+.pcard{--r:26px;flex:1;min-width:0;padding:8px 8px 14px}
+.pcard__photo{
+  height:112px;border-radius:19px;overflow:hidden;position:relative;
+  background:center/cover no-repeat;
+  box-shadow:inset 0 0 0 .5px rgba(40,30,62,.10);
+}
+.pcard__photo--a{background-image:url('photo.svg')}
+.pcard__photo--b{background-image:url('photo2.svg')}
+.pcard__photo--none{
+  background:rgba(255,255,255,.16);
+  display:flex;align-items:center;justify-content:center;color:var(--t3);
+  box-shadow:inset 0 0 0 .5px rgba(40,30,62,.07), inset 0 1px 0 rgba(255,255,255,.8);
+}
+.pcard__photo--none svg{width:26px;height:26px}
+.pcard__badge{
+  position:absolute;left:10px;top:10px;height:25px;padding:0 12px;border-radius:12.5px;
+  display:flex;align-items:center;white-space:nowrap;
+  font-size:11px;font-weight:560;color:rgba(255,255,255,.98);letter-spacing:-.004em;
+  background:rgba(38,32,48,.42);
+  backdrop-filter:blur(10px) saturate(160%);
+  -webkit-backdrop-filter:blur(10px) saturate(160%);
+  box-shadow:inset 0 0 0 .5px rgba(255,255,255,.24), inset 0 1px 0 rgba(255,255,255,.28);
+}
+.pcard__badge--plain{
+  background:rgba(255,255,255,.4);color:var(--t1);
+  box-shadow:inset 0 0 0 .5px rgba(40,30,62,.08), inset 0 1px 0 rgba(255,255,255,.95);
+}
+.pcard__body{padding:12px 10px 0}
+.pcard__title{font-size:18px;font-weight:600;letter-spacing:-.026em;color:var(--t1);line-height:1.2}
+.pcard__meta{font-size:12px;font-weight:450;color:var(--t2);margin-top:5px;letter-spacing:-.004em}
+.pcard__tags{display:flex;gap:5px;margin-top:10px}
+
+.dots{display:flex;gap:5px;justify-content:center;align-items:center;margin-top:13px}
+.dots i{width:5px;height:5px;border-radius:50%;background:rgba(33,30,41,.16)}
+.dots i.on{width:17px;border-radius:2.5px;background:rgba(33,30,41,.40)}
+
+/* остаток длинной рабочей группы */
+.more{--r:18px;height:44px;margin-top:9px;display:flex;align-items:center;justify-content:center;gap:8px}
+.more .glass__body{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:100%}
+.more span{font-size:12.5px;font-weight:540;letter-spacing:-.01em;color:var(--t2)}
+.more svg{width:15px;height:15px;color:var(--t3)}
+
+/* архив: свёрнут целиком, со сводкой вместо обрубка */
+.archive{--r:22px;margin-top:22px;padding:15px 17px}
+.archive .glass__body{display:flex;align-items:center;gap:12px;width:100%}
+.archive__icon{
+  width:38px;height:38px;border-radius:12px;flex:none;
+  display:flex;align-items:center;justify-content:center;color:var(--t2);
+  background:rgba(255,255,255,.18);
+  box-shadow:inset 0 0 0 .5px rgba(40,30,62,.07), inset 0 1px 0 rgba(255,255,255,.85);
+}
+.archive__icon svg{width:19px;height:19px}
+.archive__info{flex:1;min-width:0}
+.archive__title{font-size:14.5px;font-weight:620;letter-spacing:-.016em;color:var(--t1)}
+.archive__meta{font-size:11.5px;font-weight:450;color:var(--t3);margin-top:3px}
+.archive__count{
+  min-width:26px;height:24px;padding:0 9px;border-radius:12px;flex:none;
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:620;color:var(--t2);
+  background:rgba(255,255,255,.24);
+  box-shadow:inset 0 0 0 .5px rgba(40,30,62,.07);
+}
+.archive__go{color:var(--t3);flex:none}
+.archive__go svg{width:16px;height:16px;display:block}
+
+/* ================= ВИД 3: ДНЕВНИК — НИТЬ ================= */
+.divider{display:flex;align-items:center;gap:11px;margin:22px 2px 12px}
+.divider::after{content:'';flex:1;height:1px;background:rgba(33,30,41,.10)}
+.divider span{font-size:10px;font-weight:640;letter-spacing:.16em;text-transform:uppercase;color:var(--t3)}
+
+.msg{display:flex;gap:10px;align-items:flex-start;position:relative}
+.msg + .msg{margin-top:11px}
+.msg__av{
+  width:30px;height:30px;border-radius:15px;flex:none;margin-top:3px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:11.5px;font-weight:640;color:var(--t1);
+  background:rgba(255,255,255,.32);
+  box-shadow:inset 0 0 0 .5px rgba(40,30,62,.08), inset 0 1px 0 rgba(255,255,255,.95);
+}
+.bubble{--r:22px;flex:1;padding:14px 16px;position:relative}
+.bubble__head{display:flex;align-items:baseline;gap:8px}
+.bubble__who{font-size:12.5px;font-weight:620;color:var(--t1);letter-spacing:-.012em}
+.bubble__time{font-size:10.5px;font-weight:450;color:var(--t3)}
+.bubble__title{font-size:16.5px;font-weight:600;letter-spacing:-.024em;color:var(--t1);margin-top:8px;line-height:1.25}
+.bubble__text{font-size:12.5px;font-weight:430;color:var(--t2);margin-top:5px;line-height:1.45}
+
+.msg--reply{margin-left:40px}
+.msg--reply::before{
+  content:'';position:absolute;left:-26px;top:-14px;height:33px;width:24px;
+  border-left:1.5px solid rgba(33,30,41,.18);
+  border-bottom:1.5px solid rgba(33,30,41,.18);
+  border-bottom-left-radius:13px;
+}
+
+/* переключение видов */
+body:not(.s-all) .v-all{display:none}
+body:not(.s-plans) .v-plans{display:none}
+body:not(.s-journal) .v-journal{display:none}
+body.s-all   .fseg:nth-child(1),
+body.s-plans .fseg:nth-child(2),
+body.s-journal .fseg:nth-child(3){
+  color:var(--t1);background:rgba(255,255,255,.22);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,1), inset 0 0 0 .5px rgba(40,30,62,.05), 0 2px 6px -2px rgba(60,50,84,.18);
+}
+
+/* ============ НИЖНЯЯ ПАНЕЛЬ ============ */
+.tabbar{--r:28px;left:16px;top:0;width:358px;height:64px;padding:6px;overflow:visible}
+.tabbar .glass__body{display:flex;align-items:center;flex:1;height:100%}
+.tab{flex:1;height:52px;border-radius:19px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--t3)}
+.tab svg{width:21px;height:21px}
+.tab span{font-size:9.5px;font-weight:520;letter-spacing:-.004em}
+.tab--on{
+  color:var(--t1);background:rgba(255,255,255,.22);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,1), inset 0 0 0 .5px rgba(40,30,62,.05), 0 2px 6px -2px rgba(60,50,84,.18);
+}
+.core{flex:none;width:62px;height:62px;position:relative;margin:0 4px;transform:translateY(-7px)}
+.core-halo{
+  position:absolute;inset:-10px;border-radius:50%;
+  background:radial-gradient(circle, rgba(150,138,186,.20) 38%, rgba(150,138,186,0) 70%);
+  animation:breathe 4.6s ease-in-out infinite;
+}
+@keyframes breathe{0%,100%{transform:scale(.84);opacity:.45}50%{transform:scale(1.05);opacity:.9}}
+.core-body{
+  position:absolute;inset:0;border-radius:50%;overflow:hidden;
+  backdrop-filter:blur(3px) saturate(1.65) brightness(1.04);
+  -webkit-backdrop-filter:blur(3px) saturate(1.65) brightness(1.04);
+  /* тело шара: свет сверху слева, терминатор внизу справа */
+  background:radial-gradient(120% 120% at 30% 26%,
+    rgba(255,255,255,.30) 0%,
+    rgba(255,255,255,.11) 26%,
+    rgba(255,255,255,.03) 46%,
+    rgba(255,255,255,0) 62%,
+    rgba(108,98,132,.09) 82%,
+    rgba(84,74,108,.20) 100%);
+  box-shadow:
+    inset 0 .8px 0 rgba(255,255,255,.85),
+    inset 0 0 0 .6px rgba(255,255,255,.45),
+    inset 5px 7px 12px -10px rgba(255,255,255,.85),
+    inset -7px -9px 15px -12px rgba(72,62,100,.45),
+    0 1px 2px rgba(60,50,84,.16),
+    0 7px 15px -7px rgba(60,50,84,.28);
+}
+.core-body canvas{display:block}
+.core-gloss{
+  position:absolute;inset:0;border-radius:50%;pointer-events:none;
+  background:
+    /* резкий блик — источник света */
+    radial-gradient(34% 26% at 29% 18%,
+      rgba(255,255,255,.88) 0%, rgba(255,255,255,.28) 42%, rgba(255,255,255,0) 76%),
+    /* отражённый свет снизу справа: он и делает шар шаром */
+    radial-gradient(58% 44% at 74% 90%,
+      rgba(255,255,255,.44) 0%, rgba(255,255,255,0) 68%);
+}
+</style>
+</head>
+<body class="s-all">
+
+<div class="sheet">
+
+  <div class="top">
+    <div class="top__copy">
+      <div class="kicker">Планы и дневник</div>
+      <div class="h1">Записи</div>
+    </div>
+    <div class="tool">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+        <circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/>
+      </svg>
+    </div>
+  </div>
+
+  <div class="toolrow">
+    <div class="glass filter">
+      <div class="glass__lens"></div><div class="glass__tint"></div><div class="glass__rim"></div>
+      <div class="glass__body">
+        <div class="fseg">Всё</div>
+        <div class="fseg">Планы</div>
+        <div class="fseg">Дневник</div>
+      </div>
+    </div>
+    <div class="add">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <path d="M12 6v12M6 12h12"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- ============ ВСЁ: ХРОНОЛОГИЯ ============ -->
+  <div class="v v-all">
+    <div class="rail">
+      <div class="rail__line"></div>
+
+      <div class="tl__label"><span class="node node--now"></span>Сегодня</div>
+      <div class="tl__item">
+        <div class="glass blk note">
+          <div class="glass__lens"></div><div class="glass__tint"></div><div class="glass__rim"></div>
+          <div class="glass__body">
+            <div class="note__head"><span class="avatar">Л</span><span class="kicker">Лиза · 14:20</span></div>
+            <div class="note__title">Спасибо за вчера</div>
+            <div class="note__text">Ты заметил, что я устала, раньше меня самой.</div>
+            <div class="chips">
+              <div class="chip chip--on"><i style="color:#C79C8E"></i>Вдохновлена</div>
+              <div class="chip">Благодарность</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tl__label"><span class="node"></span>На этой неделе</div>
+      <div class="tl__item">
+        <div class="glass blk plan">
+          <div class="glass__lens"></div><div class="glass__tint"></div><div class="glass__rim"></div>
+          <div class="glass__body">
+            <div class="plan__photo"><div class="plan__badge">22 августа</div></div>
+            <div class="plan__body">
+              <div class="btitle">Выходные в Суздале</div>
+              <div class="btext">Выехать в пятницу вечером, вернуться в воскресенье.</div>
+              <div class="chips">
+                <div class="chip chip--on"><i></i>Поездка</div>
+                <div class="chip">Запланировано</div>
+                <div class="chip chip--muted">в календаре</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="tl__item">
+        <div class="glass blk note">
+          <div class="glass__lens"></div><div class="glass__tint"></div><div class="glass__rim"></div>
+          <div class="glass__body">
+            <div class="note__head"><span class="avatar">А</span><span class="kicker">Антон · вторник</span></div>
+            <div class="note__title">И тебе спасибо</div>
+            <div class="note__text">Я стараюсь замечать. Иногда получается.</div>
+            <div class="chips">
+              <div class="chip chip--on"><i style="color:#8FAE9B"></i>Спокоен</div>
+              <div class="chip">Размышление</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tl__label"><span class="node"></span>Ранее</div>
+      <div class="tl__item">
+        <div class="pair">
+          <div class="glass blk tile">
+            <div class="glass__lens"></div><div class="glass__tint"></div><div class="glass__rim"></div>
+            <div class="glass__body">
+              <div class="tile__kind">Идея</div>
+              <div class="tile__title">Курс керамики вдвоём</div>
+              <div class="tile__meta">без даты</div>
+            </div>
+          </div>
+          <div class="glass blk tile">
+            <div class="glass__lens"></div><div class="glass__tint"></div><div class="glass__rim"></div>
+            <div class="glass__body">
+              <div class="tile__kind">Сделано</div>
+              <div class="tile__title">Ужин на набережной</div>
+              <div class="tile__meta">2 августа</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ============ ПЛАНЫ: ПО СТАТУСАМ ============ -->
+  <div class="v v-plans">
+
+    <div class="sect"><span>Запланировано</span><b>5</b></div>
+    <div class="carousel">
+
+      <div class="carr carr--off">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 5-7 7 7 7"/></svg>
+      </div>
+
+      <div class="glass blk pcard">
+        <div class="glass__lens"></div><div class="glass__tint"></div><div class="glass__rim"></div>
+        <div class="glass__body">
+          <div class="pcard__photo pcard__photo--a"><div class="pcard__badge">22 августа</div></div>
+          <div class="pcard__body">
+            <div class="pcard__title">Выходные в Суздале</div>
+            <div class="pcard__meta">через 10 дней · пятница</div>
+            <div class="pcard__tags"><span class="tag"><i></i>Поездка</span><span class="tag">В календаре</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="carr">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg>
+      </div>
+
+    </div>
+    <div class="dots"><i class="on"></i><i></i><i></i><i></i><i></i></div>
+
+    <div class="sect"><span>Идея</span><b>9</b></div>
+    <div class="rows">
+      <div class="glass blk row">
+        <div class="glass__lens"></div><div class="glass__tint"></div><div class="glass__rim"></div>
+        <div class="glass__body">
+          <div class="row__thumb row__thumb--empty">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9.5 18.5h5M10 21h4"/><path d="M12 3a6 6 0 0 1 3.5 10.9c-.6.4-.9 1-.9 1.6H9.4c0-.6-.3-1.2-.9-1.6A6 6 0 0 1 12 3z"/>
+            </svg>
+          </div>
+          <div class="row__info">
+            <div class="row__title">Курс керамики вдвоём</div>
+            <div class="row__meta">без даты</div>
+            <div class="row__tags"><span class="tag"><i></i>Другое</span></div>
+          </div>
+          <div class="row__go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg></div>
+        </div>
+      </div>
+      <div class="glass blk row">
+        <div class="glass__lens"></div><div class="glass__tint"></div><div class="glass__rim"></div>
+        <div class="glass__body">
+          <div class="row__thumb row__thumb--empty">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9.5 18.5h5M10 21h4"/><path d="M12 3a6 6 0 0 1 3.5 10.9c-.6.4-.9 1-.9 1.6H9.4c0-.6-.3-1.2-.9-1.6A6 6 0 0 1 12 3z"/>
+            </svg>
+          </div>
+          <div class="row__info">
+            <div class="row__title">Съездить к морю зимой</div>
+            <div class="row__meta">без даты</div>
+            <div class="row__tags"><span class="tag"><i></i>Поездка</span></div>
+          </div>
+          <div class="row__go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="glass blk more">
+      <div class="glass__lens"></div><div class="glass__tint"></div><div class="glass__rim"></div>
+      <div class="glass__body">
+        <span>Ещё 7 идей</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+      </div>
+    </div>
+
+    <div class="glass blk archive">
+      <div class="glass__lens"></div><div class="glass__tint"></div><div class="glass__rim"></div>
+      <div class="glass__body">
+        <div class="archive__icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m5 12.5 4.5 4.5L19 7.5"/>
+          </svg>
+        </div>
+        <div class="archive__info">
+          <div class="archive__title">Сделано</div>
+          <div class="archive__meta">последний — «Ужин на набережной», 2 августа</div>
+        </div>
+        <div class="archive__count">24</div>
+        <div class="archive__go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ============ ДНЕВНИК: НИТЬ ============ -->
+  <div class="v v-journal">
+
+    <div class="divider"><span>Сегодня</span></div>
+    <div class="thread">
+      <div class="msg">
+        <span class="msg__av">Л</span>
+        <div class="glass blk bubble">
+          <div class="glass__lens"></div><div class="glass__tint"></div><div class="glass__rim"></div>
+          <div class="glass__body">
+            <div class="bubble__head"><span class="bubble__who">Лиза</span><span class="bubble__time">14:20</span></div>
+            <div class="bubble__title">Спасибо за вчера</div>
+            <div class="bubble__text">Ты заметил, что я устала, раньше меня самой. Это очень много значит.</div>
+            <div class="chips">
+              <div class="chip chip--on"><i style="color:#C79C8E"></i>Вдохновлена</div>
+              <div class="chip">Благодарность</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="msg msg--reply">
+        <span class="msg__av">А</span>
+        <div class="glass blk bubble">
+          <div class="glass__lens"></div><div class="glass__tint"></div><div class="glass__rim"></div>
+          <div class="glass__body">
+            <div class="bubble__head"><span class="bubble__who">Антон</span><span class="bubble__time">19:05</span></div>
+            <div class="bubble__title">И тебе спасибо</div>
+            <div class="bubble__text">Я стараюсь замечать. Иногда получается.</div>
+            <div class="chips">
+              <div class="chip chip--on"><i style="color:#8FAE9B"></i>Спокоен</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="divider"><span>9 августа</span></div>
+    <div class="thread">
+      <div class="msg">
+        <span class="msg__av">А</span>
+        <div class="glass blk bubble">
+          <div class="glass__lens"></div><div class="glass__tint"></div><div class="glass__rim"></div>
+          <div class="glass__body">
+            <div class="bubble__head"><span class="bubble__who">Антон</span><span class="bubble__time">08:40</span></div>
+            <div class="bubble__title">Тихое утро</div>
+            <div class="bubble__text">Проснулся раньше будильника. Хорошо, что не надо никуда бежать.</div>
+            <div class="chips">
+              <div class="chip chip--on"><i style="color:#8FAE9B"></i>Спокоен</div>
+              <div class="chip">Наблюдение</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<div class="glass tabbar">
+  <div class="glass__lens"></div><div class="glass__tint"></div><div class="glass__rim"></div>
+  <div class="glass__body">
+    <div class="tab">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 10.5 12 4l8 6.5V19a1.6 1.6 0 0 1-1.6 1.6H5.6A1.6 1.6 0 0 1 4 19z"/>
+      </svg>
+      <span>Сегодня</span>
+    </div>
+    <div class="tab">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3.5" y="5" width="17" height="15.5" rx="4"/><path d="M8 3v4M16 3v4M3.5 10h17"/>
+      </svg>
+      <span>Календарь</span>
+    </div>
+    <div class="core">
+      <div class="core-halo"></div>
+      <div class="core-body"><canvas class="neurons"></canvas><div class="core-gloss"></div></div>
+    </div>
+    <div class="tab tab--on">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M5 4.5h9.5a3 3 0 0 1 3 3V20H8a3 3 0 0 1-3-3z"/><path d="M8.5 9h6M8.5 12.5h6"/>
+      </svg>
+      <span>Записи</span>
+    </div>
+    <div class="tab">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="9" cy="8.5" r="3.2"/><circle cx="16.4" cy="9.6" r="2.6"/>
+        <path d="M3.6 19.5c.5-3.1 2.8-4.8 5.4-4.8s4.9 1.7 5.4 4.8"/><path d="M16.8 14.9c2 .3 3.4 1.9 3.7 4.6"/>
+      </svg>
+      <span>Мы</span>
+    </div>
+  </div>
+</div>
+
+<script src="glass.js"></script>
+<script src="neurons.js"></script>
+</body>
+</html>

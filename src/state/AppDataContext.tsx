@@ -46,6 +46,7 @@ interface AppDataValue {
   deleteAgreement: (id: string) => void;
   toggleAgreement: (id: string) => void;
   addConflict: (input: EditableConflict) => void;
+  updateConflict: (id: string, input: EditableConflict) => void;
   deleteConflict: (id: string) => void;
   addChatMessage: (content: string) => void;
   setBackgroundColor: (color: string, luminance: number) => void;
@@ -392,6 +393,7 @@ export function AppDataProvider({ children }: PropsWithChildren) {
       deleteAgreement: (id) => deleteEntry("agreement", id),
       toggleAgreement: (id) => { const item = snapshot.agreements.find((value) => value.id === id); if (item) updateEntry("agreement", id, { ...item, acceptedBy: { ...item.acceptedBy, [snapshot.currentMemberId]: !item.acceptedBy[snapshot.currentMemberId] }, updatedAt: now() }); },
       addConflict: (input) => createEntry("conflict", { ...input, id: makeId("conflict"), authorId: snapshot.currentMemberId, createdAt: now() }),
+      updateConflict: (id, input) => { const item = snapshot.conflicts.find((value) => value.id === id); if (item) updateEntry("conflict", id, { ...item, ...input }); },
       deleteConflict: (id) => deleteEntry("conflict", id),
       addChatMessage: (content) => {
         const localId = makeId("message");

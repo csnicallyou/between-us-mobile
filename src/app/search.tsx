@@ -20,8 +20,8 @@ interface SearchResult {
 }
 
 const kindMeta = {
-  plan: { label: "План", href: "/(tabs)/plans" as Href },
-  journal: { label: "Дневник", href: "/(tabs)/journal" as Href },
+  plan: { label: "План", href: "/(tabs)/entries?filter=plans" as Href },
+  journal: { label: "Дневник", href: "/(tabs)/entries?filter=journal" as Href },
   memory: { label: "Памятное событие", href: "/memories" as Href },
   about: { label: "Важное о нас", href: "/about" as Href },
   agreement: { label: "Договорённость", href: "/agreements" as Href },

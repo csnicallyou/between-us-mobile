@@ -2,8 +2,7 @@ import { useState } from "react";
 import { Alert, Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { AppButton } from "@/components/AppButton";
 import { EntryFormModal, type FormValue } from "@/components/EntryFormModal";
-import { PageHeader } from "@/components/PageHeader";
-import { Screen } from "@/components/Screen";
+import { SwipeToDelete } from "@/components/SwipeToDelete";
 import { Surface } from "@/components/Surface";
 import { planKindLabels, planStatusLabels } from "@/domain/labels";
 import type { Plan, PlanKind, PlanStatus } from "@/domain/models";
@@ -17,7 +16,7 @@ import { useAuth } from "@/state/AuthContext";
 const statuses: PlanStatus[] = ["idea", "planned", "done"];
 const emptyForm: Record<string, FormValue> = { title: "", description: "", date: "", kind: "other", status: "idea", showInCalendar: true, imageUri: "" };
 
-export default function PlansScreen() {
+export function PlansSection() {
   const { accessToken } = useAuth();
   const { snapshot, addPlan, updatePlan, deletePlan } = useAppData();
   const { custom, palette } = useBackgroundPalette();
@@ -45,22 +44,22 @@ export default function PlansScreen() {
   const close = () => { const draftImage = String(form.imageUri || ""); if (draftImage && draftImage !== (editing?.imageUri ?? "")) deleteStoredImage(draftImage); setOpen(false); };
 
   return (
-    <Screen header={<PageHeader kicker="Куда движемся" title="Планы и поездки" subtitle="От идеи на вечер до большой совместной поездки." />}>
+    <>
       <AppButton label="Добавить план" onPress={startCreate} />
       <View style={styles.sections}>
         {statuses.map((status) => {
           const plans = snapshot.plans.filter((plan) => plan.status === status);
           return <View key={status} style={styles.section}>
             <View style={styles.heading}><Text style={[styles.headingTitle, custom && { color: palette.foreground }]}>{planStatusLabels[status]}</Text><Text style={styles.count}>{plans.length}</Text></View>
-            {plans.length ? plans.map((plan) => <Pressable key={plan.id} onLongPress={() => remove(plan)} onPress={() => startEdit(plan)}>
+            {plans.length ? plans.map((plan) => <SwipeToDelete key={plan.id} onDelete={() => remove(plan)}><Pressable onPress={() => startEdit(plan)}>
               <Surface style={styles.card}>
                 <View style={styles.cardTop}><Text style={styles.kind}>{planKindLabels[plan.kind]}</Text><Text style={styles.date}>{plan.date ? new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long", year: "numeric" }).format(new Date(`${plan.date}T12:00:00`)) : "Без даты"}</Text></View>
                 <Text style={styles.title}>{plan.title}</Text>
                 {plan.imageUri ? <Image resizeMode="contain" source={privateImageSource(plan.imageUri, accessToken)} style={styles.planImage} /> : null}
                 {plan.description ? <Text style={styles.description}>{plan.description}</Text> : null}
-                <Text style={styles.hint}>Нажмите для изменения, удерживайте для удаления</Text>
+                <Text style={styles.hint}>Нажмите для изменения, смахните влево для удаления</Text>
               </Surface>
-            </Pressable>) : <Text style={[styles.empty, custom && { color: palette.mutedForeground }]}>Пока пусто</Text>}
+            </Pressable></SwipeToDelete>) : <Text style={[styles.empty, custom && { color: palette.mutedForeground }]}>Пока пусто</Text>}
           </View>;
         })}
       </View>
@@ -77,7 +76,7 @@ export default function PlansScreen() {
         imageUri={String(form.imageUri || "") || null} onPickImage={() => void pickImage()} pickingImage={pickingImage}
         onClose={close} onSave={save} title={editing ? "Изменить план" : "Новый план"} values={form} visible={open}
       />
-    </Screen>
+    </>
   );
 }
 

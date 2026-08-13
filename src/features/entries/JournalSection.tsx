@@ -2,8 +2,7 @@ import { useState } from "react";
 import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import { AppButton } from "@/components/AppButton";
 import { EntryFormModal, type FormValue } from "@/components/EntryFormModal";
-import { PageHeader } from "@/components/PageHeader";
-import { Screen } from "@/components/Screen";
+import { SwipeToDelete } from "@/components/SwipeToDelete";
 import { Surface } from "@/components/Surface";
 import { journalKindLabels, memberName, moodLabels } from "@/domain/labels";
 import type { JournalEntry, JournalKind, Mood } from "@/domain/models";
@@ -12,7 +11,7 @@ import { colors, radius, spacing, typography } from "@/theme/tokens";
 
 const emptyForm: Record<string, FormValue> = { title: "", content: "", kind: "reflection", mood: "calm" };
 
-export default function JournalScreen() {
+export function JournalSection() {
   const { snapshot, addJournalEntry, updateJournalEntry, deleteJournalEntry } = useAppData();
   const [editing, setEditing] = useState<JournalEntry | null>(null);
   const [form, setForm] = useState<Record<string, FormValue>>(emptyForm);
@@ -33,9 +32,9 @@ export default function JournalScreen() {
   };
   const remove = (entry: JournalEntry) => Alert.alert("Удалить запись?", entry.title, [{ text: "Отмена", style: "cancel" }, { text: "Удалить", style: "destructive", onPress: () => deleteJournalEntry(entry.id) }]);
 
-  return <Screen header={<PageHeader kicker="Мысли без потери" title="Общий дневник" subtitle="Благодарности, чувства, вопросы и мысли, к которым можно вернуться вместе." />}>
+  return <>
     <AppButton label="Новая запись" onPress={() => begin()} />
-    <View style={styles.feed}>{snapshot.journal.map((entry) => <Pressable key={entry.id} onLongPress={() => remove(entry)} onPress={() => begin(entry)}>
+    <View style={styles.feed}>{snapshot.journal.map((entry) => <SwipeToDelete key={entry.id} onDelete={() => remove(entry)}><Pressable onPress={() => begin(entry)}>
       <Surface>
         <View style={styles.authorRow}>
           <View style={[styles.avatar, entry.authorId !== snapshot.currentMemberId && styles.partnerAvatar]}><Text style={styles.avatarText}>{memberName(snapshot, entry.authorId)[0]}</Text></View>
@@ -43,9 +42,9 @@ export default function JournalScreen() {
           {entry.mood ? <Text style={styles.mood}>{moodLabels[entry.mood]}</Text> : null}
         </View>
         <Text style={styles.kind}>{journalKindLabels[entry.kind]}</Text><Text style={styles.title}>{entry.title}</Text><Text style={styles.content}>{entry.content}</Text>
-        <Text style={styles.hint}>Нажмите для изменения, удерживайте для удаления</Text>
+        <Text style={styles.hint}>Нажмите для изменения, смахните влево для удаления</Text>
       </Surface>
-    </Pressable>)}</View>
+    </Pressable></SwipeToDelete>)}</View>
     <Surface style={styles.prompt}><Text style={styles.promptTitle}>Вопрос друг другу</Text><Text style={styles.promptText}>Что сегодня помогло тебе почувствовать мою любовь?</Text><AppButton label="Ответить" onPress={() => begin()} variant="secondary" /></Surface>
     <EntryFormModal
       fields={[
@@ -57,7 +56,7 @@ export default function JournalScreen() {
       onChange={(key, value) => setForm((current) => ({ ...current, [key]: value }))} onClose={() => setOpen(false)} onSave={save}
       title={editing ? "Изменить запись" : "Новая запись"} values={form} visible={open}
     />
-  </Screen>;
+  </>;
 }
 
 const styles = StyleSheet.create({

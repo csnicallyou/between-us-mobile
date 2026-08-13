@@ -83,7 +83,7 @@ export function PairSetupScreen({ initialSecret = "" }: { initialSecret?: string
 
   if (pair && pair.members.length >= 2) {
     return (
-      <AuthScaffold title={pair.name} subtitle="Вы оба уже здесь. Можно переходить в ваше общее пространство.">
+      <AuthScaffold step={3} title={pair.name} subtitle="Вы оба уже здесь. Можно переходить в ваше общее пространство.">
         <Text style={styles.memberNames}>{pair.members.map((member) => member.displayName).join(" и ")}</Text>
         <AppButton label="Продолжить" onPress={() => router.replace("/(tabs)")} />
       </AuthScaffold>
@@ -91,7 +91,7 @@ export function PairSetupScreen({ initialSecret = "" }: { initialSecret?: string
   }
 
   if (pair && invite) {
-    return <AuthScaffold title={pair.name} subtitle="Осталось позвать второго участника."><PairInviteCard invite={invite} /></AuthScaffold>;
+    return <AuthScaffold step={3} title={pair.name} subtitle="Осталось позвать второго участника."><PairInviteCard invite={invite} /></AuthScaffold>;
   }
 
   if (pair) {
@@ -104,11 +104,11 @@ export function PairSetupScreen({ initialSecret = "" }: { initialSecret?: string
   }
 
   if (!user?.emailVerified) {
-    return <AuthScaffold title="Почти готово" subtitle="Прежде чем создать или присоединиться к паре, подтвердите почту."><EmailVerificationPanel /></AuthScaffold>;
+    return <AuthScaffold step={1} title="Почти готово" subtitle="Прежде чем создать или присоединиться к паре, подтвердите почту."><EmailVerificationPanel /></AuthScaffold>;
   }
 
   return (
-    <AuthScaffold title="Создайте вашу пару" subtitle="Один создаёт общее пространство, второй входит по ссылке, QR или коду.">
+    <AuthScaffold step={2} title="Создайте вашу пару" subtitle="Один создаёт общее пространство, второй входит по ссылке, QR или коду.">
       {mode === "choose" ? (
         <View style={styles.group}>
           <AppButton label="Создать пару" onPress={() => setMode("create")} />
@@ -158,12 +158,12 @@ export default function PairSetupRoute() {
 
 const styles = StyleSheet.create({
   group: { gap: spacing.md },
-  input: { backgroundColor: colors.surfaceStrong, borderColor: colors.line, borderRadius: radius.md, borderWidth: 1, color: colors.ink, fontSize: 16, minHeight: 52, paddingHorizontal: spacing.lg },
+  input: { backgroundColor: "rgba(255,255,255,0.30)", borderColor: "rgba(255,255,255,0.46)", borderRadius: 16, borderWidth: StyleSheet.hairlineWidth, color: "rgba(33,30,41,0.94)", fontSize: 15, minHeight: 50, paddingHorizontal: 15 },
   inviteInput: { minHeight: 82, paddingTop: spacing.lg, textAlignVertical: "top" },
-  label: { color: colors.ink, fontSize: 13, fontWeight: "700" },
-  dateButton: { alignItems: "center", backgroundColor: colors.surfaceStrong, borderColor: colors.line, borderRadius: radius.md, borderWidth: 1, flexDirection: "row", justifyContent: "space-between", minHeight: 52, paddingHorizontal: spacing.lg },
-  dateText: { color: colors.ink, fontSize: 16 },
+  label: { color: "rgba(33,30,41,0.94)", fontSize: 12.5, fontWeight: "600" },
+  dateButton: { alignItems: "center", backgroundColor: "rgba(255,255,255,0.30)", borderColor: "rgba(255,255,255,0.46)", borderRadius: 16, borderWidth: StyleSheet.hairlineWidth, flexDirection: "row", justifyContent: "space-between", minHeight: 50, paddingHorizontal: 15 },
+  dateText: { color: "rgba(33,30,41,0.94)", fontSize: 15 },
   error: { color: colors.danger, fontSize: 13, lineHeight: 18 },
-  back: { color: colors.sea, fontSize: 14, fontWeight: "600", paddingVertical: spacing.sm, textAlign: "center" },
-  memberNames: { color: colors.ink, fontSize: 20, fontWeight: "700", textAlign: "center" },
+  back: { color: "rgba(33,30,41,0.60)", fontSize: 14, fontWeight: "600", paddingVertical: spacing.sm, textAlign: "center" },
+  memberNames: { color: "rgba(33,30,41,0.94)", fontSize: 18, fontWeight: "600", textAlign: "center" },
 });
