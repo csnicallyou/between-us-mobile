@@ -189,7 +189,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   node: { left: "50%", position: "absolute", top: "50%" },
-  gloss: { ...StyleSheet.absoluteFillObject, overflow: "hidden" },
+  gloss: { bottom: 0, left: 0, overflow: "hidden", position: "absolute", right: 0, top: 0 },
   ring: {
     borderColor: "rgba(255,255,255,0.34)",
     borderWidth: 1.2,
