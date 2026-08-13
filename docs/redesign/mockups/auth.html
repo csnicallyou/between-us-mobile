@@ -1,0 +1,428 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Между нами — Вход и онбординг</title>
+<link rel="stylesheet" href="light.css">
+<style>
+html,body{width:390px}
+body{font-family:'GolosText',system-ui,sans-serif}
+/* Экран входа — единственный без нижней панели: карточка стоит по центру
+   по вертикали, как в текущем AuthScaffold (justifyContent: "center"). */
+.sheet{
+  position:absolute;left:0;top:0;width:390px;min-height:844px;
+  display:flex;flex-direction:column;justify-content:center;
+  padding:56px 24px;z-index:2;
+}
+.blk{position:relative}
+
+/* ---- знак: два полупрозрачных круга, пересечение плотнее.
+   Это буквально «между нами» — общее у двоих. Знак не стеклянный
+   (без backdrop-filter): на 44 px размытие даёт тёмную кромку, а
+   удвоение заливки в пересечении и так читается. ---- */
+.mark{position:relative;width:70px;height:46px;margin:0 auto 24px}
+.mark i{
+  position:absolute;top:0;width:46px;height:46px;border-radius:50%;
+  background:rgba(255,255,255,.34);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.95), inset 0 0 0 .5px rgba(255,255,255,.42),
+    0 2px 7px -3px rgba(60,50,84,.20);
+}
+.mark i:first-child{left:0}
+.mark i:last-child{right:0}
+
+.kicker{font-size:10px;font-weight:640;letter-spacing:.19em;text-transform:uppercase;color:var(--t3);text-align:center}
+.h1{font-size:29px;font-weight:600;letter-spacing:-.032em;color:var(--t1);margin-top:9px;text-align:center;line-height:1.16}
+.sub{font-size:14.5px;font-weight:430;color:var(--t2);margin-top:11px;text-align:center;line-height:1.5;letter-spacing:-.008em}
+
+.card{--r:28px;padding:18px;margin-top:26px}
+
+/* ---- поля ----
+   Внутри стеклянной карточки поля НЕ стеклянные: правило Apple — не
+   класть стекло на стекло. Карточка и есть слой управления, поля живут
+   на ней обычной полупрозрачной заливкой. */
+.fill{
+  background:rgba(255,255,255,.30);
+  box-shadow:inset 0 0 0 .5px rgba(255,255,255,.46), inset 0 1px 0 rgba(255,255,255,.80);
+}
+.fld{
+  min-height:50px;padding:13px 15px;border-radius:16px;
+  display:flex;align-items:center;margin-top:10px;
+  background:rgba(255,255,255,.30);
+  box-shadow:inset 0 0 0 .5px rgba(255,255,255,.46), inset 0 1px 0 rgba(255,255,255,.80);
+}
+.fld > .inner{display:flex;align-items:center;width:100%}
+.fld:first-child{margin-top:0}
+.fld span{font-size:15px;color:var(--t3);letter-spacing:-.01em;line-height:1.4}
+.fld span.v{color:var(--t1);font-weight:450}
+.fld--tall{min-height:78px;align-items:flex-start}
+.flabel{font-size:12.5px;font-weight:600;letter-spacing:-.008em;color:var(--t1);margin-top:15px;margin-bottom:-2px}
+.fld--row{justify-content:space-between;gap:12px}
+.fld--row svg{width:18px;height:18px;color:var(--t3);flex:none}
+
+/* ---- код из шести цифр ---- */
+.code{display:flex;gap:8px;justify-content:center}
+.code .cell{
+  flex:1;height:56px;border-radius:14px;display:flex;align-items:center;justify-content:center;
+  font-size:22px;font-weight:600;color:var(--t1);letter-spacing:0;
+  background:rgba(255,255,255,.30);
+  box-shadow:inset 0 0 0 .5px rgba(255,255,255,.46), inset 0 1px 0 rgba(255,255,255,.80);
+}
+/* заполненные ячейки чуть плотнее — видно, где остановился ввод */
+.code .cell:not(.empty){
+  background:rgba(255,255,255,.46);
+  box-shadow:inset 0 0 0 .5px rgba(255,255,255,.62), inset 0 1px 0 rgba(255,255,255,.95);
+}
+.code .cell.empty > .inner{visibility:hidden}
+/* следующая по очереди ячейка: курсор ввода вместо серого нуля */
+.code .cell.next{position:relative}
+.code .cell.next::after{
+  content:'';position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:1.5px;height:22px;border-radius:1px;background:rgba(33,30,41,.44);
+  animation:caret 1.1s steps(1) infinite;
+}
+@keyframes caret{0%,49%{opacity:1}50%,100%{opacity:0}}
+
+/* ---- кнопки ---- */
+.pbtn{
+  margin-top:16px;height:50px;border-radius:25px;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  font-size:15px;font-weight:580;letter-spacing:-.016em;color:#F7F5FA;
+  background:linear-gradient(168deg,var(--anchor-hi) 0%,var(--anchor-lo) 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.20), 0 1px 2px rgba(60,50,84,.26), 0 10px 22px -11px rgba(60,50,84,.5);
+}
+.pbtn svg{width:17px;height:17px;opacity:.9}
+.pbtn--busy{
+  color:var(--t2);background:rgba(255,255,255,.30);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.9), inset 0 0 0 .5px rgba(255,255,255,.34);
+}
+.dots{display:flex;align-items:center;gap:4px}
+.dots i{width:5px;height:5px;border-radius:50%;background:currentColor;opacity:.35;animation:pulse 1.25s ease-in-out infinite}
+.dots i:nth-child(2){animation-delay:.16s}
+.dots i:nth-child(3){animation-delay:.32s}
+@keyframes pulse{0%,100%{opacity:.25;transform:scale(.85)}45%{opacity:1;transform:scale(1)}}
+
+.sbtn{
+  margin-top:10px;height:50px;border-radius:25px;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  font-size:15px;font-weight:560;letter-spacing:-.016em;color:var(--t1);
+  background:rgba(255,255,255,.34);
+  box-shadow:inset 0 0 0 .5px rgba(255,255,255,.50), inset 0 1px 0 rgba(255,255,255,.88);
+}
+.sbtn > .inner{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:100%}
+.sbtn svg{width:17px;height:17px;opacity:.55}
+.sbtn.off{color:var(--t3)}
+
+.links{margin-top:18px;display:flex;flex-direction:column;gap:2px}
+.lnk{
+  text-align:center;padding:9px 0;
+  font-size:13.5px;font-weight:530;color:var(--t2);letter-spacing:-.01em;
+}
+
+/* ---- ошибка ---- */
+.err{
+  margin-top:12px;padding:11px 14px;border-radius:14px;
+  display:flex;align-items:flex-start;gap:9px;
+  background:rgba(199,124,96,.12);
+  box-shadow:inset 0 0 0 .5px rgba(199,124,96,.22);
+}
+.err svg{width:15px;height:15px;color:#A9613F;flex:none;margin-top:1px}
+.err span{font-size:12.5px;font-weight:470;color:#8E5232;line-height:1.42;letter-spacing:-.004em}
+
+/* ---- приглашение ---- */
+.inv{display:flex;flex-direction:column;align-items:center}
+.qrwrap{
+  padding:11px;border-radius:20px;background:#FFFFFF;
+  box-shadow:inset 0 0 0 .5px rgba(33,30,41,.06), 0 2px 6px -2px rgba(60,50,84,.16), 0 12px 26px -14px rgba(60,50,84,.28);
+}
+.qrwrap canvas{display:block;border-radius:6px}
+.invcode{
+  margin-top:16px;font-size:23px;font-weight:640;color:var(--t1);letter-spacing:.14em;
+}
+.invexp{margin-top:7px;font-size:11.5px;font-weight:450;color:var(--t3);letter-spacing:-.004em}
+.invsplit{display:flex;align-items:center;gap:10px;width:100%;margin-top:18px}
+.invsplit::before,.invsplit::after{content:'';flex:1;height:1px;background:rgba(33,30,41,.09)}
+.invsplit span{font-size:10px;font-weight:620;letter-spacing:.14em;text-transform:uppercase;color:var(--t3)}
+.inv .pbtn,.inv .sbtn{width:100%}
+
+/* ---- обе участницы на месте ---- */
+.pairrow{display:flex;align-items:center;justify-content:center;gap:-6px;margin-bottom:2px}
+.av{
+  width:52px;height:52px;border-radius:26px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;font-weight:640;color:var(--t1);
+  background:rgba(255,255,255,.34);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.95), inset 0 0 0 .5px rgba(255,255,255,.42), 0 2px 8px -3px rgba(60,50,84,.2);
+}
+.av + .av{margin-left:-13px}
+.pairname{margin-top:14px;font-size:17px;font-weight:600;letter-spacing:-.022em;color:var(--t1);text-align:center}
+.pairsince{margin-top:5px;font-size:12.5px;font-weight:440;color:var(--t3);text-align:center;letter-spacing:-.004em}
+
+/* ---- загрузка ---- */
+.spin{display:flex;justify-content:center;padding:10px 0 4px}
+.spin i{
+  width:26px;height:26px;border-radius:50%;
+  border:2px solid rgba(33,30,41,.12);border-top-color:rgba(33,30,41,.42);
+  animation:rot 900ms linear infinite;
+}
+@keyframes rot{to{transform:rotate(360deg)}}
+
+/* ---- шаг онбординга ---- */
+.steps{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:22px}
+.steps i{width:6px;height:6px;border-radius:50%;background:rgba(33,30,41,.14)}
+.steps i.on{width:20px;border-radius:3px;background:rgba(33,30,41,.34)}
+
+[data-st]{display:none}
+</style>
+</head>
+<body class="s-signin">
+
+<div class="sheet">
+
+  <div class="mark"><i></i><i></i></div>
+  <div class="kicker">Между нами</div>
+
+  <!-- ================= ЗАГОЛОВКИ ================= -->
+  <div data-st="signin">
+    <div class="h1">Снова вместе</div>
+    <div class="sub">Войдите, чтобы открыть ваше общее пространство.</div>
+  </div>
+  <div data-st="signup">
+    <div class="h1">Создайте аккаунт</div>
+    <div class="sub">У каждого свой вход. Общее пространство появится после приглашения партнёра.</div>
+  </div>
+  <div data-st="forgot">
+    <div class="h1">Забыли пароль?</div>
+    <div class="sub">Укажите почту — пришлём код для сброса пароля.</div>
+  </div>
+  <div data-st="sent">
+    <div class="h1">Проверьте почту</div>
+    <div class="sub">Если аккаунт с адресом anton@example.com существует, мы отправили код для сброса пароля.</div>
+  </div>
+  <div data-st="reset">
+    <div class="h1">Новый пароль</div>
+    <div class="sub">Введите код из письма и новый пароль.</div>
+  </div>
+  <div data-st="done">
+    <div class="h1">Пароль изменён</div>
+    <div class="sub">Все устройства вышли из аккаунта в целях безопасности. Войдите заново с новым паролем.</div>
+  </div>
+  <div data-st="verify">
+    <div class="h1">Почти готово</div>
+    <div class="sub">Прежде чем создать или присоединиться к паре, подтвердите почту.</div>
+  </div>
+  <div data-st="choose">
+    <div class="h1">Создайте вашу пару</div>
+    <div class="sub">Один создаёт общее пространство, второй входит по ссылке, QR или коду.</div>
+  </div>
+  <div data-st="create">
+    <div class="h1">Создайте вашу пару</div>
+    <div class="sub">Название увидите оба. Дату можно будет изменить позже.</div>
+  </div>
+  <div data-st="invite">
+    <div class="h1">Наша пара</div>
+    <div class="sub">Осталось позвать второго участника.</div>
+  </div>
+  <div data-st="join">
+    <div class="h1">У вас есть приглашение</div>
+    <div class="sub">Введите код из сообщения или откройте ссылку — поле заполнится само.</div>
+  </div>
+  <div data-st="ready">
+    <div class="h1">Наша пара</div>
+    <div class="sub">Вы оба уже здесь. Можно переходить в ваше общее пространство.</div>
+  </div>
+  <div data-st="load">
+    <div class="h1">Открываем пространство</div>
+    <div class="sub">Проверяем вашу пару…</div>
+  </div>
+
+  <!-- ================= КАРТОЧКА ================= -->
+  <div class="glass blk card">
+    <div class="glass__lens"></div><div class="glass__tint"></div><div class="glass__rim"></div>
+    <div class="glass__body">
+
+      <!-- ---- вход ---- -->
+      <div data-st="signin">
+        <div class="fld"><div class="inner"><span class="v">anton@example.com</span></div>
+        </div>
+        <div class="fld"><div class="inner"><span class="v">••••••••••••</span></div>
+        </div>
+        <div class="pbtn">Войти</div>
+      </div>
+
+      <!-- ---- регистрация ---- -->
+      <div data-st="signup">
+        <div class="fld"><div class="inner"><span>Как вас называть</span></div>
+        </div>
+        <div class="fld"><div class="inner"><span>Почта</span></div>
+        </div>
+        <div class="fld"><div class="inner"><span>Пароль, минимум 10 символов</span></div>
+        </div>
+        <div class="pbtn">Создать аккаунт</div>
+      </div>
+
+      <!-- ---- забыли пароль: с ошибкой ---- -->
+      <div data-st="forgot">
+        <div class="fld"><div class="inner"><span class="v">anton@example</span></div>
+        </div>
+        <div class="err">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V13M12 16.2v.01"/></svg>
+          <span>Введите корректную почту</span>
+        </div>
+        <div class="pbtn">Отправить код</div>
+      </div>
+
+      <!-- ---- код отправлен ---- -->
+      <div data-st="sent">
+        <div class="pbtn">У меня есть код</div>
+      </div>
+
+      <!-- ---- новый пароль ---- -->
+      <div data-st="reset">
+        <div class="fld"><div class="inner"><span class="v">anton@example.com</span></div>
+        </div>
+        <div class="flabel">Код из письма</div>
+        <div class="code">
+          <div class="cell"><div class="inner">4</div></div>
+          <div class="cell"><div class="inner">9</div></div>
+          <div class="cell"><div class="inner">2</div></div>
+          <div class="cell"><div class="inner">7</div></div>
+          <div class="cell empty next"><div class="inner">0</div></div>
+          <div class="cell empty"><div class="inner">0</div></div>
+        </div>
+        <div class="flabel">Новый пароль</div>
+        <div class="fld"><div class="inner"><span>Минимум 10 символов</span></div>
+        </div>
+        <div class="pbtn">Сбросить пароль</div>
+      </div>
+
+      <!-- ---- пароль изменён ---- -->
+      <div data-st="done">
+        <div class="pbtn">Ко входу</div>
+      </div>
+
+      <!-- ---- подтверждение почты ---- -->
+      <div data-st="verify">
+        <div class="sub" style="margin-top:0;font-size:13px">Мы отправили 6-значный код на anton@example.com</div>
+        <div class="code" style="margin-top:15px">
+          <div class="cell"><div class="inner">3</div></div>
+          <div class="cell"><div class="inner">1</div></div>
+          <div class="cell"><div class="inner">8</div></div>
+          <div class="cell empty next"><div class="inner">0</div></div>
+          <div class="cell empty"><div class="inner">0</div></div>
+          <div class="cell empty"><div class="inner">0</div></div>
+        </div>
+        <div class="pbtn">Подтвердить</div>
+        <div class="sbtn off"><div class="inner">Код уже отправлен</div>
+        </div>
+      </div>
+
+      <!-- ---- выбор: создать или присоединиться ---- -->
+      <div data-st="choose">
+        <div class="pbtn" style="margin-top:0">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5.5v13M5.5 12h13"/></svg>
+          Создать пару
+        </div>
+        <div class="sbtn"><div class="inner">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><path d="M13 13h3v3M20 16v4h-4"/></svg>
+            У меня есть приглашение
+          </div>
+        </div>
+      </div>
+
+      <!-- ---- создание пары ---- -->
+      <div data-st="create">
+        <div class="fld"><div class="inner"><span class="v">Наша пара</span></div>
+        </div>
+        <div class="flabel">Дата начала отношений</div>
+        <div class="fld fld--row"><div class="inner" style="display:flex;align-items:center;justify-content:space-between;width:100%">
+            <span class="v">14 февраля 2021 г.</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="4"/><path d="M8 3v4M16 3v4M3.5 10h17"/></svg>
+          </div>
+        </div>
+        <div class="pbtn pbtn--busy">
+          <span class="dots"><i></i><i></i><i></i></span>
+          Создаём…
+        </div>
+      </div>
+
+      <!-- ---- приглашение ---- -->
+      <div data-st="invite">
+        <div class="inv">
+          <div class="qrwrap"><canvas class="qr"></canvas></div>
+          <div class="invcode">7K4M92QX8B3D</div>
+          <div class="invexp">Действует до 14 авг. 2026 г., 09:41</div>
+          <div class="invsplit"><span>или</span></div>
+          <div class="pbtn" style="margin-top:14px">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7.5 8.5 12 4l4.5 4.5"/><path d="M5 15v3.5A2.5 2.5 0 0 0 7.5 21h9a2.5 2.5 0 0 0 2.5-2.5V15"/></svg>
+            Отправить приглашение
+          </div>
+        </div>
+      </div>
+
+      <!-- ---- присоединение по коду ---- -->
+      <div data-st="join">
+        <div class="fld fld--tall"><div class="inner"><span class="v">7K4M92QX8B3D</span></div>
+        </div>
+        <div class="pbtn">Присоединиться</div>
+      </div>
+
+      <!-- ---- оба на месте ---- -->
+      <div data-st="ready">
+        <div class="pairrow">
+          <div class="av">А</div>
+          <div class="av">Л</div>
+        </div>
+        <div class="pairname">Антон и Лиза</div>
+        <div class="pairsince">Вместе с 14 февраля 2021 года</div>
+        <div class="pbtn">Продолжить</div>
+      </div>
+
+      <!-- ---- загрузка ---- -->
+      <div data-st="load">
+        <div class="spin"><i></i></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ================= ССЫЛКИ ПОД КАРТОЧКОЙ ================= -->
+  <div class="links">
+    <div class="lnk" data-st="signin">Забыли пароль?</div>
+    <div class="lnk" data-st="signin">Нет аккаунта? Зарегистрироваться</div>
+    <div class="lnk" data-st="signup">Уже есть аккаунт? Войти</div>
+    <div class="lnk" data-st="forgot sent">Назад ко входу</div>
+    <div class="lnk" data-st="reset">Назад</div>
+    <div class="lnk" data-st="create join">Назад</div>
+  </div>
+
+  <div class="steps" data-st="verify choose create invite join ready" data-d="flex">
+    <i class="st1"></i><i class="st2"></i><i class="st3"></i>
+  </div>
+
+</div>
+
+<script src="glass.js"></script>
+<script src="qr.js"></script>
+<script>
+window.__st = function () {
+  var cls = [].slice.call(document.body.classList)
+    .filter(function (c) { return c.indexOf('s-') === 0; })
+    .map(function (c) { return c.slice(2); });
+  document.querySelectorAll('[data-st]').forEach(function (el) {
+    var want = el.dataset.st.split(' ');
+    var on = want.some(function (w) { return cls.indexOf(w) >= 0; });
+    // именно 'block'/'flex', а не '': пустая строка снимает инлайновый
+    // стиль и элемент снова попадает под [data-st]{display:none}
+    el.style.display = on ? (el.dataset.d || 'block') : 'none';
+  });
+  // индикатор шага онбординга: почта → пара → приглашение
+  var step = { verify: 1, choose: 2, create: 2, join: 2, invite: 3, ready: 3 }[cls[0]] || 0;
+  ['st1', 'st2', 'st3'].forEach(function (k, i) {
+    var el = document.querySelector('.' + k);
+    if (el) el.className = k + (i + 1 === step ? ' on' : '');
+  });
+};
+window.__st();
+</script>
+</body>
+</html>
