@@ -146,6 +146,20 @@ body{font-family:'GolosText',system-ui,sans-serif}
 .msg--mine .bubble{background:rgba(255,255,255,.24)}
 .msg--mine .bubble__time{text-align:left}
 
+/* Разделитель дня в ленте. */
+.daysep{display:flex;align-items:center;gap:11px;margin:15px 2px 4px}
+.daysep::before,.daysep::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.09)}
+.daysep span{font-size:9.5px;font-weight:620;letter-spacing:.13em;text-transform:uppercase;color:var(--t3)}
+
+/* Подряд идущие сообщения одного автора: аватар и имя не повторяются,
+   место под аватар остаётся, чтобы пузыри не съезжали. Время — только
+   у последнего сообщения группы. */
+.msg--same{margin-top:-7px}
+.msg--same .msg__av{visibility:hidden}
+.msg--same .bubble__who{display:none}
+.msg--same .bubble__text{margin-top:0}
+.msg--notime .bubble__time{display:none}
+
 .composer{
   position:relative;display:flex;align-items:flex-end;gap:8px;
   margin-top:18px;
@@ -154,6 +168,7 @@ body{font-family:'GolosText',system-ui,sans-serif}
   --r:22px;flex:1;min-height:44px;padding:11px 16px;display:flex;align-items:center;
 }
 .cinput span{font-size:14px;color:var(--t3);letter-spacing:-.006em}
+.cinput .typed{color:var(--t1);font-weight:440;line-height:1.4}
 .csend{
   width:44px;height:44px;border-radius:22px;flex:none;
   display:flex;align-items:center;justify-content:center;color:#211D2A;
@@ -289,6 +304,9 @@ body:not(.m-chat) .m-chat, body:not(.m-quiet) .m-quiet,
 body:not(.m-obs) .m-obs, body:not(.m-info) .m-info{display:none}
 body.m-info .top-main, body:not(.m-info) .top-info{display:none}
 body:not(.s-empty) .c-empty, body.s-empty .c-thread{display:none}
+body:not(.s-full) .c-full, body.s-full .c-thread{display:none}
+body.s-full .c-note-idle, body:not(.s-full) .c-note-live{display:none}
+body:not(.s-full) .c-typed, body.s-full .c-ph{display:none}
 body:not(.s-send) .q-send, body.s-send .q-idle{display:none}
 body.m-quiet .seg-quiet, body.m-obs .seg-obs{
   color:var(--t1);background:rgba(255,255,255,.12);
@@ -395,9 +413,13 @@ body.m-info .seg{display:none}
   <div class="m-chat">
 
     <div class="sysnote">
-      <span>
+      <span class="c-note-idle">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5M12 8v.01"/></svg>
         ИИ пока не подключён · сообщения только локально
+      </span>
+      <span class="c-note-live">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.3 2.5 2.5 4.5-5"/></svg>
+        ИИ в разговоре · меняет только с вашего согласия
       </span>
     </div>
 
@@ -451,10 +473,96 @@ body.m-info .seg{display:none}
 
     </div>
 
+    <!-- лента в реальной работе: группировка по авторам, разделители дней -->
+    <div class="thread c-full">
+
+      <div class="daysep"><span>Вчера</span></div>
+
+      <div class="msg msg--other msg--notime">
+        <span class="msg__av">Л</span>
+        <div class="glass blk bubble">
+          <div class="glass__lens"></div><div class="glass__tint"></div><div class="glass__rim"></div>
+          <div class="glass__body">
+            <div class="bubble__who">Лиза</div>
+            <div class="bubble__text">Посмотрела гостиницы в Суздале. Есть две: одна в центре, вторая за рекой, но с видом</div>
+            <div class="bubble__time">12:41</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="msg msg--other msg--same">
+        <span class="msg__av">Л</span>
+        <div class="glass blk bubble">
+          <div class="glass__lens"></div><div class="glass__tint"></div><div class="glass__rim"></div>
+          <div class="glass__body">
+            <div class="bubble__who">Лиза</div>
+            <div class="bubble__text">Вторая дороже на четыре тысячи</div>
+            <div class="bubble__time">12:41</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="msg msg--mine">
+        <span class="msg__av">А</span>
+        <div class="glass blk bubble">
+          <div class="glass__lens"></div><div class="glass__tint"></div><div class="glass__rim"></div>
+          <div class="glass__body">
+            <div class="bubble__who">Антон</div>
+            <div class="bubble__text">Давай вторую. Мы же ради вида и едем</div>
+            <div class="bubble__time">12:58</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="daysep"><span>Сегодня</span></div>
+
+      <div class="msg msg--mine">
+        <span class="msg__av">А</span>
+        <div class="glass blk bubble">
+          <div class="glass__lens"></div><div class="glass__tint"></div><div class="glass__rim"></div>
+          <div class="glass__body">
+            <div class="bubble__who">Антон</div>
+            <div class="bubble__text">Забронировал. Заезд 22-го в 14:00</div>
+            <div class="bubble__time">09:12</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="msg msg--other">
+        <span class="msg__av">Л</span>
+        <div class="glass blk bubble">
+          <div class="glass__lens"></div><div class="glass__tint"></div><div class="glass__rim"></div>
+          <div class="glass__body">
+            <div class="bubble__who">Лиза</div>
+            <div class="bubble__text">Отлично. Добавишь в календарь?</div>
+            <div class="bubble__time">09:20</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="msg msg--ai">
+        <span class="msg__av msg__av--ai">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v3.2M12 16.8V20M4 12h3.2M16.8 12H20M6.5 6.5l2.3 2.3M15.2 15.2l2.3 2.3M17.5 6.5l-2.3 2.3M8.8 15.2l-2.3 2.3"/></svg>
+        </span>
+        <div class="glass blk bubble">
+          <div class="glass__lens"></div><div class="glass__tint"></div><div class="glass__rim"></div>
+          <div class="glass__body">
+            <div class="bubble__who">ИИ-посредник</div>
+            <div class="bubble__text">Могу добавить событие «Суздаль, заезд» на 22 августа, 14:00. Покажу карточку до сохранения — согласитесь оба, тогда добавлю</div>
+            <div class="bubble__time">09:20</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
     <div class="composer">
       <div class="glass blk cinput">
         <div class="glass__lens"></div><div class="glass__tint"></div><div class="glass__rim"></div>
-        <div class="glass__body"><span>Сообщение для общего чата</span></div>
+        <div class="glass__body">
+          <span class="c-ph">Сообщение для общего чата</span>
+          <span class="c-typed typed">Да, добавь. И напоминание за день</span>
+        </div>
       </div>
       <div class="csend">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"/></svg>

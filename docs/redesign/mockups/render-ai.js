@@ -2,6 +2,7 @@ const { chromium } = require('playwright');
 const path = require('path');
 const jobs = [
   { cls: 'm-chat', out: 'ai-chat.png' },
+  { cls: 'm-chat s-full', out: 'ai-chat-full.png' },
   { cls: 'm-chat s-empty', out: 'ai-chat-empty.png' },
   { cls: 'm-quiet', out: 'ai-quiet.png' },
   { cls: 'm-quiet s-send', out: 'ai-quiet-send.png' },
