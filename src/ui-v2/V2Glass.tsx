@@ -16,7 +16,7 @@ export interface V2GlassProps extends PropsWithChildren {
   nativeApple?: boolean;
 }
 
-export function V2Glass({ children, dark = false, depth = "standard", nativeApple = false, radius = 32, style }: V2GlassProps) {
+export function V2Glass({ children, dark = false, depth = "pronounced", nativeApple = false, radius = 32, style }: V2GlassProps) {
   const pronounced = depth === "pronounced";
   const [size, setSize] = useState({ height: 0, width: 0 });
   const usesSwiftUIGlass = nativeApple && supportsNativeLiquidGlass;
@@ -44,7 +44,7 @@ export function V2Glass({ children, dark = false, depth = "standard", nativeAppl
         ) : (
           <>
             <BlurView intensity={dark ? 34 : pronounced ? 27 : 22} style={StyleSheet.absoluteFill} tint={dark ? "dark" : "light"}/>
-            <View style={[StyleSheet.absoluteFill, { backgroundColor: dark ? "rgba(16,16,16,.40)" : pronounced ? "rgba(255,255,255,.16)" : "rgba(255,255,255,.13)" }]}/>
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: dark ? "rgba(16,16,16,.34)" : pronounced ? "rgba(255,255,255,.10)" : "rgba(255,255,255,.11)" }]}/>
           </>
         )}
         {!usesSwiftUIGlass ? <Svg height="100%" style={StyleSheet.absoluteFill} width="100%">
@@ -93,9 +93,9 @@ const styles = StyleSheet.create({
   materialClip: { bottom: 0, left: 0, overflow: "hidden", position: "absolute", right: 0, top: 0 },
   pronouncedShadow: {
     shadowColor: "#3A304C",
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.2,
-    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.24,
+    shadowRadius: 20,
   },
   contactShadow: {
     bottom: 0,

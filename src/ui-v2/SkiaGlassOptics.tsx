@@ -15,8 +15,10 @@ float roundedBox(float2 p, float2 halfSize, float r) {
 half4 main(float2 xy) {
   float2 p = xy - size * 0.5;
   float d = roundedBox(p, size * 0.5 - 1.5, radius);
-  float edge = 1.0 - smoothstep(-10.0, 1.0, abs(d + 2.0));
-  float inner = 1.0 - smoothstep(-26.0, -2.0, d);
+  float outerEdge = 1.0 - smoothstep(0.0, 3.5, abs(d));
+  float innerEdge = 1.0 - smoothstep(0.0, 16.0, abs(d + 8.0));
+  float edge = max(outerEdge, innerEdge * 0.62);
+  float inner = 1.0 - smoothstep(-34.0, -3.0, d);
   float top = clamp(1.0 - xy.y / max(size.y * 0.52, 1.0), 0.0, 1.0);
   float bottom = clamp((xy.y - size.y * 0.55) / max(size.y * 0.45, 1.0), 0.0, 1.0);
   float side = abs(p.x) / max(size.x * 0.5, 1.0);
@@ -28,9 +30,9 @@ half4 main(float2 xy) {
   );
   half3 base = darkMode > 0.5 ? half3(0.9) : half3(1.0);
   half3 color = base * (edge * (0.20 + top * 0.42));
-  color += prism * spectral * 0.20;
-  color -= half3(bottom * inner * 0.10);
-  float alpha = edge * 0.42 + top * inner * 0.07 + bottom * inner * 0.055;
+  color += prism * spectral * 0.28;
+  color -= half3(bottom * inner * 0.15);
+  float alpha = outerEdge * 0.72 + innerEdge * 0.32 + top * inner * 0.10 + bottom * inner * 0.10;
   return half4(color, alpha);
 }
 `);

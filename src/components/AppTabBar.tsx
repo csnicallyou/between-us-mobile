@@ -85,12 +85,11 @@ function DockShape({ dark }: { dark: boolean }) {
   return <Svg height="82" pointerEvents="none" style={StyleSheet.absoluteFill} viewBox="0 0 358 82" width="100%">
     <Defs><LinearGradient id="dockFill" x1="0" x2="0" y1="0" y2="1"><Stop offset="0" stopColor={dark ? "#151515" : "#FFFFFF"} stopOpacity={dark ? 0.76 : 0.82}/><Stop offset="1" stopColor={dark ? "#050505" : "#F7F8FA"} stopOpacity={dark ? 0.68 : 0.68}/></LinearGradient></Defs>
     <Path
-      d="M28 12H132C140 12 142 5 151 2C159 -1 169 -2 179 -2C189 -2 199 -1 207 2C216 5 218 12 226 12H330C345 12 354 22 354 37V50C354 66 345 76 330 76H28C13 76 4 66 4 50V37C4 22 13 12 28 12ZM179 3A32 32 0 1 0 179 67A32 32 0 1 0 179 3Z"
+      d="M28 12H330C345 12 354 22 354 37V50C354 66 345 76 330 76H28C13 76 4 66 4 50V37C4 22 13 12 28 12ZM179 7A36 36 0 1 0 179 79A36 36 0 1 0 179 7Z"
       fill="url(#dockFill)"
       fillRule="evenodd"
-      stroke={dark ? "rgba(255,255,255,.22)" : "rgba(255,255,255,.94)"}
-      strokeWidth="1"
     />
+    <Path d="M28 12H330C345 12 354 22 354 37V50C354 66 345 76 330 76H28C13 76 4 66 4 50V37C4 22 13 12 28 12Z" fill="none" stroke={dark ? "rgba(255,255,255,.20)" : "rgba(255,255,255,.88)"} strokeWidth="1"/>
   </Svg>;
 }
 
@@ -111,6 +110,6 @@ const styles = StyleSheet.create({
   },
   label: { fontFamily: "GolosText", fontSize: 9.5, fontWeight: "500", letterSpacing: -0.04 },
   pressed: { opacity: 0.68 },
-  orbButton: { alignItems: "center", height: 64, justifyContent: "center", left: "50%", marginLeft: -32, position: "absolute", top: 3, width: 64, zIndex: 2 },
+  orbButton: { alignItems: "center", height: 64, justifyContent: "center", left: "50%", marginLeft: -32, position: "absolute", top: 10, width: 64, zIndex: 2 },
   orbPressed: { opacity: 0.78, transform: [{ scale: 0.97 }] },
 });
