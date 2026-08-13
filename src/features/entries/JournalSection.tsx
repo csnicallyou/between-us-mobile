@@ -2,8 +2,6 @@ import { useState } from "react";
 import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import { AppButton } from "@/components/AppButton";
 import { EntryFormModal, type FormValue } from "@/components/EntryFormModal";
-import { PageHeader } from "@/components/PageHeader";
-import { Screen } from "@/components/Screen";
 import { Surface } from "@/components/Surface";
 import { journalKindLabels, memberName, moodLabels } from "@/domain/labels";
 import type { JournalEntry, JournalKind, Mood } from "@/domain/models";
@@ -12,7 +10,7 @@ import { colors, radius, spacing, typography } from "@/theme/tokens";
 
 const emptyForm: Record<string, FormValue> = { title: "", content: "", kind: "reflection", mood: "calm" };
 
-export default function JournalScreen() {
+export function JournalSection() {
   const { snapshot, addJournalEntry, updateJournalEntry, deleteJournalEntry } = useAppData();
   const [editing, setEditing] = useState<JournalEntry | null>(null);
   const [form, setForm] = useState<Record<string, FormValue>>(emptyForm);
@@ -33,7 +31,7 @@ export default function JournalScreen() {
   };
   const remove = (entry: JournalEntry) => Alert.alert("Удалить запись?", entry.title, [{ text: "Отмена", style: "cancel" }, { text: "Удалить", style: "destructive", onPress: () => deleteJournalEntry(entry.id) }]);
 
-  return <Screen header={<PageHeader kicker="Мысли без потери" title="Общий дневник" subtitle="Благодарности, чувства, вопросы и мысли, к которым можно вернуться вместе." />}>
+  return <>
     <AppButton label="Новая запись" onPress={() => begin()} />
     <View style={styles.feed}>{snapshot.journal.map((entry) => <Pressable key={entry.id} onLongPress={() => remove(entry)} onPress={() => begin(entry)}>
       <Surface>
@@ -57,7 +55,7 @@ export default function JournalScreen() {
       onChange={(key, value) => setForm((current) => ({ ...current, [key]: value }))} onClose={() => setOpen(false)} onSave={save}
       title={editing ? "Изменить запись" : "Новая запись"} values={form} visible={open}
     />
-  </Screen>;
+  </>;
 }
 
 const styles = StyleSheet.create({

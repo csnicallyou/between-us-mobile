@@ -70,7 +70,7 @@ export default function CalendarScreen() {
       </Surface>
       <View style={styles.agendaHeader}><Text style={[styles.agendaTitle, custom && { color: palette.foreground }]}>Выбранный день</Text><Text style={[styles.agendaDate, custom && { color: palette.mutedForeground }]}>{new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long" }).format(new Date(`${selected}T12:00:00`))}</Text></View>
       {selectedItems.length ? selectedItems.map((item) => <Surface key={item.id} style={styles.item}><Text style={styles.itemSource}>{item.source === "plan" ? "План" : "Событие"}</Text><Text style={styles.itemTitle}>{item.title}</Text></Surface>) : <Text style={[styles.empty, custom && { color: palette.mutedForeground }]}>На этот день пока ничего не добавлено.</Text>}
-      <View style={styles.actions}><AppButton label="Добавить событие" onPress={() => router.push("/memories" as Href)} variant="secondary" style={styles.action} /><AppButton label="Новый план" onPress={() => router.push("/plans" as Href)} style={styles.action} /></View>
+      <View style={styles.actions}><AppButton label="Добавить событие" onPress={() => router.push("/memories" as Href)} variant="secondary" style={styles.action} /><AppButton label="Новый план" onPress={() => router.push("/(tabs)/entries?filter=plans" as Href)} style={styles.action} /></View>
     </Screen>
   );
 }

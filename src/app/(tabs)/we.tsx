@@ -16,14 +16,12 @@ const sections = [
   { icon: "color-palette-outline", title: "Фон и контраст", subtitle: "Персональное оформление", href: "/appearance" },
   { icon: "time-outline", title: "Наша история", subtitle: "Памятные события", href: "/memories" },
   { icon: "heart-outline", title: "Важное о нас", subtitle: "Поддержка и границы", href: "/about" },
-  { icon: "lock-closed-outline", title: "Тихий канал", subtitle: "Личное обращение", href: "/quiet" },
   { icon: "chatbubbles-outline", title: "Разбор ссор", subtitle: "Эпизоды и выводы", href: "/conflicts" },
   { icon: "people-outline", title: "Договорённости", subtitle: "Общие правила", href: "/agreements" },
-  { icon: "sparkles-outline", title: "Чат втроём", subtitle: "Локальный прототип", href: "/chat" },
   { icon: "download-outline", title: "Экспорт данных", subtitle: "С согласия обоих", href: "/data-export" },
 ] as const;
 
-export default function MoreScreen() {
+export default function WeScreen() {
   const router = useRouter();
   const [reduceTransparency, setReduceTransparency] = useState<boolean | null>(null);
 
@@ -32,7 +30,7 @@ export default function MoreScreen() {
   }, []);
 
   return (
-    <Screen header={<PageHeader kicker="Все разделы" title="Ещё" subtitle="Дополнительные разделы общей платформы и будущие возможности." />}>
+    <Screen header={<PageHeader kicker="Про нас двоих" title="Мы" subtitle="История, договорённости и всё, что важно помнить друг о друге." />}>
       <Surface style={styles.group}>
         {sections.map((section, index) => (
           <View key={section.title}>

@@ -2,8 +2,6 @@ import { useState } from "react";
 import { Alert, Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { AppButton } from "@/components/AppButton";
 import { EntryFormModal, type FormValue } from "@/components/EntryFormModal";
-import { PageHeader } from "@/components/PageHeader";
-import { Screen } from "@/components/Screen";
 import { Surface } from "@/components/Surface";
 import { planKindLabels, planStatusLabels } from "@/domain/labels";
 import type { Plan, PlanKind, PlanStatus } from "@/domain/models";
@@ -17,7 +15,7 @@ import { useAuth } from "@/state/AuthContext";
 const statuses: PlanStatus[] = ["idea", "planned", "done"];
 const emptyForm: Record<string, FormValue> = { title: "", description: "", date: "", kind: "other", status: "idea", showInCalendar: true, imageUri: "" };
 
-export default function PlansScreen() {
+export function PlansSection() {
   const { accessToken } = useAuth();
   const { snapshot, addPlan, updatePlan, deletePlan } = useAppData();
   const { custom, palette } = useBackgroundPalette();
@@ -45,7 +43,7 @@ export default function PlansScreen() {
   const close = () => { const draftImage = String(form.imageUri || ""); if (draftImage && draftImage !== (editing?.imageUri ?? "")) deleteStoredImage(draftImage); setOpen(false); };
 
   return (
-    <Screen header={<PageHeader kicker="Куда движемся" title="Планы и поездки" subtitle="От идеи на вечер до большой совместной поездки." />}>
+    <>
       <AppButton label="Добавить план" onPress={startCreate} />
       <View style={styles.sections}>
         {statuses.map((status) => {
@@ -77,7 +75,7 @@ export default function PlansScreen() {
         imageUri={String(form.imageUri || "") || null} onPickImage={() => void pickImage()} pickingImage={pickingImage}
         onClose={close} onSave={save} title={editing ? "Изменить план" : "Новый план"} values={form} visible={open}
       />
-    </Screen>
+    </>
   );
 }
 
