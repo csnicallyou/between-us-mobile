@@ -82,12 +82,12 @@ export function surfaceShadow(size: number) {
   });
 }
 
-/** Типографика макетов. Golos Text подключается отдельным шагом. */
+/** Типографика макетов. Семейство загружается в корневом layout до показа приложения. */
 export const materialType = {
-  kicker: { fontSize: 10, fontWeight: "600", letterSpacing: 1.6, textTransform: "uppercase" },
-  title: { fontSize: 26, fontWeight: "600", letterSpacing: -0.8 },
-  section: { fontSize: 19, fontWeight: "600", letterSpacing: -0.5 },
-  body: { fontSize: 14, fontWeight: "400", lineHeight: 20 },
-  label: { fontSize: 12.5, fontWeight: "600", letterSpacing: -0.1 },
-  caption: { fontSize: 11.5, fontWeight: "400" },
+  kicker: { fontFamily: "GolosText", fontSize: 10, letterSpacing: 1.6, textTransform: "uppercase" },
+  title: { fontFamily: "GolosText", fontSize: 26, letterSpacing: -0.8 },
+  section: { fontFamily: "GolosText", fontSize: 19, letterSpacing: -0.5 },
+  body: { fontFamily: "GolosText", fontSize: 14, lineHeight: 20 },
+  label: { fontFamily: "GolosText", fontSize: 12.5, letterSpacing: -0.1 },
+  caption: { fontFamily: "GolosText", fontSize: 11.5 },
 } as const;

@@ -1,4 +1,5 @@
 import { Stack } from "expo-router";
+import { useFonts } from "expo-font";
 import { StatusBar } from "expo-status-bar";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -29,17 +30,30 @@ function RootNavigator() {
         <Stack.Screen name="about" />
         <Stack.Screen name="agreements" />
         <Stack.Screen name="appearance" />
+        <Stack.Screen name="ai" />
         <Stack.Screen name="chat" />
         <Stack.Screen name="conflicts" />
+        <Stack.Screen name="data-export" />
         <Stack.Screen name="memories" />
+        <Stack.Screen name="notifications" />
         <Stack.Screen name="quiet" />
         <Stack.Screen name="account" />
+        <Stack.Screen name="search" />
+        <Stack.Screen name="settings" />
       </Stack.Protected>
     </Stack>
   );
 }
 
 export default function RootLayout() {
+  const [fontsLoaded, fontError] = useFonts({
+    GolosText: require("../../docs/redesign/mockups/GolosText.ttf"),
+  });
+
+  if (!fontsLoaded && !fontError) {
+    return <View style={styles.loading}><StatusBar style="dark" /><ActivityIndicator color={colors.sea} size="large" /></View>;
+  }
+
   return (
     <ErrorBoundary>
       <AuthProvider><PairProvider><AppDataProvider><StatusBar style="dark" /><RootNavigator /></AppDataProvider></PairProvider></AuthProvider>
