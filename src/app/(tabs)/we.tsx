@@ -1,97 +1,160 @@
 import { Ionicons } from "@expo/vector-icons";
 import { type Href, useRouter } from "expo-router";
-import { useEffect, useState } from "react";
-import { AccessibilityInfo, Pressable, StyleSheet, Text, View } from "react-native";
-import { PageHeader } from "@/components/PageHeader";
-import { NativeGlassLayer } from "@/components/NativeGlassLayer";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Screen } from "@/components/Screen";
 import { Surface } from "@/components/Surface";
-import { glassDiagnostics, supportsNativeLiquidGlass } from "@/platform/glass";
-import { colors, controlShadow, radius, spacing } from "@/theme/tokens";
+import { useAppData } from "@/state/AppDataContext";
+import { fill, ink, materialSpacing, rim } from "@/theme/material";
 
-const sections = [
-  { icon: "person-circle-outline", title: "Аккаунт и пара", subtitle: "Профиль и синхронизация", href: "/account" },
-  { icon: "search-outline", title: "Поиск", subtitle: "По всем общим записям", href: "/search" },
-  { icon: "notifications-outline", title: "Уведомления", subtitle: "Категории и тихие часы", href: "/notifications" },
-  { icon: "color-palette-outline", title: "Фон и контраст", subtitle: "Персональное оформление", href: "/appearance" },
-  { icon: "time-outline", title: "Наша история", subtitle: "Памятные события", href: "/memories" },
-  { icon: "heart-outline", title: "Важное о нас", subtitle: "Поддержка и границы", href: "/about" },
-  { icon: "chatbubbles-outline", title: "Разбор ссор", subtitle: "Эпизоды и выводы", href: "/conflicts" },
-  { icon: "people-outline", title: "Договорённости", subtitle: "Общие правила", href: "/agreements" },
-  { icon: "download-outline", title: "Экспорт данных", subtitle: "С согласия обоих", href: "/data-export" },
-] as const;
+type IconName = keyof typeof Ionicons.glyphMap;
 
+function plural(count: number, one: string, few: string, many: string) {
+  const mod10 = count % 10;
+  const mod100 = count % 100;
+  if (mod100 >= 11 && mod100 <= 14) return many;
+  if (mod10 === 1) return one;
+  if (mod10 >= 2 && mod10 <= 4) return few;
+  return many;
+}
+
+interface TileOptions {
+  icon: IconName;
+  href: string;
+  title: string;
+  subtitle: string;
+  count: number;
+  unit: [string, string, string];
+  wide?: boolean;
+}
+
+/**
+ * «Мы» — бывшее «Ещё», но только про отношения.
+ *
+ * Служебные разделы (аккаунт, уведомления, фон, экспорт, диагностика)
+ * уехали в `/settings`, поиск — в шапку. Осталось четыре раздела, и они
+ * показаны плитками с живым счётчиком, а не плоским списком: число
+ * записей — самая полезная подсказка на этом экране.
+ */
 export default function WeScreen() {
   const router = useRouter();
-  const [reduceTransparency, setReduceTransparency] = useState<boolean | null>(null);
+  const { snapshot } = useAppData();
 
-  useEffect(() => {
-    void AccessibilityInfo.isReduceTransparencyEnabled().then(setReduceTransparency);
-  }, []);
+  const go = (href: string) => router.push(href as Href);
+
+  const tile = (options: TileOptions) => (
+    <Pressable
+      accessibilityRole="button"
+      key={options.href}
+      onPress={() => go(options.href)}
+      style={({ pressed }) => [options.wide ? styles.wide : styles.half, pressed && styles.pressed]}
+    >
+      <Surface style={styles.tile}>
+        <View style={styles.tileTop}>
+          <View style={styles.well}><Ionicons color={ink.muted} name={options.icon} size={19} /></View>
+          <View style={styles.counter}>
+            <Text style={styles.count}>{options.count}</Text>
+            <Text style={styles.unit}>{plural(options.count, options.unit[0], options.unit[1], options.unit[2])}</Text>
+          </View>
+        </View>
+        <Text style={styles.tileTitle}>{options.title}</Text>
+        <Text numberOfLines={2} style={styles.tileSubtitle}>
+          {options.count === 0 ? "Раздел ещё пуст" : options.subtitle}
+        </Text>
+      </Surface>
+    </Pressable>
+  );
 
   return (
-    <Screen header={<PageHeader kicker="Про нас двоих" title="Мы" subtitle="История, договорённости и всё, что важно помнить друг о друге." />}>
-      <Surface style={styles.group}>
-        {sections.map((section, index) => (
-          <View key={section.title}>
-            <Pressable accessibilityRole="button" onPress={() => router.push(section.href as Href)} style={({ pressed }) => [styles.item, pressed && styles.pressed]}>
-              <View style={[styles.iconWell, index % 3 === 1 && styles.violetWell, index % 3 === 2 && styles.coralWell]}>
-                <Ionicons color={index % 3 === 1 ? colors.violet : index % 3 === 2 ? colors.coral : colors.sea} name={section.icon} size={21} />
-              </View>
-              <View style={styles.copy}>
-                <Text style={styles.title}>{section.title}</Text>
-                <Text style={styles.subtitle}>{section.subtitle}</Text>
-              </View>
-              <Ionicons color={colors.muted} name="chevron-forward" size={18} />
-            </Pressable>
-            {index < sections.length - 1 ? <View style={styles.separator} /> : null}
+    <Screen
+      header={
+        <View style={styles.header}>
+          <View style={styles.headings}>
+            <Text style={styles.kicker}>Про нас двоих</Text>
+            <Text style={styles.title}>Мы</Text>
           </View>
-        ))}
-      </Surface>
-      <Surface style={styles.foundation}>
-        <Text style={styles.foundationTitle}>Мобильная основа готова</Text>
-        <Text style={styles.foundationText}>Аккаунты пары и общие данные синхронизируются с сервером. Следующий этап — ИИ-посредник, уведомления и виджеты.</Text>
-      </Surface>
-      <View style={styles.diagnostics}>
-        <View pointerEvents="none" style={styles.probeBackdrop}>
-          <View style={[styles.probeOrb, styles.probeSea]} />
-          <View style={[styles.probeOrb, styles.probeCoral]} />
+          <Pressable accessibilityLabel="Поиск" accessibilityRole="button" onPress={() => go("/search")} style={styles.round}>
+            <Ionicons color={ink.strong} name="search-outline" size={18} />
+          </Pressable>
+          <Pressable accessibilityLabel="Настройки" accessibilityRole="button" onPress={() => go("/settings")} style={styles.round}>
+            <Ionicons color={ink.strong} name="settings-outline" size={18} />
+          </Pressable>
         </View>
-        {supportsNativeLiquidGlass ? <View style={styles.probeGlass}><NativeGlassLayer cornerRadius={41} interactive variant="clear" /></View> : null}
-        <View style={styles.diagnosticsCopy}>
-          <Text style={styles.diagnosticsTitle}>Диагностика Liquid Glass</Text>
-          <Text style={styles.diagnosticsLine}>iOS: {glassDiagnostics.osVersion}</Text>
-          <Text style={styles.diagnosticsLine}>API: {glassDiagnostics.apiAvailable ? "доступен" : "недоступен"}</Text>
-          <Text style={styles.diagnosticsLine}>Сборка: {glassDiagnostics.compiledWithLiquidGlass ? "поддерживает" : "не поддерживает"}</Text>
-          <Text style={styles.diagnosticsLine}>UIKit GlassView: {supportsNativeLiquidGlass ? "активен" : "недоступен"}</Text>
-          <Text style={styles.diagnosticsLine}>Уменьшение прозрачности: {reduceTransparency === null ? "проверяется" : reduceTransparency ? "включено" : "выключено"}</Text>
-        </View>
+      }
+    >
+      <View style={styles.grid}>
+        {tile({
+          count: snapshot.memories.length,
+          href: "/memories",
+          icon: "time-outline",
+          subtitle: "События, к которым хочется возвращаться",
+          title: "Наша история",
+          unit: ["момент", "момента", "моментов"],
+          wide: true,
+        })}
+        {tile({
+          count: snapshot.about.length,
+          href: "/about",
+          icon: "heart-outline",
+          subtitle: "Поддержка, границы, самочувствие",
+          title: "Важное о нас",
+          unit: ["карточка", "карточки", "карточек"],
+        })}
+        {tile({
+          count: snapshot.agreements.length,
+          href: "/agreements",
+          icon: "people-outline",
+          subtitle: "Правила, которые вы выбрали сами",
+          title: "Договорённости",
+          unit: ["правило", "правила", "правил"],
+        })}
+        {tile({
+          count: snapshot.conflicts.length,
+          href: "/conflicts",
+          icon: "git-compare-outline",
+          subtitle: "Эпизоды и выводы, а не рейтинг виноватых",
+          title: "Разбор ссор",
+          unit: ["эпизод", "эпизода", "эпизодов"],
+          wide: true,
+        })}
       </View>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  group: { backgroundColor: "rgba(255,255,255,0.68)", paddingHorizontal: spacing.md, paddingVertical: spacing.xs },
-  item: { alignItems: "center", flexDirection: "row", minHeight: 72, paddingHorizontal: spacing.xs, paddingVertical: spacing.sm },
-  pressed: { opacity: 0.72, transform: [{ scale: 0.985 }] },
-  iconWell: { alignItems: "center", backgroundColor: colors.seaSoft, borderColor: colors.glassLine, borderRadius: radius.md, borderWidth: StyleSheet.hairlineWidth, height: 44, justifyContent: "center", width: 44, ...controlShadow },
-  violetWell: { backgroundColor: colors.violetSoft },
-  coralWell: { backgroundColor: colors.coralSoft },
-  copy: { flex: 1, marginHorizontal: spacing.md },
-  title: { color: colors.ink, fontSize: 15, fontWeight: "700" },
-  subtitle: { color: colors.muted, fontSize: 12, lineHeight: 17, marginTop: 2 },
-  separator: { backgroundColor: colors.line, height: StyleSheet.hairlineWidth, marginLeft: 60 },
-  foundation: { backgroundColor: colors.seaSoft, marginTop: spacing.xl },
-  foundationTitle: { color: colors.ink, fontSize: 16, fontWeight: "700" },
-  foundationText: { color: colors.muted, fontSize: 13, lineHeight: 20, marginTop: spacing.sm },
-  diagnostics: { backgroundColor: colors.surfaceStrong, borderRadius: radius.lg, minHeight: 190, marginTop: spacing.xl, overflow: "hidden", padding: spacing.lg },
-  diagnosticsCopy: { position: "relative" },
-  diagnosticsTitle: { color: colors.ink, fontSize: 16, fontWeight: "700", marginBottom: spacing.sm },
-  diagnosticsLine: { color: colors.muted, fontSize: 13, lineHeight: 22 },
-  probeBackdrop: { bottom: 0, left: 0, position: "absolute", right: 0, top: 0 },
-  probeOrb: { borderRadius: radius.pill, height: 150, position: "absolute", width: 150 },
-  probeSea: { backgroundColor: "#73D1C4", right: -28, top: -46 },
-  probeCoral: { backgroundColor: "#F0A99C", bottom: -75, right: 58 },
-  probeGlass: { borderRadius: radius.pill, height: 82, position: "absolute", right: 24, top: 54, width: 82 },
+  header: { alignItems: "center", flexDirection: "row", gap: 9, marginBottom: materialSpacing.xl, paddingTop: materialSpacing.xs },
+  headings: { flex: 1 },
+  kicker: { color: ink.faint, fontSize: 10, fontWeight: "600", letterSpacing: 1.6, textTransform: "uppercase" },
+  title: { color: ink.strong, fontSize: 28, fontWeight: "600", letterSpacing: -0.9, marginTop: 5 },
+  round: {
+    alignItems: "center",
+    backgroundColor: fill.control,
+    borderColor: rim.hair,
+    borderRadius: 19,
+    borderWidth: StyleSheet.hairlineWidth,
+    height: 38,
+    justifyContent: "center",
+    width: 38,
+  },
+  grid: { flexDirection: "row", flexWrap: "wrap", gap: 11 },
+  wide: { width: "100%" },
+  half: { flexBasis: "46%", flexGrow: 1 },
+  pressed: { opacity: 0.8, transform: [{ scale: 0.99 }] },
+  tile: { minHeight: 128, padding: 15 },
+  tileTop: { alignItems: "flex-start", flexDirection: "row", justifyContent: "space-between" },
+  well: {
+    alignItems: "center",
+    backgroundColor: fill.control,
+    borderColor: rim.hair,
+    borderRadius: 13,
+    borderWidth: StyleSheet.hairlineWidth,
+    height: 38,
+    justifyContent: "center",
+    width: 38,
+  },
+  counter: { alignItems: "flex-end" },
+  count: { color: ink.strong, fontSize: 25, fontWeight: "600", letterSpacing: -0.9, lineHeight: 27 },
+  unit: { color: ink.faint, fontSize: 10.5, marginTop: 2 },
+  tileTitle: { color: ink.strong, fontSize: 16, fontWeight: "600", letterSpacing: -0.4, marginTop: 14 },
+  tileSubtitle: { color: ink.muted, fontSize: 12.5, lineHeight: 17, marginTop: 5 },
 });
