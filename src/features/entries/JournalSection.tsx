@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import { AppButton } from "@/components/AppButton";
 import { EntryFormModal, type FormValue } from "@/components/EntryFormModal";
+import { SwipeToDelete } from "@/components/SwipeToDelete";
 import { Surface } from "@/components/Surface";
 import { journalKindLabels, memberName, moodLabels } from "@/domain/labels";
 import type { JournalEntry, JournalKind, Mood } from "@/domain/models";
@@ -33,7 +34,7 @@ export function JournalSection() {
 
   return <>
     <AppButton label="Новая запись" onPress={() => begin()} />
-    <View style={styles.feed}>{snapshot.journal.map((entry) => <Pressable key={entry.id} onLongPress={() => remove(entry)} onPress={() => begin(entry)}>
+    <View style={styles.feed}>{snapshot.journal.map((entry) => <SwipeToDelete key={entry.id} onDelete={() => remove(entry)}><Pressable onPress={() => begin(entry)}>
       <Surface>
         <View style={styles.authorRow}>
           <View style={[styles.avatar, entry.authorId !== snapshot.currentMemberId && styles.partnerAvatar]}><Text style={styles.avatarText}>{memberName(snapshot, entry.authorId)[0]}</Text></View>
@@ -41,9 +42,9 @@ export function JournalSection() {
           {entry.mood ? <Text style={styles.mood}>{moodLabels[entry.mood]}</Text> : null}
         </View>
         <Text style={styles.kind}>{journalKindLabels[entry.kind]}</Text><Text style={styles.title}>{entry.title}</Text><Text style={styles.content}>{entry.content}</Text>
-        <Text style={styles.hint}>Нажмите для изменения, удерживайте для удаления</Text>
+        <Text style={styles.hint}>Нажмите для изменения, смахните влево для удаления</Text>
       </Surface>
-    </Pressable>)}</View>
+    </Pressable></SwipeToDelete>)}</View>
     <Surface style={styles.prompt}><Text style={styles.promptTitle}>Вопрос друг другу</Text><Text style={styles.promptText}>Что сегодня помогло тебе почувствовать мою любовь?</Text><AppButton label="Ответить" onPress={() => begin()} variant="secondary" /></Surface>
     <EntryFormModal
       fields={[

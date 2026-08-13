@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import { AppButton } from "@/components/AppButton";
 import { EntryFormModal, type FormValue } from "@/components/EntryFormModal";
+import { SwipeToDelete } from "@/components/SwipeToDelete";
 import { Screen } from "@/components/Screen";
 import { SubpageHeader } from "@/components/SubpageHeader";
 import { Surface } from "@/components/Surface";
@@ -20,7 +21,7 @@ export default function AboutScreen() {
   const begin = (item?: AboutItem) => { setEditing(item ?? null); setForm(item ? { owner: item.owner, category: item.category, title: item.title, content: item.content } : empty); setOpen(true); };
   const save = () => { const title = String(form.title).trim(); const content = String(form.content).trim(); if (!title || !content) return Alert.alert("Заполните карточку", "Нужны название и описание."); const input = { owner: form.owner as AboutOwner, category: form.category as AboutCategory, title, content }; editing ? updateAboutItem(editing.id, input) : addAboutItem(input); setOpen(false); };
   const remove = (item: AboutItem) => Alert.alert("Удалить карточку?", item.title, [{ text: "Отмена", style: "cancel" }, { text: "Удалить", style: "destructive", onPress: () => deleteAboutItem(item.id) }]);
-  return <Screen header={<SubpageHeader title="Важное о нас" subtitle="Поддержка, личные границы и важные особенности каждого — без догадок." />}><AppButton label="Добавить важное" onPress={() => begin()} /><View style={styles.list}>{snapshot.about.length ? snapshot.about.map((item) => <Pressable key={item.id} onLongPress={() => remove(item)} onPress={() => begin(item)}><Surface><Text style={styles.meta}>{ownerLabel(item.owner)} · {categories[item.category]}</Text><Text style={styles.title}>{item.title}</Text><Text style={styles.copy}>{item.content}</Text></Surface></Pressable>) : <Surface><Text style={styles.empty}>Здесь можно сохранить то, что важно помнить друг о друге.</Text></Surface>}</View>
+  return <Screen header={<SubpageHeader title="Важное о нас" subtitle="Поддержка, личные границы и важные особенности каждого — без догадок." />}><AppButton label="Добавить важное" onPress={() => begin()} /><View style={styles.list}>{snapshot.about.length ? snapshot.about.map((item) => <SwipeToDelete key={item.id} onDelete={() => remove(item)}><Pressable onPress={() => begin(item)}><Surface><Text style={styles.meta}>{ownerLabel(item.owner)} · {categories[item.category]}</Text><Text style={styles.title}>{item.title}</Text><Text style={styles.copy}>{item.content}</Text></Surface></Pressable></SwipeToDelete>) : <Surface><Text style={styles.empty}>Здесь можно сохранить то, что важно помнить друг о друге.</Text></Surface>}</View>
     <EntryFormModal visible={open} title={editing ? "Изменить карточку" : "Новая карточка"} values={form} onChange={(key, value) => setForm((current) => ({ ...current, [key]: value }))} onClose={() => setOpen(false)} onSave={save} fields={[{ key: "owner", label: "О ком", choices: ownerChoices }, { key: "category", label: "Категория", choices: Object.entries(categories).map(([value, label]) => ({ value, label })) }, { key: "title", label: "Название" }, { key: "content", label: "Описание", multiline: true }]} />
   </Screen>;
 }

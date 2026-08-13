@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Alert, Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { AppButton } from "@/components/AppButton";
 import { EntryFormModal, type FormValue } from "@/components/EntryFormModal";
+import { SwipeToDelete } from "@/components/SwipeToDelete";
 import { Screen } from "@/components/Screen";
 import { SubpageHeader } from "@/components/SubpageHeader";
 import { Surface } from "@/components/Surface";
@@ -26,9 +27,9 @@ export default function MemoriesScreen() {
   const remove = (item: Memory) => Alert.alert("Удалить событие?", item.title, [{ text: "Отмена", style: "cancel" }, { text: "Удалить", style: "destructive", onPress: () => { deleteStoredImage(item.imageUri); deleteMemory(item.id); } }]);
   return <Screen header={<SubpageHeader title="Наша история" subtitle="Памятные события, фотографии и маленькие моменты, которые хочется сохранить." />}>
     <AppButton label="Добавить момент" onPress={() => begin()} />
-    <View style={styles.list}>{snapshot.memories.length ? snapshot.memories.map((item) => <Pressable key={item.id} onLongPress={() => remove(item)} onPress={() => begin(item)}><Surface>
+    <View style={styles.list}>{snapshot.memories.length ? snapshot.memories.map((item) => <SwipeToDelete key={item.id} onDelete={() => remove(item)}><Pressable onPress={() => begin(item)}><Surface>
       <Text style={styles.meta}>{kinds[item.kind]} · {new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long", year: "numeric" }).format(new Date(`${item.date}T12:00:00`))}</Text><Text style={styles.title}>{item.title}</Text>{item.imageUri ? <Image resizeMode="contain" source={privateImageSource(item.imageUri, accessToken)} style={styles.memoryImage} /> : null}{item.description ? <Text style={styles.copy}>{item.description}</Text> : null}<Text style={styles.hint}>{item.showInCalendar ? "Отображается в календаре" : "Скрыто из календаря"}</Text>
-    </Surface></Pressable>) : <Surface><Text style={styles.empty}>Добавьте первый общий момент.</Text></Surface>}</View>
+    </Surface></Pressable></SwipeToDelete>) : <Surface><Text style={styles.empty}>Добавьте первый общий момент.</Text></Surface>}</View>
     <EntryFormModal visible={open} title={editing ? "Изменить момент" : "Новый момент"} values={form} onChange={(key, value) => setForm((current) => ({ ...current, [key]: value }))} onClose={close} onSave={save} fields={[
       { key: "title", label: "Название", placeholder: "Что произошло" }, { key: "description", label: "Описание", placeholder: "Почему этот момент важен", multiline: true }, { key: "date", label: "Дата", type: "date" }, { key: "kind", label: "Тип", choices: Object.entries(kinds).map(([value, label]) => ({ value, label })) }, { key: "showInCalendar", label: "Показывать в календаре", type: "switch" },
     ]} imageUri={String(form.imageUri || "") || null} onPickImage={() => void pickImage()} pickingImage={pickingImage} />

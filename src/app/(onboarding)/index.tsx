@@ -83,7 +83,7 @@ export function PairSetupScreen({ initialSecret = "" }: { initialSecret?: string
 
   if (pair && pair.members.length >= 2) {
     return (
-      <AuthScaffold title={pair.name} subtitle="Вы оба уже здесь. Можно переходить в ваше общее пространство.">
+      <AuthScaffold step={3} title={pair.name} subtitle="Вы оба уже здесь. Можно переходить в ваше общее пространство.">
         <Text style={styles.memberNames}>{pair.members.map((member) => member.displayName).join(" и ")}</Text>
         <AppButton label="Продолжить" onPress={() => router.replace("/(tabs)")} />
       </AuthScaffold>
@@ -91,7 +91,7 @@ export function PairSetupScreen({ initialSecret = "" }: { initialSecret?: string
   }
 
   if (pair && invite) {
-    return <AuthScaffold title={pair.name} subtitle="Осталось позвать второго участника."><PairInviteCard invite={invite} /></AuthScaffold>;
+    return <AuthScaffold step={3} title={pair.name} subtitle="Осталось позвать второго участника."><PairInviteCard invite={invite} /></AuthScaffold>;
   }
 
   if (pair) {
@@ -104,11 +104,11 @@ export function PairSetupScreen({ initialSecret = "" }: { initialSecret?: string
   }
 
   if (!user?.emailVerified) {
-    return <AuthScaffold title="Почти готово" subtitle="Прежде чем создать или присоединиться к паре, подтвердите почту."><EmailVerificationPanel /></AuthScaffold>;
+    return <AuthScaffold step={1} title="Почти готово" subtitle="Прежде чем создать или присоединиться к паре, подтвердите почту."><EmailVerificationPanel /></AuthScaffold>;
   }
 
   return (
-    <AuthScaffold title="Создайте вашу пару" subtitle="Один создаёт общее пространство, второй входит по ссылке, QR или коду.">
+    <AuthScaffold step={2} title="Создайте вашу пару" subtitle="Один создаёт общее пространство, второй входит по ссылке, QR или коду.">
       {mode === "choose" ? (
         <View style={styles.group}>
           <AppButton label="Создать пару" onPress={() => setMode("create")} />
