@@ -1,13 +1,11 @@
 import { Directory, File, Paths } from "expo-file-system";
 import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, Share, StyleSheet, Text } from "react-native";
-import { AppButton } from "@/components/AppButton";
-import { Screen } from "@/components/Screen";
-import { SubpageHeader } from "@/components/SubpageHeader";
-import { Surface } from "@/components/Surface";
+import { V2Button as AppButton } from "@/ui-v2";
+import { InnerGlass as Surface, InnerScreen as Screen, InnerScreenHeader } from "@/components/redesign/InnerScreenChrome";
 import { backendClient, type ExportRequestDto } from "@/services/backendClient";
 import { useAuth } from "@/state/AuthContext";
-import { ink, materialSpacing, materialType } from "@/theme/material";
+import { ink, materialSpacing, materialType } from "@/ui-v2/styleTokens";
 import { colors } from "@/theme/tokens";
 
 export default function DataExportScreen() {
@@ -57,11 +55,11 @@ export default function DataExportScreen() {
   });
 
   if (request === undefined) {
-    return <Screen header={<SubpageHeader kicker="Приложение" title="Экспорт данных" subtitle="Выгрузка общих записей требует согласия обоих." />}><ActivityIndicator color={colors.sea} /></Screen>;
+    return <Screen header={<InnerScreenHeader kicker="Приложение" title="Экспорт данных" subtitle="Выгрузка общих записей требует согласия обоих." />}><ActivityIndicator color={colors.sea} /></Screen>;
   }
 
   return (
-    <Screen header={<SubpageHeader kicker="Приложение" title="Экспорт данных" subtitle="Выгрузка общих записей требует согласия обоих." />}>
+    <Screen header={<InnerScreenHeader kicker="Приложение" title="Экспорт данных" subtitle="Выгрузка общих записей требует согласия обоих." />}>
       <Surface style={styles.section}>
         <Text style={styles.body}>
           Экспорт включает планы, дневник, памятные события, договорённости, чат и настроения — всё общее пространство пары.

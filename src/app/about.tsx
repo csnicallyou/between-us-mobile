@@ -1,14 +1,12 @@
 import { useState } from "react";
 import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import { EntryFormModal, type FormValue } from "@/components/EntryFormModal";
-import { Screen } from "@/components/Screen";
 import { SwipeToDelete } from "@/components/SwipeToDelete";
-import { Surface } from "@/components/Surface";
-import { InnerScreenHeader, InnerSectionHeader, innerStyles } from "@/components/redesign/InnerScreenChrome";
+import { InnerGlass as Surface, InnerScreen as Screen, InnerScreenHeader, InnerSectionHeader, innerStyles } from "@/components/redesign/InnerScreenChrome";
 import { memberName } from "@/domain/labels";
 import type { AboutCategory, AboutItem, AboutOwner } from "@/domain/models";
 import { useAppData } from "@/state/AppDataContext";
-import { fill, ink, materialType, rim, surfaceShadow } from "@/theme/material";
+import { fill, ink, materialType, rim, surfaceShadow } from "@/ui-v2/styleTokens";
 
 const categories: Record<AboutCategory, string> = { support: "Поддержка", boundary: "Границы", preference: "Предпочтения", health: "Самочувствие", important: "Важное" };
 const categoryOrder = Object.keys(categories) as AboutCategory[];

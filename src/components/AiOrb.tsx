@@ -1,200 +1,178 @@
 import { useEffect, useMemo, useRef } from "react";
 import { Animated, Easing, StyleSheet, View } from "react-native";
-import Svg, { Circle, Defs, RadialGradient, Stop } from "react-native-svg";
+import Svg, { Circle, Defs, Line, RadialGradient, Stop } from "react-native-svg";
 
 interface AiOrbProps {
   size?: number;
-  /** Активное состояние в панели: кольцо и более плотный гало. */
   active?: boolean;
+  dark?: boolean;
 }
 
-const NODE_COUNT = 38;
-/** Кадров на один оборот. Интерполяция периодическая, шов не виден. */
-const SAMPLES = 36;
-const PALETTE = ["#FFFFFF", "#FFFFFF", "#EDEAF2", "#221E2A", "#221E2A", "#3B3644"] as const;
-const ACTIVE_PALETTE = ["#FFFFFF", "#F7F7F7", "#DADADA", "#929292", "#FFFFFF", "#B8B8B8"] as const;
-
-interface Sample {
+interface NodePoint {
   x: number;
   y: number;
-  scale: number;
-  opacity: number;
+  z: number;
+  radius: number;
+  color: string;
 }
 
-/**
- * Узлы живут в объёме шара, а не на плоскости: шар медленно вращается,
- * ближние узлы крупнее и ярче дальних. Это и делает его шаром, а не кругом.
- *
- * Все кадры оборота считаются один раз при загрузке модуля и скармливаются
- * в `interpolate`. Дальше анимацию целиком ведёт нативный драйвер: JS в
- * покадровой работе не участвует, поэтому сфера в панели вкладок ничего не
- * стоит, хотя видна всё время.
- */
-function buildTracks(): { samples: Sample[]; color: string }[] {
+const NODE_COUNT = 16;
+const LINK_DISTANCE = 0.82;
+const PALETTE = ["#FFFFFF", "#FFFFFF", "#EDEAF2", "#221E2A", "#221E2A", "#3B3644"] as const;
+
+function createNetwork() {
   let seed = 20260813;
   const random = () => {
-    seed = (seed * 1103515245 + 12345) & 0x7fffffff;
-    return seed / 0x7fffffff;
+    seed = (seed * 1664525 + 1013904223) >>> 0;
+    return seed / 0xffffffff;
   };
 
-  const nodes = Array.from({ length: NODE_COUNT }, (_, index) => ({
-    // равномерно по объёму, а не по поверхности
-    radius: 0.34 + 0.58 * Math.cbrt(random()),
-    phi: Math.acos(1 - 2 * random()),
-    theta: random() * Math.PI * 2,
-    color: PALETTE[index % PALETTE.length] as string,
-  }));
-
-  return nodes.map((node) => {
-    const samples: Sample[] = [];
-    for (let step = 0; step <= SAMPLES; step += 1) {
-      const angle = (Math.PI * 2 * step) / SAMPLES;
-      const tilt = 0.26 * Math.sin(angle);
-      const flat = node.radius * Math.sin(node.phi);
-      const x = flat * Math.cos(node.theta + angle);
-      const baseY = node.radius * Math.cos(node.phi);
-      const baseZ = flat * Math.sin(node.theta + angle);
-      const y = baseY * Math.cos(tilt) - baseZ * Math.sin(tilt);
-      const z = baseY * Math.sin(tilt) + baseZ * Math.cos(tilt);
-      const depth = (z + 1) / 2;
-      const perspective = 0.78 + 0.22 * depth;
-      samples.push({
-        x: x * perspective,
-        y: y * perspective,
-        scale: 0.5 + 0.9 * depth,
-        opacity: 0.4 + 0.6 * depth,
-      });
-    }
-    return { samples, color: node.color };
+  const nodes: NodePoint[] = Array.from({ length: NODE_COUNT }, (_, index) => {
+    const u = random() * 2 - 1;
+    const theta = random() * Math.PI * 2;
+    const radius = Math.cbrt(random()) * 0.92;
+    const side = Math.sqrt(1 - u * u);
+    const z = radius * u;
+    const depth = (z + 1) / 2;
+    return {
+      x: radius * side * Math.cos(theta),
+      y: radius * side * Math.sin(theta),
+      z,
+      radius: 1.05 + 1.85 * depth,
+      color: PALETTE[index % PALETTE.length]!,
+    };
   });
+
+  const links: { a: number; b: number; opacity: number }[] = [];
+  for (let a = 0; a < nodes.length; a += 1) {
+    for (let b = a + 1; b < nodes.length; b += 1) {
+      const left = nodes[a]!;
+      const right = nodes[b]!;
+      const distance = Math.hypot(left.x - right.x, left.y - right.y, left.z - right.z);
+      if (distance < LINK_DISTANCE) {
+        const depth = ((left.z + 1) / 2 + (right.z + 1) / 2) / 2;
+        links.push({ a, b, opacity: (1 - distance / LINK_DISTANCE) * (0.16 + 0.5 * depth) });
+      }
+    }
+  }
+  return { links, nodes };
 }
 
-const TRACKS = buildTracks();
-const INPUT_RANGE = Array.from({ length: SAMPLES + 1 }, (_, step) => step / SAMPLES);
+const NETWORK = createNetwork();
 
-export function AiOrb({ active = false, size = 62 }: AiOrbProps) {
-  const phase = useRef(new Animated.Value(0)).current;
+/**
+ * The orb is a transparent glass volume, not a coloured button. The sixteen
+ * particles and their links mirror `docs/redesign/mockups/neurons.js`.
+ */
+export function AiOrb({ active = false, dark = false, size = 62 }: AiOrbProps) {
+  const spin = useRef(new Animated.Value(0)).current;
   const breath = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    const spin = Animated.loop(
-      Animated.timing(phase, { duration: active ? 6200 : 11000, easing: Easing.linear, toValue: 1, useNativeDriver: true }),
+    const rotation = Animated.loop(
+      Animated.timing(spin, {
+        duration: active ? 10500 : 15000,
+        easing: Easing.linear,
+        toValue: 1,
+        useNativeDriver: true,
+      }),
     );
     const pulse = Animated.loop(
       Animated.sequence([
-        Animated.timing(breath, { duration: active ? 1600 : 2300, easing: Easing.inOut(Easing.ease), toValue: 1, useNativeDriver: true }),
-        Animated.timing(breath, { duration: active ? 1600 : 2300, easing: Easing.inOut(Easing.ease), toValue: 0, useNativeDriver: true }),
+        Animated.timing(breath, { duration: active ? 1700 : 2300, easing: Easing.inOut(Easing.ease), toValue: 1, useNativeDriver: true }),
+        Animated.timing(breath, { duration: active ? 1700 : 2300, easing: Easing.inOut(Easing.ease), toValue: 0, useNativeDriver: true }),
       ]),
     );
-    spin.start();
+    rotation.start();
     pulse.start();
-    return () => {
-      spin.stop();
-      pulse.stop();
-    };
-  }, [active, breath, phase]);
+    return () => { rotation.stop(); pulse.stop(); };
+  }, [active, breath, spin]);
 
   const radius = size / 2;
-  const dot = Math.max(1.1, size * 0.023);
-
-  const nodes = useMemo(
-    () =>
-      TRACKS.map((track, index) => ({
-        color: active ? ACTIVE_PALETTE[index % ACTIVE_PALETTE.length] : track.color,
-        key: `node-${index}`,
-        opacity: phase.interpolate({ inputRange: INPUT_RANGE, outputRange: track.samples.map((s) => s.opacity) }),
-        scale: phase.interpolate({ inputRange: INPUT_RANGE, outputRange: track.samples.map((s) => s.scale) }),
-        x: phase.interpolate({ inputRange: INPUT_RANGE, outputRange: track.samples.map((s) => s.x * radius) }),
-        y: phase.interpolate({ inputRange: INPUT_RANGE, outputRange: track.samples.map((s) => s.y * radius) }),
-      })),
-    [active, phase, radius],
-  );
+  const networkRadius = radius - size * 0.065;
+  const projected = useMemo(() => NETWORK.nodes.map((node) => ({
+    ...node,
+    px: radius + node.x * networkRadius,
+    py: radius + node.y * networkRadius,
+  })), [networkRadius, radius]);
+  const onDark = dark || active;
 
   return (
-    <View style={{ height: size, width: size }}>
+    <View pointerEvents="none" style={{ height: size, width: size }}>
       <Animated.View
-        pointerEvents="none"
         style={[
           styles.halo,
           {
-            opacity: breath.interpolate({ inputRange: [0, 1], outputRange: active ? [0.28, 0.48] : [0.16, 0.30] }),
-            transform: [{ scale: breath.interpolate({ inputRange: [0, 1], outputRange: [0.86, 1.06] }) }],
+            opacity: breath.interpolate({ inputRange: [0, 1], outputRange: active ? [0.32, 0.54] : [0.16, 0.28] }),
+            transform: [{ scale: breath.interpolate({ inputRange: [0, 1], outputRange: [0.84, 1.05] }) }],
           },
         ]}
       >
         <Svg height="100%" width="100%">
           <Defs>
-            <RadialGradient id="orbHalo" r="50%">
-              <Stop offset="0" stopColor="#FFFFFF" stopOpacity={active ? 0.28 : 0.16} />
-              <Stop offset="0.42" stopColor="#FFFFFF" stopOpacity={active ? 0.12 : 0.07} />
-              <Stop offset="1" stopColor="#FFFFFF" stopOpacity="0" />
+            <RadialGradient id="orb-halo" r="50%">
+              <Stop offset="0" stopColor={onDark ? "#FFFFFF" : "#968ABA"} stopOpacity={active ? 0.34 : 0.24} />
+              <Stop offset="0.42" stopColor={onDark ? "#FFFFFF" : "#968ABA"} stopOpacity={active ? 0.12 : 0.09} />
+              <Stop offset="1" stopColor={onDark ? "#FFFFFF" : "#968ABA"} stopOpacity="0" />
             </RadialGradient>
           </Defs>
-          <Circle cx="50%" cy="50%" fill="url(#orbHalo)" r="50%" />
+          <Circle cx="50%" cy="50%" fill="url(#orb-halo)" r="50%" />
         </Svg>
       </Animated.View>
-      <View style={[styles.body, { borderRadius: radius, height: size, width: size }]}>
-        <Svg height={size} width={size}>
+
+      <View style={[styles.volume, { borderRadius: radius }]}>
+        <Svg height={size} style={StyleSheet.absoluteFill} width={size}>
           <Defs>
-            <RadialGradient cx="30%" cy="26%" id="orbBody" r="78%">
-              <Stop offset="0" stopColor="#FFFFFF" stopOpacity="0.30" />
-              <Stop offset="0.46" stopColor="#FFFFFF" stopOpacity="0.03" />
-              <Stop offset="0.82" stopColor="#6C6284" stopOpacity="0.09" />
-              <Stop offset="1" stopColor="#544A6C" stopOpacity="0.22" />
+            <RadialGradient cx="29%" cy="22%" id="orb-volume" r="74%">
+              <Stop offset="0" stopColor="#FFFFFF" stopOpacity={onDark ? 0.18 : 0.24} />
+              <Stop offset="0.42" stopColor="#FFFFFF" stopOpacity="0.035" />
+              <Stop offset="0.76" stopColor="#6C6284" stopOpacity="0.04" />
+              <Stop offset="1" stopColor="#544A6C" stopOpacity={onDark ? 0.08 : 0.13} />
             </RadialGradient>
           </Defs>
-          <Circle cx={radius} cy={radius} fill="url(#orbBody)" r={radius} />
+          <Circle cx={radius} cy={radius} fill="url(#orb-volume)" r={radius - 0.5} stroke="rgba(255,255,255,0.34)" strokeWidth="0.6" />
         </Svg>
-        {nodes.map((node) => (
-          <Animated.View
-            key={node.key}
-            style={[
-              styles.node,
-              {
-                backgroundColor: node.color,
-                borderRadius: dot,
-                height: dot * 2,
-                marginLeft: -dot,
-                marginTop: -dot,
-                opacity: node.opacity,
-                transform: [{ translateX: node.x }, { translateY: node.y }, { scale: node.scale }],
-                width: dot * 2,
-              },
-            ]}
-          />
-        ))}
-        <View pointerEvents="none" style={[styles.gloss, { borderRadius: radius }]}>
+
+        <Animated.View
+          style={[
+            StyleSheet.absoluteFill,
+            {
+              transform: [
+                { rotate: spin.interpolate({ inputRange: [0, 1], outputRange: ["0deg", "360deg"] }) },
+                { scaleY: breath.interpolate({ inputRange: [0, 1], outputRange: [0.98, 1.02] }) },
+              ],
+            },
+          ]}
+        >
           <Svg height={size} width={size}>
-            <Defs>
-              <RadialGradient cx="29%" cy="18%" id="orbGloss" r="34%">
-                <Stop offset="0" stopColor="#FFFFFF" stopOpacity="0.88" />
-                <Stop offset="0.42" stopColor="#FFFFFF" stopOpacity="0.26" />
-                <Stop offset="1" stopColor="#FFFFFF" stopOpacity="0" />
-              </RadialGradient>
-            </Defs>
-            <Circle cx={radius} cy={radius} fill="url(#orbGloss)" r={radius} />
+            {NETWORK.links.map((link) => {
+              const a = projected[link.a]!;
+              const b = projected[link.b]!;
+              return <Line key={`${link.a}-${link.b}`} opacity={link.opacity} stroke="#FFFFFF" strokeWidth={0.7} x1={a.px} x2={b.px} y1={a.py} y2={b.py} />;
+            })}
+            {projected.map((node, index) => {
+              const depth = (node.z + 1) / 2;
+              return <Circle cx={node.px} cy={node.py} fill={node.color} key={index} opacity={0.45 + 0.55 * depth} r={node.radius} />;
+            })}
           </Svg>
-        </View>
+        </Animated.View>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  halo: {
-    bottom: -8,
-    left: -8,
+  halo: { bottom: -10, left: -10, position: "absolute", right: -10, top: -10 },
+  volume: {
+    bottom: 0,
+    left: 0,
     position: "absolute",
-    right: -8,
-    top: -8,
-  },
-  body: {
-    alignItems: "center",
-    borderColor: "rgba(255,255,255,0.45)",
-    borderWidth: StyleSheet.hairlineWidth,
-    justifyContent: "center",
+    right: 0,
+    top: 0,
     overflow: "hidden",
+    shadowColor: "#3C3254",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.18,
+    shadowRadius: 8,
   },
-  node: { left: "50%", position: "absolute", top: "50%" },
-  gloss: { bottom: 0, left: 0, overflow: "hidden", position: "absolute", right: 0, top: 0 },
 });

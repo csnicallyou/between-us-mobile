@@ -1,14 +1,12 @@
 import { useState } from "react";
 import { ActivityIndicator, Alert, Image, Pressable, StyleSheet, Switch, Text, TextInput, View } from "react-native";
-import { AppButton } from "@/components/AppButton";
-import { Screen } from "@/components/Screen";
-import { SubpageHeader } from "@/components/SubpageHeader";
-import { Surface } from "@/components/Surface";
+import { V2Button as AppButton } from "@/ui-v2";
+import { InnerGlass as Surface, InnerScreen as Screen, InnerScreenHeader } from "@/components/redesign/InnerScreenChrome";
 import { privateImageSource } from "@/services/backendClient";
 import { useAppData } from "@/state/AppDataContext";
 import { useAuth } from "@/state/AuthContext";
 import { normalizeHex, paletteForLuminance, relativeLuminance } from "@/theme/adaptivePalette";
-import { fill, ink, materialRadius, materialSpacing, materialType, rim } from "@/theme/material";
+import { fill, ink, materialRadius, materialSpacing, materialType, rim } from "@/ui-v2/styleTokens";
 import { colors } from "@/theme/tokens";
 import { analyzeImageLuminance, deleteStoredImage, selectAndStoreImage } from "@/services/imageService";
 
@@ -37,7 +35,7 @@ export default function AppearanceScreen() {
       Alert.alert("Не удалось выбрать фон", error instanceof Error && error.message === "PHOTO_PERMISSION_DENIED" ? "Разрешите доступ к фотографиям в настройках iPhone." : "Попробуйте выбрать другое изображение.");
     } finally { setSelectingPhoto(false); }
   };
-  return <Screen header={<SubpageHeader kicker="Приложение" title="Фон и контраст" subtitle="Выберите основу — приложение автоматически подстроит заголовки, системную строку, защитный слой и стеклянные поверхности." />}>
+  return <Screen header={<InnerScreenHeader kicker="Приложение" title="Фон и контраст" subtitle="Выберите основу — приложение автоматически подстроит заголовки, системную строку, защитный слой и стеклянные поверхности." />}>
     <Surface style={styles.partnerToggle}>
       <View style={styles.partnerToggleRow}>
         <View style={styles.partnerToggleText}>
@@ -51,7 +49,7 @@ export default function AppearanceScreen() {
         <Image resizeMode="cover" source={privateImageSource(partnerAppearance.backgroundValue, accessToken)} style={styles.photoPreview} />
       ) : null}
     </Surface>
-    <Surface style={styles.preview} glassTintColor={luminance < 0.36 ? "rgba(255,255,255,0.56)" : undefined}><View style={[styles.sample, { backgroundColor: normalizeHex(value) ?? colors.background }]}><Text style={[styles.sampleTitle, { color: palette.foreground }]}>Предпросмотр фона</Text><Text style={[styles.sampleText, { color: palette.mutedForeground }]}>Текст остаётся читаемым автоматически</Text><View style={styles.sampleGlass}><Text style={styles.sampleGlassText}>Стеклянная карточка</Text></View></View></Surface>
+    <Surface style={styles.preview}><View style={[styles.sample, { backgroundColor: normalizeHex(value) ?? colors.background }]}><Text style={[styles.sampleTitle, { color: palette.foreground }]}>Предпросмотр фона</Text><Text style={[styles.sampleText, { color: palette.mutedForeground }]}>Текст остаётся читаемым автоматически</Text><View style={styles.sampleGlass}><Text style={styles.sampleGlassText}>Стеклянная карточка</Text></View></View></Surface>
     <Text style={[styles.sectionTitle, snapshot.appearance.backgroundLuminance < 0.36 && snapshot.appearance.backgroundKind !== "default" && styles.lightText]}>Готовые оттенки</Text><View style={styles.presets}>{presets.map((color) => <Pressable accessibilityLabel={`Выбрать цвет ${color}`} key={color} onPress={() => apply(color)} style={[styles.swatch, { backgroundColor: color }, snapshot.appearance.backgroundValue === color && styles.selected]} />)}</View>
     <Surface style={styles.form}><Text style={styles.label}>Свой цвет</Text><TextInput autoCapitalize="characters" autoCorrect={false} onChangeText={setValue} placeholder="#173246" placeholderTextColor={colors.muted} style={styles.input} value={value} /><AppButton label="Применить цвет" onPress={() => apply()} /></Surface>
     <Surface style={styles.photo}><Text style={styles.photoTitle}>Фотография из галереи</Text><Text style={styles.photoText}>Приложение сохранит сжатую копию и автоматически подберёт контраст. Исходное фото в галерее не изменяется.</Text>{snapshot.appearance.backgroundKind === "image" && snapshot.appearance.backgroundValue ? <Image resizeMode="cover" source={{ uri: snapshot.appearance.backgroundValue }} style={styles.photoPreview} /> : null}{selectingPhoto ? <ActivityIndicator color={colors.sea} /> : <AppButton label="Выбрать фотографию" onPress={() => void choosePhoto()} variant="secondary" />}{snapshot.appearance.backgroundKind === "image" && appearanceSyncError ? <Text selectable style={styles.syncError}>Не удалось передать фон партнёру: {appearanceSyncError}</Text> : null}</Surface>

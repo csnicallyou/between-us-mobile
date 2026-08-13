@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { Text } from "react-native";
 import { type Href, useLocalSearchParams, useRouter } from "expo-router";
-import { AppButton } from "@/components/AppButton";
-import { AuthCodeInput, AuthError, AuthField, AuthLink, AuthScaffold, authStyles } from "@/components/AuthScaffold";
+import { AuthButton, AuthCodeInput, AuthError, AuthField, AuthLink, AuthScaffold, authStyles } from "@/components/AuthScaffold";
 import { backendClient } from "@/services/backendClient";
 
 export default function ResetPasswordScreen() {
@@ -28,7 +27,7 @@ export default function ResetPasswordScreen() {
   if (done) {
     return (
       <AuthScaffold subtitle="Все устройства вышли из аккаунта в целях безопасности. Войдите заново с новым паролем." title="Пароль изменён">
-        <AppButton label="Ко входу" onPress={() => router.replace("/(auth)/sign-in" as Href)} />
+        <AuthButton label="Ко входу" onPress={() => router.replace("/(auth)/sign-in" as Href)} />
       </AuthScaffold>
     );
   }
@@ -41,7 +40,7 @@ export default function ResetPasswordScreen() {
       <Text style={authStyles.label}>Новый пароль</Text>
       <AuthField accessibilityLabel="Новый пароль" autoCapitalize="none" autoComplete="new-password" maxLength={200} onChangeText={setNewPassword} placeholder="Минимум 10 символов" secureTextEntry value={newPassword} />
       {error ? <AuthError message={error} /> : null}
-      <AppButton disabled={isSubmitting} label={isSubmitting ? "Сохраняем…" : "Сбросить пароль"} onPress={() => void submit()} />
+      <AuthButton disabled={isSubmitting} label={isSubmitting ? "Сохраняем…" : "Сбросить пароль"} onPress={() => void submit()} />
     </AuthScaffold>
   );
 }

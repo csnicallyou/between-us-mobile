@@ -1,18 +1,12 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { usePathname } from "expo-router";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AiOrb } from "@/components/AiOrb";
-import { GlassPanel } from "@/components/GlassPanel";
-import { fill, ink, materialRadius, materialType, rim } from "@/theme/material";
+import { V2Glass } from "@/ui-v2";
 
 type IconName = keyof typeof Ionicons.glyphMap;
 
-/**
- * Пропсы описаны структурно, а не импортом из `@react-navigation/bottom-tabs`:
- * этот пакет приезжает транзитивно через `expo-router` и в `package.json` не
- * объявлен, поэтому прямой импорт из него сломается при любой смене версии.
- */
 interface TabBarProps {
   state: { index: number; routes: { key: string; name: string }[] };
   navigation: {
@@ -21,102 +15,103 @@ interface TabBarProps {
   };
 }
 
-const labels: Record<string, { icon: IconName; label: string }> = {
+const TABS: Record<string, { icon: IconName; label: string }> = {
   index: { icon: "home-outline", label: "Сегодня" },
   calendar: { icon: "calendar-outline", label: "Календарь" },
   entries: { icon: "reader-outline", label: "Записи" },
   we: { icon: "people-outline", label: "Мы" },
 };
 
-/** Порядок слотов: две вкладки, сфера, ещё две. Симметрия обязательна. */
 const LEFT = ["index", "calendar"];
 const RIGHT = ["entries", "we"];
 
-/**
- * Своя панель вместо `NativeTabs`.
- *
- * Нативная панель не умеет держать в центре произвольный элемент, а сфера
- * ИИ — не вкладка: она ведёт в отдельное пространство поверх табов. Из-за
- * этого приходится отказаться от системного поведения (нативное размытие,
- * SF Symbols, сворачивание при скролле) в пользу своей панели на том же
- * материале, что и остальной интерфейс.
- */
 export function AppTabBar({ navigation, state }: TabBarProps) {
   const insets = useSafeAreaInsets();
   const pathname = usePathname();
-  const aiActive = pathname.startsWith("/ai") || pathname.startsWith("/ai-space");
+  const activeRoute = state.routes[state.index]?.name;
+  const aiActive = activeRoute === "ai-space" || pathname.startsWith("/ai");
 
-  const go = (name: string) => {
-    const route = state.routes.find((item) => item.name === name);
+  const navigate = (name: string) => {
+    const route = state.routes.find((candidate) => candidate.name === name);
     if (!route) return;
-    const focused = state.routes[state.index]?.name === name;
     const event = navigation.emit({ type: "tabPress", target: route.key, canPreventDefault: true });
-    if (!focused && !event.defaultPrevented) navigation.navigate(route.name);
+    if (activeRoute !== name && !event.defaultPrevented) navigation.navigate(name);
   };
 
   const renderTab = (name: string) => {
-    const meta = labels[name];
-    if (!meta) return null;
-    const focused = !aiActive && state.routes[state.index]?.name === name;
-    const color = aiActive
-      ? focused ? "rgba(255,255,255,0.96)" : "rgba(255,255,255,0.48)"
-      : focused ? ink.strong : ink.faint;
+    const tab = TABS[name]!;
+    const selected = !aiActive && activeRoute === name;
+    const foreground = aiActive
+      ? "rgba(255,255,255,0.42)"
+      : selected ? "rgba(33,30,41,0.94)" : "rgba(33,30,41,0.40)";
+
     return (
       <Pressable
-        accessibilityLabel={meta.label}
-        accessibilityRole="button"
-        accessibilityState={{ selected: focused }}
+        accessibilityLabel={tab.label}
+        accessibilityRole="tab"
+        accessibilityState={{ selected }}
+        hitSlop={2}
         key={name}
-        onPress={() => go(name)}
-        style={[styles.tab, focused && styles.tabActive]}
+        onPress={() => navigate(name)}
+        style={({ pressed }) => [styles.tab, selected && styles.tabSelected, pressed && styles.pressed]}
       >
-        <Ionicons color={color} name={meta.icon} size={21} />
-        <Text numberOfLines={1} style={[styles.label, aiActive && styles.labelDark, focused && styles.labelActive]}>{meta.label}</Text>
+        <Ionicons color={foreground} name={tab.icon} size={21} />
+        <Text numberOfLines={1} style={[styles.label, { color: foreground }]}>{tab.label}</Text>
       </Pressable>
     );
   };
 
   return (
     <View pointerEvents="box-none" style={[styles.dock, { paddingBottom: Math.max(insets.bottom, 10) }]}>
-      <GlassPanel
-        radius={materialRadius.panel}
-        size={64}
-        style={[styles.panel, aiActive && styles.panelDark]}
-        tint={aiActive ? "#101010" : undefined}
-      >
+      <V2Glass dark={aiActive} radius={28} style={[styles.panel, aiActive ? styles.panelDark : styles.panelLight]}>
         <View style={styles.row}>
           {LEFT.map(renderTab)}
           <Pressable
             accessibilityLabel="Пространство ИИ"
-            accessibilityRole="button"
+            accessibilityRole="tab"
             accessibilityState={{ selected: aiActive }}
-            onPress={() => go("ai-space")}
-            style={styles.core}
+            onPress={() => navigate("ai-space")}
+            style={({ pressed }) => [styles.orbButton, pressed && styles.orbPressed]}
           >
-            <AiOrb active={aiActive} size={62} />
+            <AiOrb active={aiActive} dark={aiActive} size={62} />
           </Pressable>
           {RIGHT.map(renderTab)}
         </View>
-      </GlassPanel>
+      </V2Glass>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   dock: { bottom: 0, left: 0, paddingHorizontal: 16, position: "absolute", right: 0 },
-  panel: { height: 64, padding: 6 },
+  panel: { borderRadius: 28, height: 64, overflow: "visible", padding: 6 },
+  panelLight: {
+    backgroundColor: "rgba(255,255,255,0.08)",
+    shadowColor: "#3C3254",
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.16,
+    shadowRadius: 13,
+  },
   panelDark: {
-    backgroundColor: "rgba(8,8,8,0.86)",
-    borderColor: "rgba(255,255,255,0.10)",
-    borderWidth: StyleSheet.hairlineWidth,
+    backgroundColor: "rgba(0,0,0,0.28)",
     shadowColor: "#000000",
-    shadowOpacity: 0.62,
+    shadowOffset: { width: 0, height: 7 },
+    shadowOpacity: 0.64,
+    shadowRadius: 18,
   },
   row: { alignItems: "center", flex: 1, flexDirection: "row" },
   tab: { alignItems: "center", borderRadius: 19, flex: 1, gap: 3, height: 52, justifyContent: "center" },
-  tabActive: { backgroundColor: fill.selected, borderColor: rim.hair, borderWidth: StyleSheet.hairlineWidth },
-  label: { color: ink.faint, fontFamily: materialType.label.fontFamily, fontSize: 9.5, fontWeight: "500" },
-  labelDark: { color: "rgba(255,255,255,0.48)" },
-  labelActive: { color: ink.strong },
-  core: { alignItems: "center", height: 62, justifyContent: "center", marginHorizontal: 4, transform: [{ translateY: -7 }], width: 62 },
+  tabSelected: {
+    backgroundColor: "rgba(255,255,255,0.22)",
+    borderColor: "rgba(255,255,255,0.26)",
+    borderWidth: StyleSheet.hairlineWidth,
+    shadowColor: "#3C3254",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.18,
+    shadowRadius: 3,
+  },
+  label: { fontFamily: "GolosText", fontSize: 9.5, fontWeight: "500", letterSpacing: -0.04 },
+  pressed: { opacity: 0.68 },
+  orbButton: { alignItems: "center", height: 62, justifyContent: "center", marginHorizontal: 4, transform: [{ translateY: -7 }], width: 62 },
+  orbPressed: { opacity: 0.78, transform: [{ translateY: -7 }, { scale: 0.97 }] },
 });

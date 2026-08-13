@@ -2,14 +2,12 @@ import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import { EntryFormModal, type FormValue } from "@/components/EntryFormModal";
-import { Screen } from "@/components/Screen";
 import { SwipeToDelete } from "@/components/SwipeToDelete";
-import { Surface } from "@/components/Surface";
-import { InnerScreenHeader, InnerSectionHeader, innerStyles } from "@/components/redesign/InnerScreenChrome";
+import { InnerGlass as Surface, InnerScreen as Screen, InnerScreenHeader, InnerSectionHeader, innerStyles } from "@/components/redesign/InnerScreenChrome";
 import { memberName } from "@/domain/labels";
 import type { Agreement } from "@/domain/models";
 import { useAppData } from "@/state/AppDataContext";
-import { fill, ink, materialRadius, materialType, rim } from "@/theme/material";
+import { fill, ink, materialRadius, materialType, rim } from "@/ui-v2/styleTokens";
 
 const empty: Record<string, FormValue> = { title: "", description: "" };
 
@@ -94,7 +92,7 @@ export default function AgreementsScreen() {
 
 const styles = StyleSheet.create({
   card: { paddingHorizontal: 18, paddingVertical: 17 },
-  emptyCard: { marginTop: 18 },
+  emptyCard: { marginTop: 18, paddingHorizontal: 18, paddingVertical: 17 },
   people: { flexDirection: "row", flexWrap: "wrap", gap: 7, marginTop: 13 },
   person: { alignItems: "center", alignSelf: "flex-start", backgroundColor: fill.quiet, borderColor: rim.hair, borderRadius: materialRadius.pill, borderWidth: StyleSheet.hairlineWidth, flexDirection: "row", gap: 7, minHeight: 29, paddingLeft: 8, paddingRight: 11 },
   personAccepted: { backgroundColor: fill.control },

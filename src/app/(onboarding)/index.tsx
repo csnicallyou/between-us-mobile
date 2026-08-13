@@ -3,13 +3,12 @@ import { ActivityIndicator, Platform, Pressable, StyleSheet, Text, View } from "
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { AppButton } from "@/components/AppButton";
-import { AuthError, AuthField, AuthLink, AuthScaffold, authStyles } from "@/components/AuthScaffold";
+import { AuthButton, AuthError, AuthField, AuthLink, AuthScaffold, authStyles } from "@/components/AuthScaffold";
 import { EmailVerificationPanel } from "@/components/EmailVerificationPanel";
 import { PairInviteCard } from "@/components/PairInviteCard";
 import { useAuth } from "@/state/AuthContext";
 import { usePair } from "@/state/PairContext";
-import { fill, ink, materialRadius, materialType, rim } from "@/theme/material";
+import { fill, ink, materialRadius, materialType, rim } from "@/ui-v2/styleTokens";
 
 type SetupMode = "choose" | "create" | "join";
 
@@ -73,7 +72,7 @@ export function PairSetupScreen({ initialSecret = "" }: { initialSecret?: string
         <View style={styles.pairRow}>{names.slice(0, 2).map((memberName, index) => <View key={`${memberName}-${index}`} style={[styles.avatar, index > 0 && styles.avatarOverlap]}><Text style={styles.avatarText}>{memberName.trim().charAt(0).toUpperCase()}</Text></View>)}</View>
         <Text style={styles.memberNames}>{names.join(" и ")}</Text>
         <Text style={styles.since}>Вместе с {formatRelationshipDate(pair.relationshipStartedOn ?? pair.createdAt.slice(0, 10))}</Text>
-        <AppButton label="Продолжить" onPress={() => router.replace("/(tabs)")} style={styles.primarySpacing} />
+        <AuthButton label="Продолжить" onPress={() => router.replace("/(tabs)")} style={styles.primarySpacing} />
       </AuthScaffold>
     );
   }
@@ -86,7 +85,7 @@ export function PairSetupScreen({ initialSecret = "" }: { initialSecret?: string
     return (
       <AuthScaffold subtitle="Создайте новое приглашение для партнёра." title="Наша пара">
         {error ? <AuthError message={error} /> : null}
-        <AppButton disabled={isSubmitting} label={isSubmitting ? "Создаём…" : "Создать приглашение"} onPress={() => void issueInvite()} />
+        <AuthButton disabled={isSubmitting} label={isSubmitting ? "Создаём…" : "Создать приглашение"} onPress={() => void issueInvite()} />
       </AuthScaffold>
     );
   }
@@ -110,8 +109,8 @@ export function PairSetupScreen({ initialSecret = "" }: { initialSecret?: string
     >
       {mode === "choose" ? (
         <View style={styles.group}>
-          <AppButton label="Создать пару" onPress={() => setMode("create")} />
-          <AppButton label="У меня есть приглашение" onPress={() => setMode("join")} variant="secondary" />
+          <AuthButton label="Создать пару" onPress={() => setMode("create")} />
+          <AuthButton label="У меня есть приглашение" onPress={() => setMode("join")} variant="secondary" />
         </View>
       ) : null}
       {mode === "create" ? (
@@ -131,13 +130,13 @@ export function PairSetupScreen({ initialSecret = "" }: { initialSecret?: string
               value={new Date(`${relationshipStartedOn}T12:00:00`)}
             />
           ) : null}
-          <AppButton disabled={isSubmitting} label={isSubmitting ? "Создаём…" : "Создать и пригласить"} onPress={() => void submitCreate()} />
+          <AuthButton disabled={isSubmitting} label={isSubmitting ? "Создаём…" : "Создать и пригласить"} onPress={() => void submitCreate()} />
         </View>
       ) : null}
       {mode === "join" ? (
         <View style={styles.group}>
           <AuthField accessibilityLabel="Код или ссылка приглашения" autoCapitalize="characters" autoCorrect={false} multiline onChangeText={setSecret} placeholder="12-значный код или ссылка" value={secret} />
-          <AppButton disabled={isSubmitting} label={isSubmitting ? "Подключаем…" : "Присоединиться"} onPress={() => void submitJoin()} />
+          <AuthButton disabled={isSubmitting} label={isSubmitting ? "Подключаем…" : "Присоединиться"} onPress={() => void submitJoin()} />
         </View>
       ) : null}
       {error ? <AuthError message={error} /> : null}

@@ -2,8 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useState } from "react";
 import { ActivityIndicator, Image, Modal, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from "react-native";
-import { AppButton } from "@/components/AppButton";
-import { Surface } from "@/components/Surface";
+import { V2Button as AppButton, V2Glass as Surface, V2Backdrop, v2 } from "@/ui-v2";
 import { colors, radius, spacing } from "@/theme/tokens";
 import { privateImageSource } from "@/services/backendClient";
 import { useAuth } from "@/state/AuthContext";
@@ -50,6 +49,7 @@ export function EntryFormModal({ visible, title, fields, values, onChange, onClo
   return (
     <Modal animationType="slide" presentationStyle="pageSheet" visible={visible} onRequestClose={onClose}>
       <View style={styles.page}>
+        <V2Backdrop />
         <View style={styles.topBar}>
           <Pressable accessibilityLabel="Закрыть" onPress={onClose} style={styles.close}>
             <Ionicons color={colors.ink} name="close" size={22} />
@@ -58,7 +58,7 @@ export function EntryFormModal({ visible, title, fields, values, onChange, onClo
           <View style={styles.closePlaceholder} />
         </View>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-          <Surface style={styles.form}>
+          <Surface radius={28} style={styles.form}>
             {fields.map((field) => (
               <View key={field.key} style={styles.field}>
                 {field.type === "switch" ? (
@@ -112,7 +112,7 @@ const styles = StyleSheet.create({
   topBar: { alignItems: "center", flexDirection: "row", paddingHorizontal: spacing.lg, paddingTop: spacing.lg },
   close: { alignItems: "center", backgroundColor: colors.surfaceStrong, borderRadius: radius.pill, height: 42, justifyContent: "center", width: 42 },
   closePlaceholder: { width: 42 },
-  heading: { color: colors.ink, flex: 1, fontSize: 18, fontWeight: "700", textAlign: "center" },
+  heading: { color: v2.color.ink, flex: 1, fontFamily: v2.font.family, fontSize: 18, fontWeight: "600", textAlign: "center" },
   content: { padding: spacing.lg, paddingBottom: 48 },
   form: { gap: spacing.lg },
   field: { gap: spacing.sm },

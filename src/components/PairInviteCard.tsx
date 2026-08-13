@@ -1,10 +1,9 @@
 import { useState } from "react";
 import { Share, StyleSheet, Text, View } from "react-native";
 import QRCode from "react-native-qrcode-svg";
-import { AppButton } from "@/components/AppButton";
-import { AuthError } from "@/components/AuthScaffold";
+import { AuthButton, AuthError } from "@/components/AuthScaffold";
 import type { PairInviteDto } from "@/services/backendClient";
-import { ink, materialType } from "@/theme/material";
+import { ink, materialType } from "@/ui-v2/styleTokens";
 
 interface PairInviteCardProps { invite: PairInviteDto; }
 
@@ -26,7 +25,7 @@ export function PairInviteCard({ invite }: PairInviteCardProps) {
       <Text style={styles.expiry}>Действует до {new Intl.DateTimeFormat("ru-RU", { dateStyle: "medium", timeStyle: "short" }).format(new Date(invite.expiresAt))}</Text>
       <View style={styles.split}><View style={styles.line} /><Text style={styles.or}>или</Text><View style={styles.line} /></View>
       {shareError ? <AuthError message={shareError} /> : null}
-      <AppButton label="Отправить приглашение" onPress={() => void share()} style={styles.button} />
+      <AuthButton label="Отправить приглашение" onPress={() => void share()} style={styles.button} />
     </View>
   );
 }

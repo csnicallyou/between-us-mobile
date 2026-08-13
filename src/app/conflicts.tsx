@@ -1,13 +1,11 @@
 import { useMemo, useState } from "react";
 import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import { EntryFormModal, type FormValue } from "@/components/EntryFormModal";
-import { Screen } from "@/components/Screen";
 import { SwipeToDelete } from "@/components/SwipeToDelete";
-import { Surface } from "@/components/Surface";
-import { InnerScreenHeader, InnerSectionHeader, innerStyles } from "@/components/redesign/InnerScreenChrome";
+import { InnerGlass as Surface, InnerScreen as Screen, InnerScreenHeader, InnerSectionHeader, innerStyles } from "@/components/redesign/InnerScreenChrome";
 import type { ConflictEntry, ConflictTopic } from "@/domain/models";
 import { useAppData } from "@/state/AppDataContext";
-import { fill, ink, materialRadius, materialType, rim } from "@/theme/material";
+import { fill, ink, materialRadius, materialType, rim } from "@/ui-v2/styleTokens";
 
 const topics: Record<ConflictTopic, string> = { availability: "Доступность", trust: "Доверие", boundaries: "Границы", communication: "Общение", other: "Другое" };
 const topicOrder = Object.keys(topics) as ConflictTopic[];
@@ -122,5 +120,5 @@ const styles = StyleSheet.create({
   lesson: { backgroundColor: fill.quiet, borderColor: rim.hair, borderRadius: 15, borderWidth: StyleSheet.hairlineWidth, marginTop: 12, paddingHorizontal: 14, paddingVertical: 12 },
   lessonLabel: { color: ink.faint, ...materialType.kicker, fontSize: 9.5, letterSpacing: 1.4 },
   lessonText: { color: ink.strong, fontFamily: materialType.label.fontFamily, fontSize: 13.5, fontWeight: "500", lineHeight: 19, marginTop: 5 },
-  emptyCard: { marginTop: 18 },
+  emptyCard: { marginTop: 18, paddingHorizontal: 18, paddingVertical: 16 },
 });

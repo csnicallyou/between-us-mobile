@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { type Href, useRouter } from "expo-router";
-import { AppButton } from "@/components/AppButton";
-import { AuthError, AuthField, AuthLink, AuthScaffold } from "@/components/AuthScaffold";
+import { AuthButton, AuthError, AuthField, AuthLink, AuthScaffold } from "@/components/AuthScaffold";
 import { useAuth } from "@/state/AuthContext";
 
 export default function SignUpScreen() {
@@ -33,7 +32,7 @@ export default function SignUpScreen() {
       <AuthField accessibilityLabel="Электронная почта" autoCapitalize="none" autoComplete="email" keyboardType="email-address" maxLength={254} onChangeText={setEmail} placeholder="Почта" value={email} />
       <AuthField accessibilityLabel="Пароль" autoCapitalize="none" autoComplete="new-password" maxLength={200} onChangeText={setPassword} onSubmitEditing={() => void submit()} placeholder="Пароль, минимум 10 символов" secureTextEntry value={password} />
       {error ? <AuthError message={error} /> : null}
-      <AppButton disabled={isSubmitting} label={isSubmitting ? "Создаём…" : "Создать аккаунт"} onPress={() => void submit()} />
+      <AuthButton disabled={isSubmitting} label={isSubmitting ? "Создаём…" : "Создать аккаунт"} onPress={() => void submit()} />
     </AuthScaffold>
   );
 }

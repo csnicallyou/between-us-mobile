@@ -2,12 +2,10 @@ import { Ionicons } from "@expo/vector-icons";
 import { type Href, useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
-import { Screen } from "@/components/Screen";
-import { SubpageHeader } from "@/components/SubpageHeader";
-import { Surface } from "@/components/Surface";
+import { InnerGlass as Surface, InnerScreen as Screen, InnerScreenHeader } from "@/components/redesign/InnerScreenChrome";
 import { memberName } from "@/domain/labels";
 import { useAppData } from "@/state/AppDataContext";
-import { fill, ink, materialSpacing, materialType, rim } from "@/theme/material";
+import { fill, ink, materialSpacing, materialType, rim } from "@/ui-v2/styleTokens";
 
 interface SearchResult { id: string; kindLabel: string; href: Href; title: string; snippet: string; authorId: string; dateLabel: string; }
 const kindMeta = {
@@ -34,7 +32,7 @@ export default function SearchScreen() {
   }, [query, snapshot]);
 
   return (
-    <Screen header={<SubpageHeader kicker="Общее пространство" title="Поиск" subtitle="Планы, записи, события и договорённости — в одном месте." />}>
+    <Screen header={<InnerScreenHeader kicker="Общее пространство" title="Поиск" subtitle="Планы, записи, события и договорённости — в одном месте." />}>
       <Surface style={styles.searchPanel}>
         <View style={styles.searchField}>
           <Ionicons color={ink.faint} name="search-outline" size={19} />

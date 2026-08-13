@@ -1,14 +1,16 @@
 import { Ionicons } from "@expo/vector-icons";
 import { type Href, useRouter } from "expo-router";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
-import { GlassPanel } from "@/components/GlassPanel";
-import { Screen } from "@/components/Screen";
 import { memberName, moodLabels, planKindLabels, planStatusLabels } from "@/domain/labels";
 import type { Mood } from "@/domain/models";
 import { privateImageSource } from "@/services/backendClient";
 import { useAppData } from "@/state/AppDataContext";
 import { useAuth } from "@/state/AuthContext";
-import { anchor, fill, ink, materialRadius, surfaceShadow } from "@/theme/material";
+import { V2Glass, V2Screen } from "@/ui-v2";
+
+const ink = { strong: "#211E29", muted: "rgba(33,30,41,.62)", faint: "rgba(33,30,41,.38)", hairline: "rgba(33,30,41,.10)" };
+const fill = { quiet: "rgba(255,255,255,.14)", selected: "rgba(255,255,255,.26)", control: "rgba(255,255,255,.30)" };
+const anchor = { high: "#3C3748", label: "#FFFFFF" };
 
 const moods: Mood[] = ["calm", "happy", "tender", "anxious", "tired", "sad", "angry", "neutral"];
 const weekdays = ["вс", "пн", "вт", "ср", "чт", "пт", "сб"];
@@ -105,7 +107,7 @@ export default function HomeScreen() {
   };
 
   return (
-    <Screen>
+    <V2Screen>
       <View style={styles.sheet}>
         <View style={styles.header}>
           <View style={styles.headerCopy}>
@@ -119,7 +121,7 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.bento}>
-          <GlassPanel radius={30} size={190} style={styles.hero} tint="rgba(255,255,255,0.08)">
+          <V2Glass radius={30} style={styles.hero}>
             <Text style={styles.eyebrow}>Вместе</Text>
             <Text style={styles.duration}>{durationLabel(snapshot.relationshipStartedAt)}</Text>
             <Text style={styles.since}>с {relationshipStartLabel(snapshot.relationshipStartedAt)}</Text>
@@ -128,9 +130,9 @@ export default function HomeScreen() {
               <Stat value={snapshot.memories.length} label="моментов" divided />
               <Stat value={snapshot.agreements.length} label="договорённостей" divided />
             </View>
-          </GlassPanel>
+          </V2Glass>
 
-          <GlassPanel radius={24} size={76} style={styles.weekPanel} variant="clear">
+          <V2Glass radius={24} style={styles.weekPanel}>
             {week.map(({ date, marked }) => {
               const active = date.toDateString() === now.toDateString();
               return (
@@ -141,7 +143,7 @@ export default function HomeScreen() {
                 </View>
               );
             })}
-          </GlassPanel>
+          </V2Glass>
 
           <View style={styles.moodPair}>
             {snapshot.members.slice(0, 2).map((member, index) => {
@@ -149,7 +151,7 @@ export default function HomeScreen() {
               const mine = member.id === snapshot.currentMemberId;
               return (
                 <Pressable key={member.id} disabled={!mine} onPress={cycleMood} style={styles.moodPressable}>
-                  <GlassPanel radius={24} size={112} style={styles.moodTile} tint={index === 0 ? "rgba(143,174,155,0.08)" : "rgba(199,156,142,0.08)"}>
+                  <V2Glass radius={24} style={styles.moodTile}>
                     <View style={styles.moodRow}>
                       <View style={[styles.moodDot, { backgroundColor: index === 0 ? "#8FAE9B" : "#C79C8E" }]} />
                       <Text style={styles.moodName}>{memberName(snapshot, member.id)}</Text>
@@ -157,14 +159,14 @@ export default function HomeScreen() {
                     </View>
                     <Text style={styles.moodState}>{mood?.mood ? moodLabels[mood.mood] : "Не выбрано"}</Text>
                     <Text style={styles.moodMeta}>{updatedLabel(mood?.updatedAt)}</Text>
-                  </GlassPanel>
+                  </V2Glass>
                 </Pressable>
               );
             })}
           </View>
 
           <Pressable onPress={() => router.push("/(tabs)/entries?filter=plans" as Href)}>
-            <GlassPanel radius={28} size={310} style={styles.plan} tint="rgba(143,174,155,0.07)">
+            <V2Glass radius={28} style={styles.plan}>
               <View style={styles.planPhoto}>
                 {nextPlan?.imageUri ? <Image resizeMode="cover" source={privateImageSource(nextPlan.imageUri, accessToken)} style={StyleSheet.absoluteFill} /> : <View style={styles.photoFallback}><Ionicons color={ink.faint} name="map-outline" size={30} /></View>}
                 <View style={styles.planBadge}><Text style={styles.planBadgeText}>{dateLabel(nextPlan?.date)}</Text></View>
@@ -174,10 +176,10 @@ export default function HomeScreen() {
                 <Text style={styles.blockText}>{nextPlan?.description || "Совместные планы появятся здесь."}</Text>
                 {nextPlan ? <View style={styles.chips}><Chip label={planKindLabels[nextPlan.kind]} active /><Chip label={planStatusLabels[nextPlan.status]} />{daysUntil(nextPlan.date) ? <Text style={styles.daysChip}>{daysUntil(nextPlan.date)}</Text> : null}</View> : null}
               </View>
-            </GlassPanel>
+            </V2Glass>
           </Pressable>
 
-          <GlassPanel radius={26} size={210} style={styles.note} tint="rgba(199,156,142,0.06)">
+          <V2Glass radius={26} style={styles.note}>
             <View style={styles.noteHead}>
               <View style={styles.avatar}><Text style={styles.avatarText}>{partnerEntry ? memberName(snapshot, partnerEntry.authorId)[0] : "—"}</Text></View>
               <Text style={styles.noteKicker}>{partnerEntry ? `${memberName(snapshot, partnerEntry.authorId)} написал(а) · ${updatedLabel(partnerEntry.createdAt)}` : "Последняя запись партнёра"}</Text>
@@ -188,10 +190,10 @@ export default function HomeScreen() {
               <Ionicons color={anchor.label} name="arrow-undo-outline" size={15} />
               <Text style={styles.replyText}>Ответить</Text>
             </Pressable>
-          </GlassPanel>
+          </V2Glass>
         </View>
       </View>
-    </Screen>
+    </V2Screen>
   );
 }
 
@@ -214,7 +216,7 @@ const styles = StyleSheet.create({
   kicker: { color: ink.faint, fontFamily: "GolosText", fontSize: 10, fontWeight: "600", letterSpacing: 1.5, textTransform: "uppercase" },
   title: { color: ink.strong, fontFamily: "GolosText", fontSize: 29, fontWeight: "600", letterSpacing: -0.93, lineHeight: 35, marginTop: 7 },
   tools: { flexDirection: "row", gap: 8, paddingTop: 5 },
-  tool: { alignItems: "center", backgroundColor: fill.quiet, borderColor: "rgba(255,255,255,0.46)", borderRadius: 20, borderWidth: StyleSheet.hairlineWidth, height: 40, justifyContent: "center", width: 40, ...surfaceShadow(40) },
+  tool: { alignItems: "center", backgroundColor: "rgba(255,255,255,.12)", borderRadius: 20, height: 40, justifyContent: "center", width: 40 },
   bento: { gap: 11, marginTop: 18 },
   hero: { paddingBottom: 16, paddingHorizontal: 20, paddingTop: 19 },
   eyebrow: { color: ink.faint, fontFamily: "GolosText", fontSize: 10, fontWeight: "600", letterSpacing: 1.4, textTransform: "uppercase" },
@@ -252,7 +254,7 @@ const styles = StyleSheet.create({
   blockTitle: { color: ink.strong, fontFamily: "GolosText", fontSize: 20, fontWeight: "600", letterSpacing: -0.52, lineHeight: 24 },
   blockText: { color: ink.muted, fontFamily: "GolosText", fontSize: 13, lineHeight: 19, marginTop: 6 },
   chips: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 13 },
-  chip: { alignItems: "center", backgroundColor: fill.quiet, borderRadius: materialRadius.pill, flexDirection: "row", gap: 6, minHeight: 26, paddingHorizontal: 11 },
+  chip: { alignItems: "center", backgroundColor: fill.quiet, borderRadius: 13, flexDirection: "row", gap: 6, minHeight: 26, paddingHorizontal: 11 },
   chipActive: { backgroundColor: fill.control },
   chipDot: { backgroundColor: ink.muted, borderRadius: 3, height: 6, width: 6 },
   chipText: { color: ink.muted, fontFamily: "GolosText", fontSize: 11.5 },
@@ -264,6 +266,6 @@ const styles = StyleSheet.create({
   noteKicker: { color: ink.faint, flex: 1, fontFamily: "GolosText", fontSize: 10, fontWeight: "600", letterSpacing: 1.1, textTransform: "uppercase" },
   noteTitle: { color: ink.strong, fontFamily: "GolosText", fontSize: 18, fontWeight: "600", letterSpacing: -0.43, marginTop: 11 },
   noteText: { color: ink.muted, fontFamily: "GolosText", fontSize: 13, lineHeight: 19, marginTop: 6 },
-  reply: { alignItems: "center", alignSelf: "flex-start", backgroundColor: anchor.high, borderRadius: 19, flexDirection: "row", gap: 7, height: 38, justifyContent: "center", marginTop: 14, paddingHorizontal: 17, ...surfaceShadow(38) },
+  reply: { alignItems: "center", alignSelf: "flex-start", backgroundColor: anchor.high, borderRadius: 19, flexDirection: "row", gap: 7, height: 38, justifyContent: "center", marginTop: 14, paddingHorizontal: 17 },
   replyText: { color: anchor.label, fontFamily: "GolosText", fontSize: 13 },
 });

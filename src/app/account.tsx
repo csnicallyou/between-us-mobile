@@ -1,13 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, Alert, StyleSheet, Text, View } from "react-native";
-import { AppButton } from "@/components/AppButton";
-import { Screen } from "@/components/Screen";
-import { SubpageHeader } from "@/components/SubpageHeader";
-import { Surface } from "@/components/Surface";
+import { V2Button as AppButton } from "@/ui-v2";
+import { InnerGlass as Surface, InnerScreen as Screen, InnerScreenHeader } from "@/components/redesign/InnerScreenChrome";
 import { backendClient, BackendError, type SessionSummaryDto } from "@/services/backendClient";
 import { useAuth } from "@/state/AuthContext";
 import { usePair } from "@/state/PairContext";
-import { ink, materialSpacing, materialType } from "@/theme/material";
+import { ink, materialSpacing, materialType } from "@/ui-v2/styleTokens";
 import { colors } from "@/theme/tokens";
 
 function formatSeenAt(value: string) {
@@ -97,7 +95,7 @@ export default function AccountScreen() {
   ]);
 
   return (
-    <Screen header={<SubpageHeader kicker="Пара" title="Аккаунт и пара" subtitle="Личный профиль, участники и состояние синхронизации." />}>
+    <Screen header={<InnerScreenHeader kicker="Пара" title="Аккаунт и пара" subtitle="Личный профиль, участники и состояние синхронизации." />}>
       <Surface>
         <Text style={styles.label}>Ваш профиль</Text>
         <Text style={styles.title}>{user?.displayName}</Text>

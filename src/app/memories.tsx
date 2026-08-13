@@ -1,16 +1,14 @@
 import { useMemo, useState } from "react";
 import { Alert, Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { EntryFormModal, type FormValue } from "@/components/EntryFormModal";
-import { Screen } from "@/components/Screen";
 import { SwipeToDelete } from "@/components/SwipeToDelete";
-import { Surface } from "@/components/Surface";
-import { InnerScreenHeader, innerStyles } from "@/components/redesign/InnerScreenChrome";
+import { InnerGlass as Surface, InnerScreen as Screen, InnerScreenHeader, innerStyles } from "@/components/redesign/InnerScreenChrome";
 import type { Memory, MemoryKind } from "@/domain/models";
 import { deleteStoredImage, selectAndStoreImage } from "@/services/imageService";
 import { privateImageSource } from "@/services/backendClient";
 import { useAppData } from "@/state/AppDataContext";
 import { useAuth } from "@/state/AuthContext";
-import { fill, ink, materialRadius, materialType, rim } from "@/theme/material";
+import { fill, ink, materialRadius, materialType, rim } from "@/ui-v2/styleTokens";
 
 const kinds: Record<MemoryKind, string> = { anniversary: "Важная дата", trip: "Поездка", first: "Впервые", gift: "Подарок", everyday: "Обычный день", other: "Другое" };
 const empty: Record<string, FormValue> = { title: "", description: "", date: new Date().toISOString().slice(0, 10), kind: "other", showInCalendar: true, imageUri: "" };
@@ -127,7 +125,7 @@ export default function MemoriesScreen() {
             </View>
           ))}
         </View>
-      ) : <Surface><Text style={innerStyles.empty}>Добавьте первый общий момент.</Text></Surface>}
+      ) : <Surface style={styles.emptyCard}><Text style={innerStyles.empty}>Добавьте первый общий момент.</Text></Surface>}
       <EntryFormModal
         fields={[{ key: "title", label: "Название", placeholder: "Что произошло" }, { key: "description", label: "Описание", placeholder: "Почему этот момент важен", multiline: true }, { key: "date", label: "Дата", type: "date" }, { key: "kind", label: "Тип", choices: Object.entries(kinds).map(([value, label]) => ({ value, label })) }, { key: "showInCalendar", label: "Показывать в календаре", type: "switch" }]}
         imageUri={String(form.imageUri || "") || null}
@@ -162,4 +160,5 @@ const styles = StyleSheet.create({
   pairItem: { flex: 1, minWidth: 0 },
   compactCard: { minHeight: 92, paddingHorizontal: 15, paddingVertical: 14 },
   compactTitle: { color: ink.strong, fontFamily: materialType.title.fontFamily, fontSize: 14.5, fontWeight: "600", letterSpacing: -0.3, lineHeight: 18, marginTop: 8 },
+  emptyCard: { marginTop: 18 },
 });

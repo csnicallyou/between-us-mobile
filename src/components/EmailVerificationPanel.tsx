@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { AppButton } from "@/components/AppButton";
-import { AuthCodeInput, AuthError, AuthInfo } from "@/components/AuthScaffold";
+import { AuthButton, AuthCodeInput, AuthError, AuthInfo } from "@/components/AuthScaffold";
 import { useAuth } from "@/state/AuthContext";
-import { ink, materialType } from "@/theme/material";
+import { ink, materialType } from "@/ui-v2/styleTokens";
 
 const RESEND_COOLDOWN_SECONDS = 60;
 
@@ -49,8 +48,8 @@ export function EmailVerificationPanel() {
       <AuthCodeInput code={code} onChange={setCode} />
       {error ? <AuthError message={error} /> : null}
       {info ? <AuthInfo message={info} /> : null}
-      <AppButton disabled={isSubmitting} label={isSubmitting ? "Проверяем…" : "Подтвердить"} onPress={() => void submit()} />
-      <AppButton
+      <AuthButton disabled={isSubmitting} label={isSubmitting ? "Проверяем…" : "Подтвердить"} onPress={() => void submit()} />
+      <AuthButton
         disabled={isSubmitting || cooldownActive}
         label={cooldownActive ? `Код уже отправлен · ${secondsLeft} с` : "Отправить код ещё раз"}
         onPress={() => void resend()}

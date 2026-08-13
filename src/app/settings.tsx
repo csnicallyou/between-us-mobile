@@ -1,13 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
 import { type Href, useRouter } from "expo-router";
 import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
-import { Screen } from "@/components/Screen";
-import { SubpageHeader } from "@/components/SubpageHeader";
-import { Surface } from "@/components/Surface";
+import { InnerGlass as Surface, InnerScreen as Screen, InnerScreenHeader } from "@/components/redesign/InnerScreenChrome";
 import { glassDiagnostics, supportsNativeLiquidGlass } from "@/platform/glass";
 import { useAppData } from "@/state/AppDataContext";
 import { useAuth } from "@/state/AuthContext";
-import { fill, ink, materialSpacing, materialType, rim } from "@/theme/material";
+import { fill, ink, materialSpacing, materialType, rim } from "@/ui-v2/styleTokens";
 
 type IconName = keyof typeof Ionicons.glyphMap;
 
@@ -80,7 +78,7 @@ export default function SettingsScreen() {
   };
 
   return (
-    <Screen header={<SubpageHeader kicker="Приложение" title="Настройки" />}>
+    <Screen header={<InnerScreenHeader kicker="Приложение" title="Настройки" />}>
       <SectionTitle>Пара</SectionTitle>
       <Surface style={styles.group}>
         {rows.map((item, index) => <SettingsItem item={item} key={item.title} last={index === rows.length - 1} />)}

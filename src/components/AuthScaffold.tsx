@@ -13,9 +13,8 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
-import { AmbientBackground } from "@/components/AmbientBackground";
-import { GlassPanel } from "@/components/GlassPanel";
-import { fill, ink, materialRadius, materialType, rim } from "@/theme/material";
+import { V2Backdrop, V2Glass, v2 } from "@/ui-v2";
+import { fill, ink, materialRadius, materialType, rim } from "@/ui-v2/styleTokens";
 
 interface AuthScaffoldProps extends PropsWithChildren {
   title: string;
@@ -28,7 +27,7 @@ export function AuthScaffold({ children, footer, step, subtitle, title }: AuthSc
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar style="dark" />
-      <AmbientBackground />
+      <V2Backdrop />
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.flex}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={styles.mark}>
@@ -38,9 +37,9 @@ export function AuthScaffold({ children, footer, step, subtitle, title }: AuthSc
           <Text style={styles.kicker}>Между нами</Text>
           <Text style={styles.title}>{title}</Text>
           <Text style={styles.subtitle}>{subtitle}</Text>
-          <GlassPanel radius={materialRadius.panel} size={260} style={styles.card}>
+          <V2Glass radius={28} style={styles.card}>
             <View style={styles.cardBody}>{children}</View>
-          </GlassPanel>
+          </V2Glass>
           {footer ? <View style={styles.footer}>{footer}</View> : null}
           {step ? (
             <View accessibilityLabel={`Шаг ${step} из 3`} style={styles.steps}>
@@ -80,6 +79,16 @@ export function AuthLink({ children, onPress }: { children: ReactNode; onPress: 
   );
 }
 
+export function AuthButton({ disabled = false, label, onPress, style, variant = "primary" }: { disabled?: boolean; label: string; onPress: () => void; style?: object; variant?: "primary" | "secondary" }) {
+  const content = (
+    <Pressable accessibilityRole="button" disabled={disabled} onPress={onPress} style={({ pressed }) => [authStyles.actionPress, pressed && authStyles.actionPressed, disabled && authStyles.actionDisabled]}>
+      <Text style={[authStyles.actionLabel, variant === "secondary" && authStyles.actionLabelSecondary]}>{label}</Text>
+    </Pressable>
+  );
+  if (variant === "secondary") return <V2Glass radius={25} style={[authStyles.action, style]}>{content}</V2Glass>;
+  return <View style={[authStyles.action, authStyles.actionPrimary, style]}>{content}</View>;
+}
+
 export function AuthCodeInput({ code, onChange }: { code: string; onChange: (value: string) => void }) {
   const inputRef = useRef<TextInput>(null);
   return (
@@ -110,8 +119,8 @@ export function AuthCodeInput({ code, onChange }: { code: string; onChange: (val
 
 export const authStyles = StyleSheet.create({
   field: {
-    backgroundColor: fill.control,
-    borderColor: rim.hair,
+    backgroundColor: "rgba(255,255,255,0.30)",
+    borderColor: "rgba(255,255,255,0.46)",
     borderRadius: materialRadius.field,
     borderWidth: StyleSheet.hairlineWidth,
     color: ink.strong,
@@ -155,10 +164,17 @@ export const authStyles = StyleSheet.create({
   codeDigit: { color: ink.strong, fontFamily: materialType.title.fontFamily, fontSize: 22, fontWeight: "600" },
   caret: { backgroundColor: "rgba(33,30,41,0.44)", borderRadius: 1, height: 22, position: "absolute", width: 1.5 },
   hiddenCodeInput: { height: 1, opacity: 0, position: "absolute", width: 1 },
+  action: { borderRadius: 25, height: 50, marginTop: 6, overflow: "hidden" },
+  actionPrimary: { backgroundColor: v2.color.anchorHi, shadowColor: "#3C3254", shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.24, shadowRadius: 11 },
+  actionPress: { alignItems: "center", height: 50, justifyContent: "center", paddingHorizontal: 18 },
+  actionPressed: { opacity: 0.84, transform: [{ scale: 0.985 }] },
+  actionDisabled: { opacity: 0.48 },
+  actionLabel: { color: "#F7F5FA", fontFamily: v2.font.family, fontSize: 15, fontWeight: "600", letterSpacing: -0.24 },
+  actionLabelSecondary: { color: v2.color.ink },
 });
 
 const styles = StyleSheet.create({
-  safeArea: { backgroundColor: "#F4F1F6", flex: 1 },
+  safeArea: { backgroundColor: "#EEF1F5", flex: 1 },
   flex: { flex: 1 },
   content: { flexGrow: 1, justifyContent: "center", paddingHorizontal: 24, paddingVertical: 40 },
   mark: { alignSelf: "center", height: 46, marginBottom: 24, width: 70 },
@@ -179,7 +195,7 @@ const styles = StyleSheet.create({
   markLeft: { left: 0 },
   markRight: { right: 0 },
   kicker: { ...materialType.kicker, color: ink.faint, textAlign: "center" },
-  title: { ...materialType.title, color: ink.strong, lineHeight: 34, marginTop: 9, textAlign: "center" },
+  title: { ...v2.font.h1, color: v2.color.ink, marginTop: 9, textAlign: "center" },
   subtitle: { color: ink.muted, fontFamily: materialType.body.fontFamily, fontSize: 14.5, letterSpacing: -0.12, lineHeight: 22, marginTop: 11, textAlign: "center" },
   card: { marginTop: 26, padding: 18 },
   cardBody: { gap: 10 },

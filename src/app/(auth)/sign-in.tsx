@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { View } from "react-native";
 import { type Href, useRouter } from "expo-router";
-import { AppButton } from "@/components/AppButton";
-import { AuthError, AuthField, AuthLink, AuthScaffold } from "@/components/AuthScaffold";
+import { AuthButton, AuthError, AuthField, AuthLink, AuthScaffold } from "@/components/AuthScaffold";
 import { useAuth } from "@/state/AuthContext";
 
 export default function SignInScreen() {
@@ -30,7 +29,7 @@ export default function SignInScreen() {
       <AuthField accessibilityLabel="Электронная почта" autoCapitalize="none" autoComplete="email" keyboardType="email-address" maxLength={254} onChangeText={setEmail} placeholder="Почта" value={email} />
       <AuthField accessibilityLabel="Пароль" autoCapitalize="none" autoComplete="current-password" maxLength={200} onChangeText={setPassword} onSubmitEditing={() => void submit()} placeholder="Пароль" secureTextEntry value={password} />
       {error ? <AuthError message={error} /> : null}
-      <AppButton disabled={isSubmitting} label={isSubmitting ? "Входим…" : "Войти"} onPress={() => void submit()} />
+      <AuthButton disabled={isSubmitting} label={isSubmitting ? "Входим…" : "Войти"} onPress={() => void submit()} />
     </AuthScaffold>
   );
 }

@@ -37,18 +37,13 @@ for (const path of sourceFiles) {
   if ((await stat(path)).size === 0) throw new Error(`${relative(sourceRoot, path)} is empty`);
 }
 
-const nativeGlassLayer = await readFile(new URL("../src/components/NativeGlassLayer.tsx", import.meta.url), "utf8");
-if (!nativeGlassLayer.includes('from "expo-glass-effect"')) {
-  throw new Error("NativeGlassLayer must use the UIKit-backed expo-glass-effect component");
+for (const path of ["V2Screen.tsx", "V2Glass.tsx", "V2Backdrop.tsx", "V2Button.tsx", "tokens.ts"]) {
+  await readFile(new URL(`../src/ui-v2/${path}`, import.meta.url));
 }
-if (!nativeGlassLayer.includes('variant = "regular"')) {
-  throw new Error("NativeGlassLayer must default to regular Liquid Glass for visible optical depth");
-}
-if (nativeGlassLayer.includes('colorScheme="light"')) {
-  throw new Error("NativeGlassLayer must allow UIKit to choose the system glass color scheme");
-}
-if (nativeGlassLayer.includes("@expo/ui/swift-ui")) {
-  throw new Error("NativeGlassLayer must not wrap an empty SwiftUI shape");
+const retiredUiImports = /@\/components\/(Screen|Surface|GlassPanel|NativeGlassLayer|AmbientBackground|AppButton|MoodPanel|PageHeader|SubpageHeader)|@\/features\/(ai|entries|redesign)/;
+for (const path of sourceFiles) {
+  const content = await readFile(path, "utf8");
+  if (retiredUiImports.test(content)) throw new Error(`${relative(sourceRoot, path)} imports the retired UI layer`);
 }
 
 const rootLayout = await readFile(new URL("src/app/_layout.tsx", root), "utf8");

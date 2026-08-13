@@ -1,15 +1,13 @@
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useEffect, useState } from "react";
 import { Platform, StyleSheet, Switch, Text, View } from "react-native";
-import { AppButton } from "@/components/AppButton";
-import { Screen } from "@/components/Screen";
-import { SubpageHeader } from "@/components/SubpageHeader";
-import { Surface } from "@/components/Surface";
+import { V2Button as AppButton } from "@/ui-v2";
+import { InnerGlass as Surface, InnerScreen as Screen, InnerScreenHeader } from "@/components/redesign/InnerScreenChrome";
 import { backendClient } from "@/services/backendClient";
 import { registerPushToken } from "@/services/pushNotifications";
 import { ALL_PUSH_CATEGORIES, readNotificationPrefs, writeNotificationPrefs, type NotificationPrefs, type PushCategory } from "@/services/notificationPrefs";
 import { useAuth } from "@/state/AuthContext";
-import { fill, ink, materialSpacing, materialType, rim } from "@/theme/material";
+import { fill, ink, materialSpacing, materialType, rim } from "@/ui-v2/styleTokens";
 import { colors } from "@/theme/tokens";
 
 const categoryLabels: Record<PushCategory, string> = {
@@ -59,7 +57,7 @@ export default function NotificationsScreen() {
   const quietHoursEnabled = prefs.quietHoursStart !== null && prefs.quietHoursEnd !== null;
 
   return (
-    <Screen header={<SubpageHeader kicker="Приложение" title="Уведомления" subtitle="Что присылать партнёру и в какие часы молчать." />}>
+    <Screen header={<InnerScreenHeader kicker="Приложение" title="Уведомления" subtitle="Что присылать партнёру и в какие часы молчать." />}>
       <Surface style={styles.section}>
         <Text style={styles.sectionTitle}>Категории</Text>
         {ALL_PUSH_CATEGORIES.map((category) => (
