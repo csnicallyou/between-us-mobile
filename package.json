@@ -5,6 +5,8 @@
   "main": "expo-router/entry",
   "scripts": {
     "start": "expo start",
+    "dev:iphone": "expo start --dev-client --lan",
+    "dev:iphone:tunnel": "expo start --dev-client --tunnel",
     "ios": "expo start --ios",
     "android": "expo start --android",
     "web": "expo start --web",
@@ -22,6 +24,7 @@
     "expo": "^56.0.19",
     "expo-blur": "~56.0.4",
     "expo-constants": "~56.0.23",
+    "expo-dev-client": "~56.0.24",
     "expo-file-system": "~56.0.9",
     "expo-font": "~56.0.7",
     "expo-glass-effect": "~56.0.4",

@@ -1,0 +1,74 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Between Us: iPhone Live (Wi-Fi)",
+      "type": "npm",
+      "script": "dev:iphone",
+      "isBackground": true,
+      "problemMatcher": [],
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": {
+          "HTTP_PROXY": "",
+          "HTTPS_PROXY": "",
+          "ALL_PROXY": "",
+          "http_proxy": "",
+          "https_proxy": "",
+          "all_proxy": ""
+        }
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      }
+    },
+    {
+      "label": "Between Us: iPhone Live (Tunnel)",
+      "type": "npm",
+      "script": "dev:iphone:tunnel",
+      "isBackground": true,
+      "problemMatcher": [],
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": {
+          "HTTP_PROXY": "",
+          "HTTPS_PROXY": "",
+          "ALL_PROXY": "",
+          "http_proxy": "",
+          "https_proxy": "",
+          "all_proxy": ""
+        }
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      }
+    },
+    {
+      "label": "Between Us: Web Layout Preview",
+      "type": "npm",
+      "script": "web",
+      "isBackground": true,
+      "problemMatcher": [],
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": {
+          "HTTP_PROXY": "",
+          "HTTPS_PROXY": "",
+          "ALL_PROXY": "",
+          "http_proxy": "",
+          "https_proxy": "",
+          "all_proxy": ""
+        }
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      }
+    }
+  ]
+}
