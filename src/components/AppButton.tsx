@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, Text, type PressableProps, type StyleProp, type ViewStyle } from "react-native";
 import { NativeGlassLayer } from "@/components/NativeGlassLayer";
 import { supportsNativeLiquidGlass } from "@/platform/glass";
-import { anchor, fill, ink, materialRadius, rim, surfaceShadow } from "@/theme/material";
+import { anchor, fill, ink, materialRadius, materialType, rim, surfaceShadow } from "@/theme/material";
 
 interface AppButtonProps extends Omit<PressableProps, "style"> {
   label: string;
@@ -55,7 +55,7 @@ const styles = StyleSheet.create({
   },
   danger: { backgroundColor: supportsNativeLiquidGlass ? "transparent" : "rgba(186,104,78,0.14)" },
   pressed: { opacity: 0.88, transform: [{ scale: 0.985 }] },
-  label: { color: anchor.label, fontSize: 15, fontWeight: "600", letterSpacing: -0.2 },
+  label: { color: anchor.label, fontSize: 15, fontWeight: "600", letterSpacing: -0.2, fontFamily: materialType.label.fontFamily },
   quietLabel: { color: ink.strong },
   dangerLabel: { color: "#9B4E31" },
 });

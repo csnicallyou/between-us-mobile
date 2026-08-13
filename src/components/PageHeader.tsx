@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from "react-native";
-import { ink, materialSpacing } from "@/theme/material";
+import { ink, materialSpacing, materialType } from "@/theme/material";
 import { useAppData } from "@/state/AppDataContext";
 import { paletteForLuminance } from "@/theme/adaptivePalette";
 
@@ -28,7 +28,7 @@ export function PageHeader({ title, subtitle, kicker }: PageHeaderProps) {
 
 const styles = StyleSheet.create({
   container: { marginBottom: materialSpacing.xl, paddingTop: materialSpacing.xs },
-  kicker: { color: ink.faint, fontSize: 10, fontWeight: "600", letterSpacing: 1.6, marginBottom: 7, textTransform: "uppercase" },
-  title: { color: ink.strong, fontSize: 28, fontWeight: "600", letterSpacing: -0.9, lineHeight: 33 },
-  subtitle: { color: ink.muted, fontSize: 14, lineHeight: 21, marginTop: 9, maxWidth: 560 },
+  kicker: { color: ink.faint, marginBottom: 7, ...materialType.kicker },
+  title: { color: ink.strong, lineHeight: 34, ...materialType.title },
+  subtitle: { color: ink.muted, marginTop: 9, maxWidth: 560, ...materialType.body },
 });

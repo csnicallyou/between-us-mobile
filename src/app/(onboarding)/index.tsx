@@ -1,20 +1,24 @@
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { AppButton } from "@/components/AppButton";
-import { AuthScaffold } from "@/components/AuthScaffold";
+import { AuthError, AuthField, AuthLink, AuthScaffold, authStyles } from "@/components/AuthScaffold";
 import { EmailVerificationPanel } from "@/components/EmailVerificationPanel";
 import { PairInviteCard } from "@/components/PairInviteCard";
 import { useAuth } from "@/state/AuthContext";
 import { usePair } from "@/state/PairContext";
-import { colors, radius, spacing } from "@/theme/tokens";
+import { fill, ink, materialRadius, materialType, rim } from "@/theme/material";
 
 type SetupMode = "choose" | "create" | "join";
 
 function toIsoDate(value: Date) {
   return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, "0")}-${String(value.getDate()).padStart(2, "0")}`;
+}
+
+function formatRelationshipDate(value: string) {
+  return new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long", year: "numeric" }).format(new Date(`${value}T12:00:00`));
 }
 
 export function PairSetupScreen({ initialSecret = "" }: { initialSecret?: string }) {
@@ -32,83 +36,78 @@ export function PairSetupScreen({ initialSecret = "" }: { initialSecret?: string
 
   useEffect(() => {
     if (!effectiveSecret) return;
-    setSecret(effectiveSecret);
-    setMode("join");
+    setSecret(effectiveSecret); setMode("join");
   }, [effectiveSecret]);
 
   const submitCreate = async () => {
-    if (!name.trim() || !/^\d{4}-\d{2}-\d{2}$/.test(relationshipStartedOn)) {
-      setError("Укажите название пары и дату начала отношений");
-      return;
-    }
-    setError(null);
-    setIsSubmitting(true);
-    try {
-      await createPair({ name: name.trim(), relationshipStartedOn });
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Не удалось создать пару");
-    } finally {
-      setIsSubmitting(false);
-    }
+    if (!name.trim() || !/^\d{4}-\d{2}-\d{2}$/.test(relationshipStartedOn)) { setError("Укажите название пары и дату начала отношений"); return; }
+    setError(null); setIsSubmitting(true);
+    try { await createPair({ name: name.trim(), relationshipStartedOn }); }
+    catch (caught) { setError(caught instanceof Error ? caught.message : "Не удалось создать пару"); }
+    finally { setIsSubmitting(false); }
   };
 
   const submitJoin = async () => {
-    setError(null);
-    setIsSubmitting(true);
-    try {
-      await joinPair(secret);
-      router.replace("/(tabs)");
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Не удалось принять приглашение");
-    } finally {
-      setIsSubmitting(false);
-    }
+    if (!secret.trim()) { setError("Введите код или откройте ссылку приглашения"); return; }
+    setError(null); setIsSubmitting(true);
+    try { await joinPair(secret.trim()); router.replace("/(tabs)"); }
+    catch (caught) { setError(caught instanceof Error ? caught.message : "Не удалось принять приглашение"); }
+    finally { setIsSubmitting(false); }
   };
 
   const issueInvite = async () => {
-    setError(null);
-    setIsSubmitting(true);
-    try {
-      await createInvite();
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Не удалось создать приглашение");
-    } finally {
-      setIsSubmitting(false);
-    }
+    setError(null); setIsSubmitting(true);
+    try { await createInvite(); }
+    catch (caught) { setError(caught instanceof Error ? caught.message : "Не удалось создать приглашение"); }
+    finally { setIsSubmitting(false); }
   };
 
   if (isLoading) {
-    return <AuthScaffold title="Открываем пространство" subtitle="Проверяем вашу пару…"><ActivityIndicator color={colors.sea} size="large" /></AuthScaffold>;
+    return <AuthScaffold subtitle="Проверяем вашу пару…" title="Открываем пространство"><View style={styles.spinner}><ActivityIndicator color={ink.muted} size="large" /></View></AuthScaffold>;
   }
 
   if (pair && pair.members.length >= 2) {
+    const names = pair.members.map((member) => member.displayName);
     return (
-      <AuthScaffold step={3} title={pair.name} subtitle="Вы оба уже здесь. Можно переходить в ваше общее пространство.">
-        <Text style={styles.memberNames}>{pair.members.map((member) => member.displayName).join(" и ")}</Text>
-        <AppButton label="Продолжить" onPress={() => router.replace("/(tabs)")} />
+      <AuthScaffold step={3} subtitle="Вы оба уже здесь. Можно переходить в ваше общее пространство." title="Наша пара">
+        <View style={styles.pairRow}>{names.slice(0, 2).map((memberName, index) => <View key={`${memberName}-${index}`} style={[styles.avatar, index > 0 && styles.avatarOverlap]}><Text style={styles.avatarText}>{memberName.trim().charAt(0).toUpperCase()}</Text></View>)}</View>
+        <Text style={styles.memberNames}>{names.join(" и ")}</Text>
+        <Text style={styles.since}>Вместе с {formatRelationshipDate(pair.relationshipStartedOn ?? pair.createdAt.slice(0, 10))}</Text>
+        <AppButton label="Продолжить" onPress={() => router.replace("/(tabs)")} style={styles.primarySpacing} />
       </AuthScaffold>
     );
   }
 
   if (pair && invite) {
-    return <AuthScaffold step={3} title={pair.name} subtitle="Осталось позвать второго участника."><PairInviteCard invite={invite} /></AuthScaffold>;
+    return <AuthScaffold step={3} subtitle="Осталось позвать второго участника." title="Наша пара"><PairInviteCard invite={invite} /></AuthScaffold>;
   }
 
   if (pair) {
     return (
-      <AuthScaffold title={pair.name} subtitle="Создайте новое приглашение для партнёра.">
-        {error ? <Text accessibilityLiveRegion="polite" style={styles.error}>{error}</Text> : null}
+      <AuthScaffold subtitle="Создайте новое приглашение для партнёра." title="Наша пара">
+        {error ? <AuthError message={error} /> : null}
         <AppButton disabled={isSubmitting} label={isSubmitting ? "Создаём…" : "Создать приглашение"} onPress={() => void issueInvite()} />
       </AuthScaffold>
     );
   }
 
   if (!user?.emailVerified) {
-    return <AuthScaffold step={1} title="Почти готово" subtitle="Прежде чем создать или присоединиться к паре, подтвердите почту."><EmailVerificationPanel /></AuthScaffold>;
+    return <AuthScaffold step={1} subtitle="Прежде чем создать или присоединиться к паре, подтвердите почту." title="Почти готово"><EmailVerificationPanel /></AuthScaffold>;
   }
 
+  const header = mode === "join"
+    ? { title: "У вас есть приглашение", subtitle: "Введите код из сообщения или откройте ссылку — поле заполнится само." }
+    : mode === "create"
+      ? { title: "Создайте вашу пару", subtitle: "Название увидите оба. Дату можно будет изменить позже." }
+      : { title: "Создайте вашу пару", subtitle: "Один создаёт общее пространство, второй входит по ссылке, QR или коду." };
+
   return (
-    <AuthScaffold step={2} title="Создайте вашу пару" subtitle="Один создаёт общее пространство, второй входит по ссылке, QR или коду.">
+    <AuthScaffold
+      footer={mode !== "choose" ? <AuthLink onPress={() => { setError(null); setMode("choose"); }}>Назад</AuthLink> : undefined}
+      step={2}
+      subtitle={header.subtitle}
+      title={header.title}
+    >
       {mode === "choose" ? (
         <View style={styles.group}>
           <AppButton label="Создать пару" onPress={() => setMode("create")} />
@@ -117,21 +116,18 @@ export function PairSetupScreen({ initialSecret = "" }: { initialSecret?: string
       ) : null}
       {mode === "create" ? (
         <View style={styles.group}>
-          <TextInput accessibilityLabel="Название пары" maxLength={80} onChangeText={setName} placeholder="Название пары" placeholderTextColor={colors.muted} style={styles.input} value={name} />
-          <Text style={styles.label}>Дата начала отношений</Text>
-          <Pressable accessibilityLabel="Дата начала отношений" onPress={() => setShowDatePicker(true)} style={styles.dateButton}>
-            <Text style={styles.dateText}>{new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long", year: "numeric" }).format(new Date(`${relationshipStartedOn}T12:00:00`))}</Text>
-            <Ionicons color={colors.muted} name="calendar-outline" size={19} />
+          <AuthField accessibilityLabel="Название пары" maxLength={80} onChangeText={setName} placeholder="Название пары" value={name} />
+          <Text style={authStyles.label}>Дата начала отношений</Text>
+          <Pressable accessibilityLabel="Дата начала отношений" onPress={() => setShowDatePicker(true)} style={({ pressed }) => [styles.dateButton, pressed && styles.pressed]}>
+            <Text style={styles.dateText}>{formatRelationshipDate(relationshipStartedOn)}</Text>
+            <Ionicons color={ink.faint} name="calendar-outline" size={19} />
           </Pressable>
           {showDatePicker ? (
             <DateTimePicker
               display={Platform.OS === "ios" ? "inline" : "default"}
               maximumDate={new Date()}
               mode="date"
-              onChange={(_, date) => {
-                if (Platform.OS !== "ios") setShowDatePicker(false);
-                if (date) setRelationshipStartedOn(toIsoDate(date));
-              }}
+              onChange={(_, date) => { if (Platform.OS !== "ios") setShowDatePicker(false); if (date) setRelationshipStartedOn(toIsoDate(date)); }}
               value={new Date(`${relationshipStartedOn}T12:00:00`)}
             />
           ) : null}
@@ -140,12 +136,11 @@ export function PairSetupScreen({ initialSecret = "" }: { initialSecret?: string
       ) : null}
       {mode === "join" ? (
         <View style={styles.group}>
-          <TextInput accessibilityLabel="Код или ссылка приглашения" autoCapitalize="characters" autoCorrect={false} multiline onChangeText={setSecret} placeholder="12-значный код или ссылка" placeholderTextColor={colors.muted} style={[styles.input, styles.inviteInput]} value={secret} />
+          <AuthField accessibilityLabel="Код или ссылка приглашения" autoCapitalize="characters" autoCorrect={false} multiline onChangeText={setSecret} placeholder="12-значный код или ссылка" value={secret} />
           <AppButton disabled={isSubmitting} label={isSubmitting ? "Подключаем…" : "Присоединиться"} onPress={() => void submitJoin()} />
         </View>
       ) : null}
-      {error ? <Text accessibilityLiveRegion="polite" style={styles.error}>{error}</Text> : null}
-      {mode !== "choose" ? <Pressable onPress={() => { setError(null); setMode("choose"); }}><Text style={styles.back}>Назад</Text></Pressable> : null}
+      {error ? <AuthError message={error} /> : null}
     </AuthScaffold>
   );
 }
@@ -157,13 +152,16 @@ export default function PairSetupRoute() {
 }
 
 const styles = StyleSheet.create({
-  group: { gap: spacing.md },
-  input: { backgroundColor: "rgba(255,255,255,0.30)", borderColor: "rgba(255,255,255,0.46)", borderRadius: 16, borderWidth: StyleSheet.hairlineWidth, color: "rgba(33,30,41,0.94)", fontSize: 15, minHeight: 50, paddingHorizontal: 15 },
-  inviteInput: { minHeight: 82, paddingTop: spacing.lg, textAlignVertical: "top" },
-  label: { color: "rgba(33,30,41,0.94)", fontSize: 12.5, fontWeight: "600" },
-  dateButton: { alignItems: "center", backgroundColor: "rgba(255,255,255,0.30)", borderColor: "rgba(255,255,255,0.46)", borderRadius: 16, borderWidth: StyleSheet.hairlineWidth, flexDirection: "row", justifyContent: "space-between", minHeight: 50, paddingHorizontal: 15 },
-  dateText: { color: "rgba(33,30,41,0.94)", fontSize: 15 },
-  error: { color: colors.danger, fontSize: 13, lineHeight: 18 },
-  back: { color: "rgba(33,30,41,0.60)", fontSize: 14, fontWeight: "600", paddingVertical: spacing.sm, textAlign: "center" },
-  memberNames: { color: "rgba(33,30,41,0.94)", fontSize: 18, fontWeight: "600", textAlign: "center" },
+  group: { gap: 10 },
+  dateButton: { alignItems: "center", backgroundColor: fill.control, borderColor: rim.hair, borderRadius: materialRadius.field, borderWidth: StyleSheet.hairlineWidth, flexDirection: "row", justifyContent: "space-between", minHeight: 50, paddingHorizontal: 15 },
+  dateText: { color: ink.strong, fontFamily: materialType.body.fontFamily, fontSize: 15, letterSpacing: -0.15 },
+  pressed: { opacity: 0.66 },
+  spinner: { alignItems: "center", paddingBottom: 4, paddingTop: 10 },
+  pairRow: { alignItems: "center", flexDirection: "row", justifyContent: "center", marginBottom: 2 },
+  avatar: { alignItems: "center", backgroundColor: fill.controlStrong, borderColor: rim.hair, borderRadius: 26, borderWidth: StyleSheet.hairlineWidth, height: 52, justifyContent: "center", width: 52 },
+  avatarOverlap: { marginLeft: -13 },
+  avatarText: { color: ink.strong, fontFamily: materialType.title.fontFamily, fontSize: 18, fontWeight: "600" },
+  memberNames: { color: ink.strong, fontFamily: materialType.title.fontFamily, fontSize: 17, fontWeight: "600", letterSpacing: -0.37, marginTop: 12, textAlign: "center" },
+  since: { color: ink.faint, fontFamily: materialType.body.fontFamily, fontSize: 12.5, marginTop: -5, textAlign: "center" },
+  primarySpacing: { marginTop: 6 },
 });

@@ -8,7 +8,8 @@ import { privateImageSource } from "@/services/backendClient";
 import { useAppData } from "@/state/AppDataContext";
 import { useAuth } from "@/state/AuthContext";
 import { normalizeHex, paletteForLuminance, relativeLuminance } from "@/theme/adaptivePalette";
-import { colors, radius, spacing } from "@/theme/tokens";
+import { fill, ink, materialRadius, materialSpacing, materialType, rim } from "@/theme/material";
+import { colors } from "@/theme/tokens";
 import { analyzeImageLuminance, deleteStoredImage, selectAndStoreImage } from "@/services/imageService";
 
 const presets = ["#F7FAFC", "#DDEBE7", "#E7E3F4", "#F4DED8", "#173246", "#253D36", "#3A3152", "#55332F"];
@@ -36,7 +37,7 @@ export default function AppearanceScreen() {
       Alert.alert("Не удалось выбрать фон", error instanceof Error && error.message === "PHOTO_PERMISSION_DENIED" ? "Разрешите доступ к фотографиям в настройках iPhone." : "Попробуйте выбрать другое изображение.");
     } finally { setSelectingPhoto(false); }
   };
-  return <Screen header={<SubpageHeader title="Фон и контраст" subtitle="Выберите основу — приложение автоматически подстроит заголовки, системную строку, защитный слой и стеклянные поверхности." />}>
+  return <Screen header={<SubpageHeader kicker="Приложение" title="Фон и контраст" subtitle="Выберите основу — приложение автоматически подстроит заголовки, системную строку, защитный слой и стеклянные поверхности." />}>
     <Surface style={styles.partnerToggle}>
       <View style={styles.partnerToggleRow}>
         <View style={styles.partnerToggleText}>
@@ -59,7 +60,27 @@ export default function AppearanceScreen() {
 }
 
 const styles = StyleSheet.create({
-  partnerToggle: { gap: spacing.sm, marginBottom: spacing.xl },
-  partnerToggleRow: { alignItems: "center", flexDirection: "row", gap: spacing.md, justifyContent: "space-between" },
+  partnerToggle: { gap: materialSpacing.sm, marginBottom: materialSpacing.xl },
+  partnerToggleRow: { alignItems: "center", flexDirection: "row", gap: materialSpacing.md, justifyContent: "space-between" },
   partnerToggleText: { flex: 1, gap: 2 },
-  preview: { padding: 0, overflow: "hidden" }, sample: { minHeight: 180, padding: spacing.xl }, sampleTitle: { fontSize: 24, fontWeight: "700" }, sampleText: { fontSize: 14, marginTop: spacing.sm }, sampleGlass: { backgroundColor: "rgba(255,255,255,0.72)", borderRadius: radius.md, marginTop: spacing.xl, padding: spacing.md }, sampleGlassText: { color: colors.ink, fontWeight: "700" }, sectionTitle: { color: colors.ink, fontSize: 16, fontWeight: "700", marginTop: spacing.xl }, lightText: { color: colors.white }, presets: { flexDirection: "row", flexWrap: "wrap", gap: spacing.md, marginTop: spacing.md }, swatch: { borderColor: "rgba(255,255,255,0.8)", borderRadius: radius.pill, borderWidth: 3, height: 48, width: 48 }, selected: { borderColor: colors.sea, borderWidth: 4 }, form: { gap: spacing.md, marginTop: spacing.xl }, label: { color: colors.ink, fontSize: 13, fontWeight: "700" }, input: { backgroundColor: "rgba(255,255,255,0.82)", borderRadius: radius.md, color: colors.ink, fontSize: 16, minHeight: 50, paddingHorizontal: spacing.md }, photo: { marginTop: spacing.xl }, photoTitle: { color: colors.ink, fontSize: 16, fontWeight: "700" }, photoText: { color: colors.muted, fontSize: 14, lineHeight: 21, marginBottom: spacing.lg, marginTop: spacing.sm }, photoPreview: { borderRadius: radius.md, height: 180, marginBottom: spacing.lg, width: "100%" }, syncError: { color: colors.danger, fontSize: 12, lineHeight: 18, marginTop: spacing.sm }, reset: { marginTop: spacing.xl } });
+  preview: { overflow: "hidden", padding: 0 },
+  sample: { minHeight: 180, padding: materialSpacing.xl },
+  sampleTitle: { fontFamily: "GolosText", fontSize: 23, fontWeight: "600", letterSpacing: -0.5 },
+  sampleText: { fontFamily: "GolosText", fontSize: 14, marginTop: materialSpacing.sm },
+  sampleGlass: { backgroundColor: fill.controlStrong, borderColor: rim.hair, borderRadius: materialRadius.field, borderWidth: StyleSheet.hairlineWidth, marginTop: materialSpacing.xl, padding: materialSpacing.md },
+  sampleGlassText: { color: ink.strong, fontFamily: "GolosText", fontWeight: "600" },
+  sectionTitle: { color: ink.strong, marginTop: materialSpacing.xl, ...materialType.section },
+  lightText: { color: colors.white },
+  presets: { flexDirection: "row", flexWrap: "wrap", gap: materialSpacing.md, marginTop: materialSpacing.md },
+  swatch: { borderColor: "rgba(255,255,255,0.82)", borderRadius: materialRadius.pill, borderWidth: 3, height: 48, width: 48 },
+  selected: { borderColor: colors.sea, borderWidth: 4 },
+  form: { gap: materialSpacing.md, marginTop: materialSpacing.xl },
+  label: { color: ink.strong, fontFamily: "GolosText", fontSize: 13, fontWeight: "600" },
+  input: { backgroundColor: fill.controlStrong, borderColor: rim.hair, borderRadius: materialRadius.field, borderWidth: StyleSheet.hairlineWidth, color: ink.strong, fontFamily: "GolosText", fontSize: 16, minHeight: 52, paddingHorizontal: materialSpacing.md },
+  photo: { marginTop: materialSpacing.xl },
+  photoTitle: { color: ink.strong, ...materialType.section },
+  photoText: { color: ink.muted, marginBottom: materialSpacing.lg, marginTop: materialSpacing.sm, ...materialType.body, fontSize: 14 },
+  photoPreview: { borderRadius: materialRadius.field, height: 180, marginBottom: materialSpacing.lg, width: "100%" },
+  syncError: { color: colors.danger, fontFamily: "GolosText", fontSize: 12, lineHeight: 18, marginTop: materialSpacing.sm },
+  reset: { marginTop: materialSpacing.xl },
+});

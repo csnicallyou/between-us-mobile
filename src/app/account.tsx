@@ -7,7 +7,8 @@ import { Surface } from "@/components/Surface";
 import { backendClient, BackendError, type SessionSummaryDto } from "@/services/backendClient";
 import { useAuth } from "@/state/AuthContext";
 import { usePair } from "@/state/PairContext";
-import { colors, spacing } from "@/theme/tokens";
+import { ink, materialSpacing, materialType } from "@/theme/material";
+import { colors } from "@/theme/tokens";
 
 function formatSeenAt(value: string) {
   return new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" }).format(new Date(value));
@@ -96,7 +97,7 @@ export default function AccountScreen() {
   ]);
 
   return (
-    <Screen header={<SubpageHeader title="Аккаунт и пара" subtitle="Личный профиль, участники и состояние синхронизации." />}>
+    <Screen header={<SubpageHeader kicker="Пара" title="Аккаунт и пара" subtitle="Личный профиль, участники и состояние синхронизации." />}>
       <Surface>
         <Text style={styles.label}>Ваш профиль</Text>
         <Text style={styles.title}>{user?.displayName}</Text>
@@ -124,17 +125,17 @@ export default function AccountScreen() {
 }
 
 const styles = StyleSheet.create({
-  section: { marginTop: spacing.xl },
-  label: { color: colors.sea, fontSize: 12, fontWeight: "700", letterSpacing: 1.2, textTransform: "uppercase" },
-  title: { color: colors.ink, fontSize: 24, fontWeight: "700", marginTop: spacing.sm },
-  copy: { color: colors.muted, fontSize: 15, lineHeight: 22, marginTop: spacing.xs },
-  members: { marginTop: spacing.md },
-  hint: { color: colors.muted, fontSize: 13, lineHeight: 20, marginTop: spacing.lg },
-  error: { color: colors.danger, fontSize: 13, lineHeight: 18, marginTop: spacing.sm },
-  sessionsLoading: { marginTop: spacing.lg },
-  sessionRow: { alignItems: "center", borderTopColor: colors.line, borderTopWidth: StyleSheet.hairlineWidth, flexDirection: "row", justifyContent: "space-between", paddingVertical: spacing.md },
-  sessionInfo: { flex: 1, paddingRight: spacing.md },
-  sessionLabel: { color: colors.ink, fontSize: 14, fontWeight: "600" },
-  sessionMeta: { color: colors.muted, fontSize: 12, marginTop: 2 },
-  sessionButton: { minHeight: 38, paddingHorizontal: spacing.md },
+  section: { marginTop: materialSpacing.xl },
+  label: { color: "#43887E", ...materialType.kicker },
+  title: { color: ink.strong, marginTop: materialSpacing.sm, ...materialType.section, fontSize: 23 },
+  copy: { color: ink.muted, marginTop: materialSpacing.xs, ...materialType.body, fontSize: 14.5 },
+  members: { marginTop: materialSpacing.md },
+  hint: { color: ink.muted, marginTop: materialSpacing.lg, ...materialType.body },
+  error: { color: colors.danger, marginTop: materialSpacing.sm, ...materialType.body },
+  sessionsLoading: { marginTop: materialSpacing.lg },
+  sessionRow: { alignItems: "center", borderTopColor: ink.hairline, borderTopWidth: StyleSheet.hairlineWidth, flexDirection: "row", justifyContent: "space-between", paddingVertical: materialSpacing.md },
+  sessionInfo: { flex: 1, paddingRight: materialSpacing.md },
+  sessionLabel: { color: ink.strong, fontFamily: "GolosText", fontSize: 14, fontWeight: "600" },
+  sessionMeta: { color: ink.faint, marginTop: 2, ...materialType.caption },
+  sessionButton: { minHeight: 38, paddingHorizontal: materialSpacing.md },
 });

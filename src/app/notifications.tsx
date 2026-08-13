@@ -9,7 +9,8 @@ import { backendClient } from "@/services/backendClient";
 import { registerPushToken } from "@/services/pushNotifications";
 import { ALL_PUSH_CATEGORIES, readNotificationPrefs, writeNotificationPrefs, type NotificationPrefs, type PushCategory } from "@/services/notificationPrefs";
 import { useAuth } from "@/state/AuthContext";
-import { colors, spacing } from "@/theme/tokens";
+import { fill, ink, materialSpacing, materialType, rim } from "@/theme/material";
+import { colors } from "@/theme/tokens";
 
 const categoryLabels: Record<PushCategory, string> = {
   chat: "Сообщения в чате",
@@ -58,7 +59,7 @@ export default function NotificationsScreen() {
   const quietHoursEnabled = prefs.quietHoursStart !== null && prefs.quietHoursEnd !== null;
 
   return (
-    <Screen header={<SubpageHeader title="Уведомления" subtitle="Что присылать партнёру и в какие часы молчать." />}>
+    <Screen header={<SubpageHeader kicker="Приложение" title="Уведомления" subtitle="Что присылать партнёру и в какие часы молчать." />}>
       <Surface style={styles.section}>
         <Text style={styles.sectionTitle}>Категории</Text>
         {ALL_PUSH_CATEGORIES.map((category) => (
@@ -108,12 +109,12 @@ export default function NotificationsScreen() {
 }
 
 const styles = StyleSheet.create({
-  section: { gap: spacing.md, marginBottom: spacing.lg },
-  sectionTitle: { color: colors.ink, fontSize: 16, fontWeight: "700" },
-  row: { alignItems: "center", flexDirection: "row", justifyContent: "space-between" },
-  rowLabel: { color: colors.ink, fontSize: 15 },
-  hint: { color: colors.muted, fontSize: 13, lineHeight: 19 },
-  timeRow: { flexDirection: "row", gap: spacing.md },
+  section: { gap: materialSpacing.md, marginBottom: materialSpacing.lg },
+  sectionTitle: { color: ink.strong, ...materialType.section },
+  row: { alignItems: "center", backgroundColor: fill.quiet, borderColor: rim.hair, borderRadius: 16, borderWidth: StyleSheet.hairlineWidth, flexDirection: "row", justifyContent: "space-between", minHeight: 54, paddingHorizontal: materialSpacing.md },
+  rowLabel: { color: ink.strong, fontFamily: "GolosText", fontSize: 14.5 },
+  hint: { color: ink.muted, ...materialType.body },
+  timeRow: { flexDirection: "row", gap: materialSpacing.md },
   timeButton: { flex: 1 },
-  doneButton: { marginTop: spacing.sm },
+  doneButton: { marginTop: materialSpacing.sm },
 });
