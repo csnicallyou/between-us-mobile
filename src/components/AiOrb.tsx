@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import { Animated, Easing, StyleSheet, View } from "react-native";
 import Svg, { Circle, Defs, Line, RadialGradient, Stop } from "react-native-svg";
+import { BlurView } from "expo-blur";
 
 interface AiOrbProps {
   size?: number;
@@ -99,38 +100,26 @@ export function AiOrb({ active = false, dark = false, size = 62 }: AiOrbProps) {
 
   return (
     <View pointerEvents="none" style={{ height: size, width: size }}>
-      <Animated.View
-        style={[
-          styles.halo,
-          {
-            opacity: breath.interpolate({ inputRange: [0, 1], outputRange: active ? [0.32, 0.54] : [0.16, 0.28] }),
-            transform: [{ scale: breath.interpolate({ inputRange: [0, 1], outputRange: [0.84, 1.05] }) }],
-          },
-        ]}
-      >
-        <Svg height="100%" width="100%">
-          <Defs>
-            <RadialGradient id="orb-halo" r="50%">
-              <Stop offset="0" stopColor={onDark ? "#FFFFFF" : "#968ABA"} stopOpacity={active ? 0.34 : 0.24} />
-              <Stop offset="0.42" stopColor={onDark ? "#FFFFFF" : "#968ABA"} stopOpacity={active ? 0.12 : 0.09} />
-              <Stop offset="1" stopColor={onDark ? "#FFFFFF" : "#968ABA"} stopOpacity="0" />
-            </RadialGradient>
-          </Defs>
-          <Circle cx="50%" cy="50%" fill="url(#orb-halo)" r="50%" />
-        </Svg>
-      </Animated.View>
-
-      <View style={[styles.volume, { borderRadius: radius }]}>
+      <View style={[styles.volume, onDark ? styles.volumeDark : styles.volumeLight, { borderRadius: radius }]}>
+        <BlurView intensity={onDark ? 12 : 16} style={StyleSheet.absoluteFill} tint={onDark ? "dark" : "light"} />
         <Svg height={size} style={StyleSheet.absoluteFill} width={size}>
           <Defs>
-            <RadialGradient cx="29%" cy="22%" id="orb-volume" r="74%">
-              <Stop offset="0" stopColor="#FFFFFF" stopOpacity={onDark ? 0.18 : 0.24} />
-              <Stop offset="0.42" stopColor="#FFFFFF" stopOpacity="0.035" />
-              <Stop offset="0.76" stopColor="#6C6284" stopOpacity="0.04" />
-              <Stop offset="1" stopColor="#544A6C" stopOpacity={onDark ? 0.08 : 0.13} />
+            <RadialGradient cx="30%" cy="26%" id="orb-volume" r="120%">
+              <Stop offset="0" stopColor="#FFFFFF" stopOpacity={onDark ? 0.30 : 0.34} />
+              <Stop offset="0.26" stopColor="#FFFFFF" stopOpacity={onDark ? 0.10 : 0.13} />
+              <Stop offset="0.46" stopColor="#FFFFFF" stopOpacity="0.025" />
+              <Stop offset="0.62" stopColor="#FFFFFF" stopOpacity="0" />
+              <Stop offset="0.82" stopColor="#6C6284" stopOpacity={onDark ? 0.13 : 0.09} />
+              <Stop offset="1" stopColor="#544A6C" stopOpacity={onDark ? 0.26 : 0.20} />
+            </RadialGradient>
+            <RadialGradient cx="29%" cy="18%" id="orb-gloss" r="48%">
+              <Stop offset="0" stopColor="#FFFFFF" stopOpacity="0.76" />
+              <Stop offset="0.42" stopColor="#FFFFFF" stopOpacity="0.20" />
+              <Stop offset="1" stopColor="#FFFFFF" stopOpacity="0" />
             </RadialGradient>
           </Defs>
-          <Circle cx={radius} cy={radius} fill="url(#orb-volume)" r={radius - 0.5} stroke="rgba(255,255,255,0.34)" strokeWidth="0.6" />
+          <Circle cx={radius} cy={radius} fill="url(#orb-volume)" r={radius - 0.5} />
+          <Circle cx={radius} cy={radius} fill="url(#orb-gloss)" r={radius - 0.8} />
         </Svg>
 
         <Animated.View
@@ -162,7 +151,6 @@ export function AiOrb({ active = false, dark = false, size = 62 }: AiOrbProps) {
 }
 
 const styles = StyleSheet.create({
-  halo: { bottom: -10, left: -10, position: "absolute", right: -10, top: -10 },
   volume: {
     bottom: 0,
     left: 0,
@@ -170,9 +158,17 @@ const styles = StyleSheet.create({
     right: 0,
     top: 0,
     overflow: "hidden",
+  },
+  volumeLight: {
     shadowColor: "#3C3254",
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.20,
+    shadowRadius: 9,
+  },
+  volumeDark: {
+    shadowColor: "#000000",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.18,
+    shadowOpacity: 0.52,
     shadowRadius: 8,
   },
 });

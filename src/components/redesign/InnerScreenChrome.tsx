@@ -3,6 +3,7 @@ import { useRouter } from "expo-router";
 import type { PropsWithChildren, ReactNode } from "react";
 import { Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-native";
 import { V2Glass, V2Screen, v2 } from "@/ui-v2";
+import { OrbSinkItem } from "@/motion/ScrollSuction";
 import { anchor, fill, ink, materialType } from "@/ui-v2/styleTokens";
 
 interface InnerScreenHeaderProps {
@@ -28,7 +29,7 @@ export function InnerScreen({ children, header }: PropsWithChildren<{ header?: R
 }
 
 export function InnerGlass({ children, radius = 24, style }: PropsWithChildren<{ radius?: number; style?: StyleProp<ViewStyle> }>) {
-  return <V2Glass radius={radius} style={[styles.glassCard, style]}>{children}</V2Glass>;
+  return <OrbSinkItem><V2Glass radius={radius} style={[styles.glassCard, style]}>{children}</V2Glass></OrbSinkItem>;
 }
 
 /** Exact native counterpart of docs/redesign/mockups/inner.html `.top`. */

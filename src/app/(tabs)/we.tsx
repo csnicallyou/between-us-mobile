@@ -5,6 +5,7 @@ import { dateTimestamp, formatDateSafe } from "@/domain/dataSafety";
 import { privateImageSource } from "@/services/backendClient";
 import { useAppData } from "@/state/AppDataContext";
 import { useAuth } from "@/state/AuthContext";
+import { OrbSinkItem } from "@/motion/ScrollSuction";
 import { V2Glass, V2Screen } from "@/ui-v2";
 
 const c = { text: "#211E29", muted: "rgba(33,30,41,.62)", faint: "rgba(33,30,41,.38)", hair: "rgba(33,30,41,.10)", coral: "#C79C8E" };
@@ -25,18 +26,18 @@ export default function WeScreen() {
   return <V2Screen>
     <View style={s.header}><View style={s.copy}><Text style={s.kicker}>Про нас двоих</Text><Text style={s.h1}>Мы</Text></View><Pressable accessibilityLabel="Поиск" onPress={() => go("/search")} style={s.tool}><Ionicons color={c.text} name="search-outline" size={19} /></Pressable></View>
     <View style={s.bento}>
-      <Pressable onPress={() => go("/memories")}><V2Glass radius={28} style={s.story}>
+      <OrbSinkItem><Pressable onPress={() => go("/memories")}><V2Glass radius={28} style={s.story}>
         <View style={s.storyPhoto}>{storyImage ? <Image resizeMode="cover" source={privateImageSource(storyImage, accessToken)} style={StyleSheet.absoluteFill} /> : <Ionicons color={c.faint} name="images-outline" size={32} />}<View style={s.storyCount}><Text style={s.storyCountText}>{snapshot.memories.length} {plural(snapshot.memories.length, ["момент", "момента", "моментов"])}</Text></View></View>
         <View style={s.storyBody}><View style={s.flex}><Text style={s.sectionTitle}>Наша история</Text><Text numberOfLines={2} style={s.sectionMeta}>{latestMemory ? `Последний — «${latestMemory.title}», ${formatDateSafe(latestMemory.date, { day: "numeric", month: "long" })}` : "События, к которым хочется возвращаться"}</Text></View><Ionicons color={c.faint} name="chevron-forward" size={18} /></View>
-      </V2Glass></Pressable>
+      </V2Glass></Pressable></OrbSinkItem>
       <View style={s.pair}>
-        <Pressable onPress={() => go("/about")} style={s.half}><V2Glass radius={24} style={s.tile}><View style={s.tileHead}><Text style={s.tileNumber}>{snapshot.about.length}</Text><Text style={s.tileUnit}>{plural(snapshot.about.length, ["карточка", "карточки", "карточек"])}</Text></View><Text style={s.tileName}>Важное о нас</Text><Text style={s.tileSub}>Поддержка, границы, самочувствие</Text><View style={s.mini}><Text style={s.miniText}>{snapshot.about.length ? "Открыть раздел" : "Раздел ещё пуст"}</Text></View></V2Glass></Pressable>
-        <Pressable onPress={() => go("/agreements")} style={s.half}><V2Glass radius={24} style={s.tile}><View style={s.tileHead}><Text style={s.tileNumber}>{snapshot.agreements.length}</Text><Text style={s.tileUnit}>{plural(snapshot.agreements.length, ["правило", "правила", "правил"])}</Text></View><Text style={s.tileName}>Договорённости</Text><Text style={s.tileSub}>{accepted} подтверждены обоими</Text><View style={s.mini}>{waiting > 0 && <View style={s.coralDot} />}<Text style={s.miniText}>{waiting ? `${waiting} ждёт подтверждения` : "Всё подтверждено"}</Text></View></V2Glass></Pressable>
+        <OrbSinkItem style={s.half}><Pressable onPress={() => go("/about")}><V2Glass radius={24} style={s.tile}><View style={s.tileHead}><Text style={s.tileNumber}>{snapshot.about.length}</Text><Text style={s.tileUnit}>{plural(snapshot.about.length, ["карточка", "карточки", "карточек"])}</Text></View><Text style={s.tileName}>Важное о нас</Text><Text style={s.tileSub}>Поддержка, границы, самочувствие</Text><View style={s.mini}><Text style={s.miniText}>{snapshot.about.length ? "Открыть раздел" : "Раздел ещё пуст"}</Text></View></V2Glass></Pressable></OrbSinkItem>
+        <OrbSinkItem style={s.half}><Pressable onPress={() => go("/agreements")}><V2Glass radius={24} style={s.tile}><View style={s.tileHead}><Text style={s.tileNumber}>{snapshot.agreements.length}</Text><Text style={s.tileUnit}>{plural(snapshot.agreements.length, ["правило", "правила", "правил"])}</Text></View><Text style={s.tileName}>Договорённости</Text><Text style={s.tileSub}>{accepted} подтверждены обоими</Text><View style={s.mini}>{waiting > 0 && <View style={s.coralDot} />}<Text style={s.miniText}>{waiting ? `${waiting} ждёт подтверждения` : "Всё подтверждено"}</Text></View></V2Glass></Pressable></OrbSinkItem>
       </View>
-      <Pressable onPress={() => go("/conflicts")}><V2Glass radius={26} style={s.review}>
+      <OrbSinkItem><Pressable onPress={() => go("/conflicts")}><V2Glass radius={26} style={s.review}>
         <View style={s.reviewRow}><View style={s.reviewNumber}><Text style={s.reviewNumberText}>{snapshot.conflicts.length}</Text><Text style={s.reviewUnit}>эпизодов</Text></View><View style={s.flex}><Text style={s.sectionTitle}>Разбор ссор</Text><Text style={s.sectionMeta}>Не рейтинг виноватых, а архив выводов</Text></View><Ionicons color={c.faint} name="chevron-forward" size={18} /></View>
         {latestConflict && <View style={s.latest}><Text style={s.latestKicker}>Последний разбор · {formatDateSafe(latestConflict.date, { day: "numeric", month: "long" })}</Text><Text numberOfLines={2} style={s.latestTitle}>{latestConflict.lesson || latestConflict.title}</Text></View>}
-      </V2Glass></Pressable>
+      </V2Glass></Pressable></OrbSinkItem>
     </View>
   </V2Screen>;
 }

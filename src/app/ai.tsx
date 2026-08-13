@@ -1,4 +1,4 @@
-import { type PropsWithChildren, useState } from "react";
+import { type PropsWithChildren, useRef, useState } from "react";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Redirect, type Href } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -7,7 +7,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
-  ScrollView,
+  Animated,
   StyleSheet,
   Text,
   TextInput,
@@ -22,6 +22,7 @@ import { memberName } from "@/domain/labels";
 import { BackendError, backendClient } from "@/services/backendClient";
 import { useAppData } from "@/state/AppDataContext";
 import { useAuth } from "@/state/AuthContext";
+import { OrbSinkItem, ScrollSuctionProvider } from "@/motion/ScrollSuction";
 import { V2Glass } from "@/ui-v2";
 
 type Mode = "quiet" | "chat" | "observations" | "info";
@@ -61,7 +62,7 @@ function AiBackground() {
 
 function DarkGlass({ children, radius = 22, style }: PropsWithChildren<{ radius?: number; style?: StyleProp<ViewStyle> }>) {
   return (
-    <V2Glass dark radius={radius} style={[styles.glass, style]}>
+    <V2Glass dark plain radius={radius} style={[styles.glass, style]}>
       {children}
     </V2Glass>
   );
@@ -69,21 +70,35 @@ function DarkGlass({ children, radius = 22, style }: PropsWithChildren<{ radius?
 
 export function AiSpaceContent() {
   const [mode, setMode] = useState<Mode>("chat");
+  const scrollOffset = useRef(new Animated.Value(0)).current;
+  const scrollOffsetNow = useRef(0);
 
   return (
     <SafeAreaView edges={["top"]} style={styles.safe}>
       <StatusBar style="light" />
       <AiBackground />
-      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.flex}>
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-          <Header info={mode === "info"} onBack={() => setMode("chat")} onInfo={() => setMode("info")} />
-          {mode !== "info" ? <ModeSelector mode={mode} setMode={setMode} /> : null}
-          {mode === "chat" ? <ChatContent /> : null}
-          {mode === "quiet" ? <QuietContent /> : null}
-          {mode === "observations" ? <ObservationsContent /> : null}
-          {mode === "info" ? <AccessContent /> : null}
-        </ScrollView>
-      </KeyboardAvoidingView>
+      <ScrollSuctionProvider offset={scrollOffset} offsetNow={scrollOffsetNow}>
+        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.flex}>
+          <Animated.ScrollView
+            contentContainerStyle={[styles.content, mode === "chat" && styles.chatContent]}
+            keyboardShouldPersistTaps="handled"
+            onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollOffset } } }], {
+              listener: (event: { nativeEvent: { contentOffset: { y: number } } }) => { scrollOffsetNow.current = event.nativeEvent.contentOffset.y; },
+              useNativeDriver: true,
+            })}
+            scrollEventThrottle={16}
+            showsVerticalScrollIndicator={false}
+          >
+            <Header info={mode === "info"} onBack={() => setMode("chat")} onInfo={() => setMode("info")} />
+            {mode !== "info" ? <ModeSelector mode={mode} setMode={setMode} /> : null}
+            {mode === "chat" ? <ChatContent /> : null}
+            {mode === "quiet" ? <QuietContent /> : null}
+            {mode === "observations" ? <ObservationsContent /> : null}
+            {mode === "info" ? <AccessContent /> : null}
+          </Animated.ScrollView>
+          {mode === "chat" ? <ChatComposer /> : null}
+        </KeyboardAvoidingView>
+      </ScrollSuctionProvider>
     </SafeAreaView>
   );
 }
@@ -138,15 +153,7 @@ function ModeButton({ hero = false, icon, label, onPress, selected }: { hero?: b
 }
 
 function ChatContent() {
-  const { addChatMessage, snapshot } = useAppData();
-  const [message, setMessage] = useState("");
-
-  const send = () => {
-    const content = message.trim();
-    if (!content) return;
-    addChatMessage(content);
-    setMessage("");
-  };
+  const { snapshot } = useAppData();
 
   return (
     <>
@@ -162,7 +169,7 @@ function ChatContent() {
             const ai = item.author === "ai";
             const author = ai ? "ИИ-посредник" : memberName(snapshot, item.author);
             return (
-              <View key={item.id} style={[styles.messageRow, mine && styles.messageMine]}>
+              <OrbSinkItem key={item.id} style={[styles.messageRow, mine && styles.messageMine]}>
                 <View style={[styles.avatar, ai && styles.aiAvatar]}>
                   {ai ? <Ionicons color={ink.muted} name="sparkles-outline" size={12} /> : <Text style={styles.avatarText}>{author.slice(0, 1)}</Text>}
                 </View>
@@ -171,7 +178,7 @@ function ChatContent() {
                   <Text style={styles.bubbleText}>{item.content}</Text>
                   <Text style={[styles.bubbleTime, mine && styles.bubbleTimeMine]}>{formatTime(item.createdAt)}</Text>
                 </DarkGlass>
-              </View>
+              </OrbSinkItem>
             );
           })}
         </View>
@@ -183,24 +190,37 @@ function ChatContent() {
         </View>
       )}
 
-      <View style={styles.composer}>
-        <DarkGlass radius={22} style={styles.composerInput}>
-          <TextInput
-            maxLength={5000}
-            multiline
-            onChangeText={setMessage}
-            placeholder="Сообщение для общего разговора"
-            placeholderTextColor={ink.faint}
-            style={styles.textInput}
-            value={message}
-          />
-        </DarkGlass>
-        <Pressable accessibilityLabel="Отправить" disabled={!message.trim()} onPress={send} style={({ pressed }) => [styles.send, !message.trim() && styles.sendDisabled, pressed && styles.pressed]}>
-          <Ionicons color="#211D2A" name="arrow-up" size={18} />
-        </Pressable>
-      </View>
     </>
   );
+}
+
+function ChatComposer() {
+  const { addChatMessage } = useAppData();
+  const [message, setMessage] = useState("");
+  const send = () => {
+    const content = message.trim();
+    if (!content) return;
+    addChatMessage(content);
+    setMessage("");
+  };
+  return <View style={styles.composerDock}>
+    <View style={styles.composer}>
+      <DarkGlass radius={22} style={styles.composerInput}>
+        <TextInput
+          maxLength={5000}
+          multiline
+          onChangeText={setMessage}
+          placeholder="Сообщение для общего разговора"
+          placeholderTextColor={ink.faint}
+          style={styles.textInput}
+          value={message}
+        />
+      </DarkGlass>
+      <Pressable accessibilityLabel="Отправить" disabled={!message.trim()} onPress={send} style={({ pressed }) => [styles.send, !message.trim() && styles.sendDisabled, pressed && styles.pressed]}>
+        <Ionicons color="#211D2A" name="arrow-up" size={18} />
+      </Pressable>
+    </View>
+  </View>;
 }
 
 function QuietContent() {
@@ -336,6 +356,7 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   safe: { backgroundColor: "#070707", flex: 1 },
   content: { paddingBottom: 126, paddingHorizontal: 20, paddingTop: 4 },
+  chatContent: { paddingBottom: 194 },
   header: { alignItems: "center", flexDirection: "row", gap: 11 },
   heading: { flex: 1, minWidth: 0 },
   kicker: { color: ink.faint, fontFamily: font, fontSize: 10, fontWeight: "600", letterSpacing: 1.5, textTransform: "uppercase" },
@@ -359,20 +380,21 @@ const styles = StyleSheet.create({
   avatar: { alignItems: "center", backgroundColor: "rgba(255,255,255,0.28)", borderColor: "rgba(255,255,255,0.30)", borderRadius: 13, borderTopColor: "rgba(255,255,255,0.70)", borderWidth: StyleSheet.hairlineWidth, height: 26, justifyContent: "center", marginTop: 2, width: 26 },
   aiAvatar: { backgroundColor: "rgba(255,255,255,0.10)" },
   avatarText: { color: ink.strong, fontFamily: font, fontSize: 10.5, fontWeight: "600" },
-  bubble: { minWidth: 120, paddingHorizontal: 14, paddingVertical: 11 },
-  bubbleMine: { backgroundColor: "rgba(255,255,255,0.28)" },
+  bubble: { minWidth: 84, paddingHorizontal: 12, paddingVertical: 7 },
+  bubbleMine: { backgroundColor: "rgba(255,255,255,0.17)" },
   bubbleAuthor: { color: ink.faint, fontFamily: font, fontSize: 10.5, fontWeight: "600", letterSpacing: 0.2 },
-  bubbleText: { color: ink.strong, fontFamily: font, fontSize: 14, fontWeight: "400", letterSpacing: -0.08, lineHeight: 20, marginTop: 4 },
-  bubbleTime: { color: ink.faint, fontFamily: font, fontSize: 9.5, fontWeight: "400", marginTop: 6, textAlign: "right" },
+  bubbleText: { color: ink.strong, fontFamily: font, fontSize: 14, fontWeight: "400", letterSpacing: -0.08, lineHeight: 18, marginTop: 2 },
+  bubbleTime: { color: ink.faint, fontFamily: font, fontSize: 9.5, fontWeight: "400", marginTop: 3, textAlign: "right" },
   bubbleTimeMine: { textAlign: "left" },
   chatEmpty: { alignItems: "center", paddingHorizontal: 30, paddingVertical: 52 },
   chatEmptyIcon: { alignItems: "center", backgroundColor: "rgba(255,255,255,0.10)", borderRadius: 19, height: 54, justifyContent: "center", width: 54 },
   chatEmptyTitle: { color: ink.strong, fontFamily: font, fontSize: 18, fontWeight: "600", letterSpacing: -0.43, marginTop: 16 },
   chatEmptyText: { color: ink.muted, fontFamily: font, fontSize: 13.5, lineHeight: 20.5, marginTop: 9, maxWidth: 272, textAlign: "center" },
-  composer: { alignItems: "flex-end", flexDirection: "row", gap: 8, marginTop: 18 },
-  composerInput: { flex: 1, minHeight: 44, paddingHorizontal: 16, paddingVertical: 10 },
+  composerDock: { bottom: 86, left: 0, paddingHorizontal: 20, position: "absolute", right: 0 },
+  composer: { alignItems: "flex-end", flexDirection: "row", gap: 8 },
+  composerInput: { flex: 1, minHeight: 42, paddingHorizontal: 15, paddingVertical: 8 },
   textInput: { color: ink.strong, fontFamily: font, fontSize: 14, lineHeight: 20, maxHeight: 110, minHeight: 24, padding: 0 },
-  send: { alignItems: "center", backgroundColor: "#E7E4EA", borderRadius: 22, height: 44, justifyContent: "center", shadowColor: "#000000", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.4, shadowRadius: 8, width: 44 },
+  send: { alignItems: "center", backgroundColor: "#E7E4EA", borderRadius: 21, height: 42, justifyContent: "center", shadowColor: "#000000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.24, shadowRadius: 6, width: 42 },
   sendDisabled: { backgroundColor: "rgba(255,255,255,0.16)", opacity: 0.6 },
   pressed: { opacity: 0.76 },
   lockCard: { marginTop: 18, paddingHorizontal: 18, paddingVertical: 17 },

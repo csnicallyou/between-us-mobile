@@ -58,6 +58,14 @@ export default function EntriesScreen() {
     setJournalOpen(false);
   };
   const pickImage = async () => { try { setPicking(true); const uri = await selectAndStoreImage("plan"); if (uri) setPlanForm((current) => ({ ...current, imageUri: uri })); } finally { setPicking(false); } };
+  const confirmDeletePlan = () => {
+    if (!editingPlan) return;
+    Alert.alert("Удалить план?", "Это действие нельзя отменить.", [{ text: "Отмена", style: "cancel" }, { text: "Удалить", style: "destructive", onPress: () => { data.deletePlan(editingPlan.id); setPlanOpen(false); } }]);
+  };
+  const confirmDeleteJournal = () => {
+    if (!editingJournal) return;
+    Alert.alert("Удалить запись?", "Это действие нельзя отменить.", [{ text: "Отмена", style: "cancel" }, { text: "Удалить", style: "destructive", onPress: () => { data.deleteJournalEntry(editingJournal.id); setJournalOpen(false); } }]);
+  };
 
   return <V2Screen>
     <View style={styles.header}><View style={styles.copy}><Text style={styles.kicker}>Планы и дневник</Text><Text style={styles.h1}>Записи</Text></View><Pressable accessibilityLabel="Поиск" onPress={() => router.push("/search" as Href)} style={styles.search}><Ionicons color={colors.text} name="search-outline" size={19} /></Pressable></View>
@@ -65,8 +73,8 @@ export default function EntriesScreen() {
     {filter === "all" && <AllTimeline accessToken={accessToken} onJournal={beginJournal} onPlan={beginPlan} snapshot={snapshot} />}
     {filter === "plans" && <PlansView accessToken={accessToken} onOpen={beginPlan} plans={snapshot.plans} />}
     {filter === "journal" && <JournalView entries={snapshot.journal} onOpen={beginJournal} snapshot={snapshot} />}
-    <EntryFormModal fields={[{ key: "title", label: "Название", placeholder: "Что вы хотите сделать" }, { key: "description", label: "Детали", placeholder: "Что важно учесть", multiline: true }, { key: "date", label: "Дата", type: "date" }, { key: "kind", label: "Тип", choices: Object.entries(planKindLabels).map(([value, label]) => ({ value, label })) }, { key: "status", label: "Статус", choices: Object.entries(planStatusLabels).map(([value, label]) => ({ value, label })) }, { key: "showInCalendar", label: "Показывать в календаре", type: "switch" }]} imageUri={String(planForm.imageUri || "") || null} onChange={(key, value) => setPlanForm((current) => ({ ...current, [key]: value }))} onClose={() => setPlanOpen(false)} onPickImage={() => void pickImage()} onSave={savePlan} pickingImage={picking} title={editingPlan ? "Изменить план" : "Новый план"} values={planForm} visible={planOpen} />
-    <EntryFormModal fields={[{ key: "title", label: "Заголовок", placeholder: "О чём эта запись" }, { key: "content", label: "Текст", placeholder: "Напишите своими словами", multiline: true }, { key: "kind", label: "Тип", choices: Object.entries(journalKindLabels).map(([value, label]) => ({ value, label })) }, { key: "mood", label: "Настроение", choices: Object.entries(moodLabels).map(([value, label]) => ({ value, label })) }]} onChange={(key, value) => setJournalForm((current) => ({ ...current, [key]: value }))} onClose={() => setJournalOpen(false)} onSave={saveJournal} title={editingJournal ? "Изменить запись" : "Новая запись"} values={journalForm} visible={journalOpen} />
+    <EntryFormModal fields={[{ key: "title", label: "Название", placeholder: "Что вы хотите сделать" }, { key: "description", label: "Детали", placeholder: "Что важно учесть", multiline: true }, { key: "date", label: "Дата", type: "date" }, { key: "kind", label: "Тип", choices: Object.entries(planKindLabels).map(([value, label]) => ({ value, label })) }, { key: "status", label: "Статус", choices: Object.entries(planStatusLabels).map(([value, label]) => ({ value, label })) }, { key: "showInCalendar", label: "Показывать в календаре", type: "switch" }]} imageUri={String(planForm.imageUri || "") || null} onChange={(key, value) => setPlanForm((current) => ({ ...current, [key]: value }))} onClose={() => setPlanOpen(false)} onDelete={editingPlan ? confirmDeletePlan : undefined} onPickImage={() => void pickImage()} onSave={savePlan} pickingImage={picking} title={editingPlan ? "Изменить план" : "Новый план"} values={planForm} visible={planOpen} />
+    <EntryFormModal fields={[{ key: "title", label: "Заголовок", placeholder: "О чём эта запись" }, { key: "content", label: "Текст", placeholder: "Напишите своими словами", multiline: true }, { key: "kind", label: "Тип", choices: Object.entries(journalKindLabels).map(([value, label]) => ({ value, label })) }, { key: "mood", label: "Настроение", choices: Object.entries(moodLabels).map(([value, label]) => ({ value, label })) }]} onChange={(key, value) => setJournalForm((current) => ({ ...current, [key]: value }))} onClose={() => setJournalOpen(false)} onDelete={editingJournal ? confirmDeleteJournal : undefined} onSave={saveJournal} title={editingJournal ? "Изменить запись" : "Новая запись"} values={journalForm} visible={journalOpen} />
   </V2Screen>;
 }
 

@@ -35,9 +35,10 @@ interface EntryFormModalProps {
   imageUri?: string | null;
   onPickImage?: () => void;
   pickingImage?: boolean;
+  onDelete?: (() => void) | undefined;
 }
 
-export function EntryFormModal({ visible, title, fields, values, onChange, onClose, onSave, saveLabel = "Сохранить", imageUri, onPickImage, pickingImage = false }: EntryFormModalProps) {
+export function EntryFormModal({ visible, title, fields, values, onChange, onClose, onSave, onDelete, saveLabel = "Сохранить", imageUri, onPickImage, pickingImage = false }: EntryFormModalProps) {
   const { accessToken } = useAuth();
   const [activeDateKey, setActiveDateKey] = useState<string | null>(null);
   const dateValue = (key: string) => {
@@ -101,6 +102,7 @@ export function EntryFormModal({ visible, title, fields, values, onChange, onClo
             <AppButton label="Отмена" onPress={onClose} style={styles.action} variant="secondary" />
             <AppButton label={saveLabel} onPress={onSave} style={styles.action} />
           </View>
+          {onDelete ? <Pressable accessibilityRole="button" onPress={onDelete} style={styles.deleteAction}><Text style={styles.deleteText}>Удалить запись</Text></Pressable> : null}
         </ScrollView>
       </View>
     </Modal>
@@ -129,5 +131,7 @@ const styles = StyleSheet.create({
   dateText: { color: colors.ink, fontSize: 16 },
   actions: { flexDirection: "row", gap: spacing.md, marginTop: spacing.lg },
   action: { flex: 1 },
+  deleteAction: { alignItems: "center", marginTop: 16, paddingVertical: 10 },
+  deleteText: { color: "#B65E5A", fontFamily: v2.font.family, fontSize: 13, fontWeight: "600" },
   imagePreview: { backgroundColor: "rgba(255,255,255,0.48)", borderRadius: radius.md, height: 190, width: "100%" },
 });

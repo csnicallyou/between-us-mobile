@@ -53,7 +53,7 @@ export function AppTabBar({ navigation, state }: TabBarProps) {
         hitSlop={2}
         key={name}
         onPress={() => navigate(name)}
-        style={({ pressed }) => [styles.tab, selected && styles.tabSelected, pressed && styles.pressed]}
+        style={({ pressed }) => [styles.tab, pressed && styles.pressed]}
       >
         <Ionicons color={foreground} name={tab.icon} size={21} />
         <Text numberOfLines={1} style={[styles.label, { color: foreground }]}>{tab.label}</Text>
@@ -73,7 +73,7 @@ export function AppTabBar({ navigation, state }: TabBarProps) {
             onPress={() => navigate("ai-space")}
           style={({ pressed }) => [styles.orbButton, pressed && styles.orbPressed]}
           >
-            <AiOrb active={aiActive} dark={aiActive} size={62} />
+            <AiOrb active={aiActive} dark={aiActive} size={52} />
         </Pressable>
         <View style={styles.rightTabs}>{RIGHT.map(renderTab)}</View>
       </View>
@@ -85,11 +85,10 @@ function DockShape({ dark }: { dark: boolean }) {
   return <Svg height="82" pointerEvents="none" style={StyleSheet.absoluteFill} viewBox="0 0 358 82" width="100%">
     <Defs><LinearGradient id="dockFill" x1="0" x2="0" y1="0" y2="1"><Stop offset="0" stopColor={dark ? "#151515" : "#FFFFFF"} stopOpacity={dark ? 0.76 : 0.82}/><Stop offset="1" stopColor={dark ? "#050505" : "#F7F8FA"} stopOpacity={dark ? 0.68 : 0.68}/></LinearGradient></Defs>
     <Path
-      d="M28 12H330C345 12 354 22 354 37V50C354 66 345 76 330 76H28C13 76 4 66 4 50V37C4 22 13 12 28 12ZM179 7A36 36 0 1 0 179 79A36 36 0 1 0 179 7Z"
+      d="M28 12H330C345 12 354 22 354 37V50C354 66 345 76 330 76H28C13 76 4 66 4 50V37C4 22 13 12 28 12ZM179 13A30 30 0 1 0 179 73A30 30 0 1 0 179 13Z"
       fill="url(#dockFill)"
       fillRule="evenodd"
     />
-    <Path d="M28 12H330C345 12 354 22 354 37V50C354 66 345 76 330 76H28C13 76 4 66 4 50V37C4 22 13 12 28 12Z" fill="none" stroke={dark ? "rgba(255,255,255,.20)" : "rgba(255,255,255,.88)"} strokeWidth="1"/>
   </Svg>;
 }
 
@@ -99,17 +98,8 @@ const styles = StyleSheet.create({
   leftTabs: { alignItems: "center", flexDirection: "row", height: 62, left: 5, position: "absolute", top: 12, width: 140 },
   rightTabs: { alignItems: "center", flexDirection: "row", height: 62, position: "absolute", right: 5, top: 12, width: 140 },
   tab: { alignItems: "center", borderRadius: 19, flex: 1, gap: 3, height: 52, justifyContent: "center" },
-  tabSelected: {
-    backgroundColor: "rgba(255,255,255,0.30)",
-    borderColor: "rgba(255,255,255,0.42)",
-    borderWidth: StyleSheet.hairlineWidth,
-    shadowColor: "#3C3254",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.18,
-    shadowRadius: 3,
-  },
   label: { fontFamily: "GolosText", fontSize: 9.5, fontWeight: "500", letterSpacing: -0.04 },
   pressed: { opacity: 0.68 },
-  orbButton: { alignItems: "center", height: 64, justifyContent: "center", left: "50%", marginLeft: -32, position: "absolute", top: 10, width: 64, zIndex: 2 },
+  orbButton: { alignItems: "center", height: 60, justifyContent: "center", left: "50%", marginLeft: -30, position: "absolute", top: 12, width: 60, zIndex: 2 },
   orbPressed: { opacity: 0.78, transform: [{ scale: 0.97 }] },
 });

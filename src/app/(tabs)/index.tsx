@@ -6,6 +6,7 @@ import type { Mood } from "@/domain/models";
 import { privateImageSource } from "@/services/backendClient";
 import { useAppData } from "@/state/AppDataContext";
 import { useAuth } from "@/state/AuthContext";
+import { OrbSinkItem } from "@/motion/ScrollSuction";
 import { V2Glass, V2Screen } from "@/ui-v2";
 
 const ink = { strong: "#211E29", muted: "rgba(33,30,41,.62)", faint: "rgba(33,30,41,.38)", hairline: "rgba(33,30,41,.10)" };
@@ -121,7 +122,7 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.bento}>
-          <V2Glass radius={30} style={styles.hero}>
+          <OrbSinkItem><V2Glass radius={30} style={styles.hero}>
             <Text style={styles.eyebrow}>Вместе</Text>
             <Text style={styles.duration}>{durationLabel(snapshot.relationshipStartedAt)}</Text>
             <Text style={styles.since}>с {relationshipStartLabel(snapshot.relationshipStartedAt)}</Text>
@@ -130,9 +131,9 @@ export default function HomeScreen() {
               <Stat value={snapshot.memories.length} label="моментов" divided />
               <Stat value={snapshot.agreements.length} label="договорённостей" divided />
             </View>
-          </V2Glass>
+          </V2Glass></OrbSinkItem>
 
-          <V2Glass radius={24} style={styles.weekPanel}>
+          <OrbSinkItem><V2Glass radius={24} style={styles.weekPanel}>
             {week.map(({ date, marked }) => {
               const active = date.toDateString() === now.toDateString();
               return (
@@ -143,7 +144,7 @@ export default function HomeScreen() {
                 </View>
               );
             })}
-          </V2Glass>
+          </V2Glass></OrbSinkItem>
 
           <View style={styles.moodPair}>
             {snapshot.members.slice(0, 2).map((member, index) => {
@@ -151,7 +152,7 @@ export default function HomeScreen() {
               const mine = member.id === snapshot.currentMemberId;
               return (
                 <Pressable key={member.id} disabled={!mine} onPress={cycleMood} style={styles.moodPressable}>
-                  <V2Glass radius={24} style={styles.moodTile}>
+                  <OrbSinkItem><V2Glass radius={24} style={styles.moodTile}>
                     <View style={styles.moodRow}>
                       <View style={[styles.moodDot, { backgroundColor: index === 0 ? "#8FAE9B" : "#C79C8E" }]} />
                       <Text style={styles.moodName}>{memberName(snapshot, member.id)}</Text>
@@ -159,14 +160,14 @@ export default function HomeScreen() {
                     </View>
                     <Text style={styles.moodState}>{mood?.mood ? moodLabels[mood.mood] : "Не выбрано"}</Text>
                     <Text style={styles.moodMeta}>{updatedLabel(mood?.updatedAt)}</Text>
-                  </V2Glass>
+                  </V2Glass></OrbSinkItem>
                 </Pressable>
               );
             })}
           </View>
 
           <Pressable onPress={() => router.push("/(tabs)/entries?filter=plans" as Href)}>
-            <V2Glass radius={28} style={styles.plan}>
+            <OrbSinkItem><V2Glass radius={28} style={styles.plan}>
               <View style={styles.planPhoto}>
                 {nextPlan?.imageUri ? <Image resizeMode="cover" source={privateImageSource(nextPlan.imageUri, accessToken)} style={StyleSheet.absoluteFill} /> : <View style={styles.photoFallback}><Ionicons color={ink.faint} name="map-outline" size={30} /></View>}
                 <View style={styles.planBadge}><Text style={styles.planBadgeText}>{dateLabel(nextPlan?.date)}</Text></View>
@@ -176,10 +177,10 @@ export default function HomeScreen() {
                 <Text style={styles.blockText}>{nextPlan?.description || "Совместные планы появятся здесь."}</Text>
                 {nextPlan ? <View style={styles.chips}><Chip label={planKindLabels[nextPlan.kind]} active /><Chip label={planStatusLabels[nextPlan.status]} />{daysUntil(nextPlan.date) ? <Text style={styles.daysChip}>{daysUntil(nextPlan.date)}</Text> : null}</View> : null}
               </View>
-            </V2Glass>
+            </V2Glass></OrbSinkItem>
           </Pressable>
 
-          <V2Glass radius={26} style={styles.note}>
+          <OrbSinkItem><V2Glass radius={26} style={styles.note}>
             <View style={styles.noteHead}>
               <View style={styles.avatar}><Text style={styles.avatarText}>{partnerEntry ? memberName(snapshot, partnerEntry.authorId)[0] : "—"}</Text></View>
               <Text style={styles.noteKicker}>{partnerEntry ? `${memberName(snapshot, partnerEntry.authorId)} написал(а) · ${updatedLabel(partnerEntry.createdAt)}` : "Последняя запись партнёра"}</Text>
@@ -190,7 +191,7 @@ export default function HomeScreen() {
               <Ionicons color={anchor.label} name="arrow-undo-outline" size={15} />
               <Text style={styles.replyText}>Ответить</Text>
             </Pressable>
-          </V2Glass>
+          </V2Glass></OrbSinkItem>
         </View>
       </View>
     </V2Screen>
