@@ -103,6 +103,25 @@ body{font-family:'GolosText',system-ui,sans-serif}
 .bar__v{font-size:11.5px;font-weight:560;color:var(--t2);width:20px;text-align:right;flex:none}
 
 .cft{--r:24px;padding:16px 18px}
+/* ---- свайп вместо долгого нажатия ----
+   Долгое нажатие для удаления есть во всех четырёх разделах «Мы» и нигде
+   не обозначено — обнаружить его невозможно. Свайп влево открывает
+   действие, подтверждение остаётся тем же Alert, что и сейчас в коде. */
+/* Обёртка клипает уезжающую карточку по своим границам — карточка
+   уходит под скруглённый край строки, а не за край экрана. */
+.swipe{position:relative;border-radius:24px;overflow:hidden}
+.swipe__act{
+  position:absolute;inset:0;border-radius:24px;
+  display:flex;align-items:center;justify-content:flex-end;gap:9px;
+  padding-right:24px;
+  background:rgba(186,104,78,.15);
+  box-shadow:inset 0 0 0 .5px rgba(186,104,78,.22);
+  color:#9B4E31;font-size:13px;font-weight:600;letter-spacing:-.01em;
+}
+.swipe__act svg{width:18px;height:18px}
+.swipe__card{position:relative;z-index:2;transition:transform .22s ease}
+body.sw .swipe__card{transform:translateX(-96px)}
+
 .cft__i{font-size:11px;font-weight:640;color:var(--t3);letter-spacing:.06em}
 .lesson{
   margin-top:12px;padding:12px 14px;border-radius:15px;
@@ -309,7 +328,12 @@ body:not(.v1) .v1, body:not(.v2) .v2, body:not(.v3) .v3, body:not(.v4) .v4{displ
           </div>
         </div>
       </div>
-      <div class="glass blk cft">
+      <div class="swipe">
+        <div class="swipe__act">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 7h14M10 7V5.5A1.5 1.5 0 0 1 11.5 4h1A1.5 1.5 0 0 1 14 5.5V7M6.5 7l.8 11.6A1.5 1.5 0 0 0 8.8 20h6.4a1.5 1.5 0 0 0 1.5-1.4L17.5 7"/></svg>
+          Удалить
+        </div>
+      <div class="glass blk cft swipe__card">
         <div class="glass__lens"></div><div class="glass__tint"></div><div class="glass__rim"></div>
         <div class="glass__body">
           <div class="meta">44 · границы · 1 августа</div>
@@ -320,6 +344,7 @@ body:not(.v1) .v1, body:not(.v2) .v2, body:not(.v3) .v3, body:not(.v4) .v4{displ
             <div class="lesson__t">Спрашивать заранее, даже если кажется, что все будут рады</div>
           </div>
         </div>
+      </div>
       </div>
     </div>
   </div>
