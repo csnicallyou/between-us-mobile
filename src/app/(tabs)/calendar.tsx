@@ -136,7 +136,7 @@ function Legend({ color, label }: { color: string; label: string }) {
 }
 
 const styles = StyleSheet.create({
-  sheet: { paddingHorizontal: 4 },
+  sheet: {},
   header: { alignItems: "flex-start", flexDirection: "row", gap: 9 },
   headerCopy: { flex: 1 },
   kicker: { color: ink.faint, fontFamily: "GolosText", fontSize: 10, fontWeight: "600", letterSpacing: 1.5, textTransform: "uppercase" },

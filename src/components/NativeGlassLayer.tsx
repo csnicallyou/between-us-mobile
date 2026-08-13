@@ -19,16 +19,11 @@ export function NativeGlassLayer({ cornerRadius, interactive = false, tintColor,
       isInteractive={interactive}
       pointerEvents="none"
       {...(tintColor ? { tintColor } : {})}
-      style={[StyleSheet.absoluteFill, styles.depth, { borderRadius: cornerRadius }]}
+      style={[StyleSheet.absoluteFill, styles.clip, { borderRadius: cornerRadius }]}
     />
   );
 }
 
 const styles = StyleSheet.create({
-  depth: {
-    shadowColor: "#173246",
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.16,
-    shadowRadius: 22,
-  },
+  clip: { overflow: "hidden" },
 });

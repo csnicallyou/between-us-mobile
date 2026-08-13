@@ -1,6 +1,7 @@
 import { createContext, type PropsWithChildren, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Platform } from "react-native";
 import type { AboutItem, Agreement, AppearanceSettings, AppSnapshot, ChatMessage, ConflictEntry, JournalEntry, Memory, Mood, Plan } from "@/domain/models";
+import { formatDateSafe, normalizeAcceptedBy } from "@/domain/dataSafety";
 import { memberName, moodLabels } from "@/domain/labels";
 import { relationshipDuration } from "@/domain/relationshipDuration";
 import { BackendError } from "@/services/backendClient";
@@ -94,7 +95,11 @@ async function resolvePayloadImage(token: string, payload: Record<string, unknow
 }
 
 function domainEntry(entry: RemoteEntry) {
-  return { ...entry.payload, id: entry.id, authorId: entry.authorId, createdAt: entry.createdAt, updatedAt: entry.updatedAt };
+  const rawPayload = entry.payload && typeof entry.payload === "object" && !Array.isArray(entry.payload) ? entry.payload : {};
+  const payload = entry.kind === "agreement"
+    ? { ...rawPayload, acceptedBy: normalizeAcceptedBy(rawPayload.acceptedBy) }
+    : rawPayload;
+  return { ...payload, id: entry.id, authorId: entry.authorId, createdAt: entry.createdAt, updatedAt: entry.updatedAt };
 }
 
 function applyRemote(base: AppSnapshot, data: RemotePairData): AppSnapshot {
@@ -111,7 +116,10 @@ function applyRemote(base: AppSnapshot, data: RemotePairData): AppSnapshot {
     journal: grouped.journal as unknown as JournalEntry[],
     memories,
     about: grouped.about as unknown as AboutItem[],
-    agreements: grouped.agreement as unknown as Agreement[],
+    agreements: (grouped.agreement as unknown as Agreement[]).map((agreement) => ({
+      ...agreement,
+      acceptedBy: normalizeAcceptedBy(agreement.acceptedBy, base.members.map(({ id }) => id)),
+    })),
     conflicts: grouped.conflict as unknown as ConflictEntry[],
     chat: data.chat,
     calendar: [
@@ -182,7 +190,13 @@ export function AppDataProvider({ children }: PropsWithChildren) {
         ]);
         setPendingSyncCount(queuedCount);
         if (!active || identityRef.current !== identity) return;
-        const local = cached && cached.currentMemberId === user.id ? cached : pairSnapshot(pair, user.id);
+        const local = cached && cached.currentMemberId === user.id ? {
+          ...cached,
+          agreements: Array.isArray(cached.agreements) ? cached.agreements.map((agreement) => ({
+            ...agreement,
+            acceptedBy: normalizeAcceptedBy(agreement.acceptedBy, pair.members.map(({ id }) => id)),
+          })) : [],
+        } : pairSnapshot(pair, user.id);
         const base = pairSnapshot(pair, user.id, appearance ?? local.appearance);
         setSnapshot({
           ...local,
@@ -244,9 +258,9 @@ export function AppDataProvider({ children }: PropsWithChildren) {
       durationLabel: `${relationshipDuration(snapshot.relationshipStartedAt)} вместе`,
       moodSummary,
       nextPlanTitle: nextPlan?.title ?? null,
-      nextPlanDateLabel: nextPlan?.date ? new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "short" }).format(new Date(`${nextPlan.date}T12:00:00`)) : null,
+      nextPlanDateLabel: nextPlan?.date ? formatDateSafe(nextPlan.date, { day: "numeric", month: "short" }, "Дата не указана") : null,
       journalAuthorName: latestJournal ? memberName(snapshot, latestJournal.authorId) : null,
-      journalDateLabel: latestJournal ? new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "short" }).format(new Date(latestJournal.createdAt)) : null,
+      journalDateLabel: latestJournal ? formatDateSafe(latestJournal.createdAt, { day: "numeric", month: "short" }, "Дата не указана") : null,
       journalTitle: latestJournal?.title ?? null,
       journalExcerpt: latestJournal?.content ?? null,
     });
@@ -391,7 +405,7 @@ export function AppDataProvider({ children }: PropsWithChildren) {
       addAgreement: (input) => createEntry("agreement", { ...input, id: makeId("agreement"), acceptedBy: Object.fromEntries(snapshot.members.map(({ id }) => [id, id === snapshot.currentMemberId])), authorId: snapshot.currentMemberId, createdAt: now(), updatedAt: now() }),
       updateAgreement: (id, input) => { const item = snapshot.agreements.find((value) => value.id === id); if (item) updateEntry("agreement", id, { ...item, ...input, updatedAt: now() }); },
       deleteAgreement: (id) => deleteEntry("agreement", id),
-      toggleAgreement: (id) => { const item = snapshot.agreements.find((value) => value.id === id); if (item) updateEntry("agreement", id, { ...item, acceptedBy: { ...item.acceptedBy, [snapshot.currentMemberId]: !item.acceptedBy[snapshot.currentMemberId] }, updatedAt: now() }); },
+      toggleAgreement: (id) => { const item = snapshot.agreements.find((value) => value.id === id); if (item) { const acceptedBy = normalizeAcceptedBy(item.acceptedBy, snapshot.members.map(({ id: memberId }) => memberId)); updateEntry("agreement", id, { ...item, acceptedBy: { ...acceptedBy, [snapshot.currentMemberId]: !acceptedBy[snapshot.currentMemberId] }, updatedAt: now() }); } },
       addConflict: (input) => createEntry("conflict", { ...input, id: makeId("conflict"), authorId: snapshot.currentMemberId, createdAt: now() }),
       updateConflict: (id, input) => { const item = snapshot.conflicts.find((value) => value.id === id); if (item) updateEntry("conflict", id, { ...item, ...input }); },
       deleteConflict: (id) => deleteEntry("conflict", id),

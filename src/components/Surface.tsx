@@ -18,7 +18,7 @@ interface SurfaceProps extends PropsWithChildren {
  * перестаёт держать контраст текста, поэтому там остаётся плотная заливка.
  * Это не компромисс ради красоты, а требование читаемости.
  */
-export function Surface({ children, glassTintColor, glassVariant = "regular", style }: SurfaceProps) {
+export function Surface({ children, glassTintColor, glassVariant = "clear", style }: SurfaceProps) {
   const { effectiveAppearance } = useAppData();
   const customDark = effectiveAppearance.backgroundKind !== "default" && effectiveAppearance.backgroundLuminance < 0.36;
 

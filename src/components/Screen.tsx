@@ -55,7 +55,7 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: "#F4F1F6" },
   ambient: { bottom: 0, left: 0, overflow: "hidden", position: "absolute", right: 0, top: 0 },
   scrollContent: { flexGrow: 1 },
-  content: { flex: 1, paddingHorizontal: 20, paddingTop: spacing.xs, paddingBottom: 120 },
+  content: { flex: 1, paddingHorizontal: 20, paddingTop: 4, paddingBottom: 108 },
   loading: { alignItems: "center", justifyContent: "center" },
   banner: { backgroundColor: colors.sunSoft, borderRadius: 12, marginBottom: spacing.md, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
   bannerConflict: { backgroundColor: colors.coralSoft },

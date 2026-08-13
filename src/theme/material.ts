@@ -30,16 +30,16 @@ export const anchor = {
  * класть стекло на стекло нельзя.
  */
 export const fill = {
-  control: "rgba(255,255,255,0.30)",
-  controlStrong: "rgba(255,255,255,0.46)",
+  control: "rgba(255,255,255,0.16)",
+  controlStrong: "rgba(255,255,255,0.28)",
   selected: "rgba(255,255,255,0.22)",
-  quiet: "rgba(255,255,255,0.14)",
+  quiet: "rgba(255,255,255,0.10)",
 } as const;
 
 /** Кромка: светлее сверху, чем снизу — свет падает сверху слева. */
 export const rim = {
-  top: "rgba(255,255,255,0.88)",
-  hair: "rgba(255,255,255,0.46)",
+  top: "rgba(255,255,255,0.58)",
+  hair: "rgba(255,255,255,0.16)",
 } as const;
 
 export const materialRadius = {
@@ -68,16 +68,16 @@ const clamp = (value: number, min: number, max: number) => Math.min(max, Math.ma
  * он и создаёт ощущение высоты. Формула та же, что в `glass.js`.
  */
 export function surfaceShadow(size: number) {
-  const offset = clamp(size * 0.05, 2.5, 7);
-  const blur = clamp(size * 0.11, 5, 14);
+  const offset = clamp(size * 0.032, 2, 5);
+  const blur = clamp(size * 0.075, 5, 12);
   return Platform.select({
     ios: {
       shadowColor: "#3C3254",
       shadowOffset: { width: 0, height: Math.round(offset) },
-      shadowOpacity: 0.16,
+      shadowOpacity: 0.11,
       shadowRadius: blur,
     },
-    android: { elevation: Math.round(clamp(size * 0.035, 2, 8)) },
+    android: { elevation: Math.round(clamp(size * 0.02, 1, 5)) },
     default: {},
   });
 }

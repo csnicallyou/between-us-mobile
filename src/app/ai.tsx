@@ -1,9 +1,11 @@
 import { useState } from "react";
+import { Redirect } from "expo-router";
+import type { Href } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
-import Svg, { Defs, Ellipse, LinearGradient, Rect, Stop } from "react-native-svg";
+import Svg, { Circle, Defs, LinearGradient, RadialGradient, Rect, Stop } from "react-native-svg";
 import { AiOrb } from "@/components/AiOrb";
 import { GlassPanel } from "@/components/GlassPanel";
 import { ChatSection } from "@/features/ai/ChatSection";
@@ -14,10 +16,32 @@ type Mode = "quiet" | "chat" | "observations" | "info";
 const aiInk = { strong: "rgba(255,255,255,0.96)", muted: "rgba(255,255,255,0.60)", faint: "rgba(255,255,255,0.38)" } as const;
 
 function AiBackground() {
-  return <Svg height="100%" style={StyleSheet.absoluteFill} viewBox="0 0 390 844" width="100%"><Defs><LinearGradient id="aiwall" x1="0" x2="1" y1="0" y2="1"><Stop offset="0" stopColor="#17131E" /><Stop offset="0.52" stopColor="#211A2B" /><Stop offset="1" stopColor="#10141E" /></LinearGradient></Defs><Rect fill="url(#aiwall)" height="844" width="390" /><Ellipse cx="315" cy="92" fill="#54466B" opacity="0.32" rx="170" ry="150" /><Ellipse cx="45" cy="580" fill="#334657" opacity="0.24" rx="190" ry="180" /></Svg>;
+  const sparks = [
+    [72, 120, 1.2], [298, 86, 1.5], [216, 248, 1], [118, 356, 1.25], [330, 420, 1],
+    [54, 512, 1.15], [252, 588, 0.95], [160, 668, 1.2], [336, 742, 1], [88, 812, 1.15],
+  ] as const;
+  return (
+    <Svg height="100%" style={StyleSheet.absoluteFill} viewBox="0 0 390 900" width="100%">
+      <Defs>
+        <LinearGradient id="aiwall" x1="0" x2="0.15" y1="0" y2="1">
+          <Stop offset="0" stopColor="#1B1B1B" />
+          <Stop offset="0.30" stopColor="#131313" />
+          <Stop offset="0.65" stopColor="#0D0D0D" />
+          <Stop offset="1" stopColor="#070707" />
+        </LinearGradient>
+        <RadialGradient cx="50%" cy="24%" id="vign" r="75%">
+          <Stop offset="0" stopColor="#2A2A2A" stopOpacity="0.55" />
+          <Stop offset="1" stopColor="#2A2A2A" stopOpacity="0" />
+        </RadialGradient>
+      </Defs>
+      <Rect fill="url(#aiwall)" height="900" width="390" />
+      <Circle cx="195" cy="200" fill="url(#vign)" r="260" />
+      {sparks.map(([cx, cy, r]) => <Circle cx={cx} cy={cy} fill="#FFFFFF" key={`${cx}-${cy}`} opacity="0.16" r={r} />)}
+    </Svg>
+  );
 }
 
-export default function AiSpaceScreen() {
+export function AiSpaceContent() {
   const [mode, setMode] = useState<Mode>("chat");
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
@@ -41,6 +65,10 @@ export default function AiSpaceScreen() {
       </ScrollView>
     </SafeAreaView>
   );
+}
+
+export default function AiSpaceDeepLink() {
+  return <Redirect href={"/(tabs)/ai-space" as Href} />;
 }
 
 function AiAccessInfo() {
@@ -69,8 +97,8 @@ function ModeButton({ hero = false, icon, label, onPress, selected }: { hero?: b
 }
 
 const styles = StyleSheet.create({
-  safe: { backgroundColor: "#15111B", flex: 1 },
-  content: { paddingBottom: 42, paddingHorizontal: 20, paddingTop: 4 },
+  safe: { backgroundColor: "#070707", flex: 1 },
+  content: { paddingBottom: 126, paddingHorizontal: 20, paddingTop: 4 },
   header: { alignItems: "center", flexDirection: "row", gap: 11 },
   heading: { flex: 1 },
   kicker: { color: aiInk.faint, ...materialType.kicker },

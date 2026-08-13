@@ -27,7 +27,7 @@ interface GlassPanelProps extends PropsWithChildren {
  * Внутрь этой панели другую стеклянную панель вкладывать нельзя — поля и
  * кнопки внутри используют заливки из `fill` в `theme/material`.
  */
-export function GlassPanel({ children, radius = materialRadius.card, size = 120, style, tint, variant = "regular" }: GlassPanelProps) {
+export function GlassPanel({ children, radius = materialRadius.card, size = 120, style, tint, variant = "clear" }: GlassPanelProps) {
   const shadow = surfaceShadow(size);
 
   if (supportsNativeLiquidGlass) {
@@ -42,12 +42,14 @@ export function GlassPanel({ children, radius = materialRadius.card, size = 120,
   return (
     <View style={[{ borderRadius: radius }, shadow, styles.fallback, style]}>
       <BlurView
-        intensity={Platform.OS === "android" ? 40 : 26}
+        intensity={Platform.OS === "android" ? 32 : 24}
         pointerEvents="none"
         style={[StyleSheet.absoluteFill, { borderRadius: radius }, styles.clip]}
         tint="light"
       />
-      <View pointerEvents="none" style={[StyleSheet.absoluteFill, { borderRadius: radius }, styles.hairline]} />
+      <View pointerEvents="none" style={[StyleSheet.absoluteFill, { borderRadius: radius }, styles.tint]} />
+      <View pointerEvents="none" style={[StyleSheet.absoluteFill, { borderRadius: radius }, styles.topRim]} />
+      <View pointerEvents="none" style={[StyleSheet.absoluteFill, { borderRadius: radius }, styles.bottomRim]} />
       {children}
     </View>
   );
@@ -55,7 +57,9 @@ export function GlassPanel({ children, radius = materialRadius.card, size = 120,
 
 const styles = StyleSheet.create({
   native: { backgroundColor: "transparent" },
-  fallback: { backgroundColor: "rgba(255,255,255,0.16)" },
+  fallback: { backgroundColor: "rgba(255,255,255,0.06)" },
   clip: { overflow: "hidden" },
-  hairline: { borderColor: rim.hair, borderWidth: StyleSheet.hairlineWidth },
+  tint: { backgroundColor: "rgba(255,255,255,0.10)" },
+  topRim: { borderTopColor: rim.top, borderTopWidth: StyleSheet.hairlineWidth },
+  bottomRim: { borderBottomColor: rim.hair, borderBottomWidth: StyleSheet.hairlineWidth },
 });

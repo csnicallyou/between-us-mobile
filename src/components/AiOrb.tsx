@@ -8,10 +8,11 @@ interface AiOrbProps {
   active?: boolean;
 }
 
-const NODE_COUNT = 30;
+const NODE_COUNT = 38;
 /** Кадров на один оборот. Интерполяция периодическая, шов не виден. */
 const SAMPLES = 36;
 const PALETTE = ["#FFFFFF", "#FFFFFF", "#EDEAF2", "#221E2A", "#221E2A", "#3B3644"] as const;
+const ACTIVE_PALETTE = ["#FFFFFF", "#F7F7F7", "#DADADA", "#929292", "#FFFFFF", "#B8B8B8"] as const;
 
 interface Sample {
   x: number;
@@ -77,12 +78,12 @@ export function AiOrb({ active = false, size = 62 }: AiOrbProps) {
 
   useEffect(() => {
     const spin = Animated.loop(
-      Animated.timing(phase, { duration: 11000, easing: Easing.linear, toValue: 1, useNativeDriver: true }),
+      Animated.timing(phase, { duration: active ? 6200 : 11000, easing: Easing.linear, toValue: 1, useNativeDriver: true }),
     );
     const pulse = Animated.loop(
       Animated.sequence([
-        Animated.timing(breath, { duration: 2300, easing: Easing.inOut(Easing.ease), toValue: 1, useNativeDriver: true }),
-        Animated.timing(breath, { duration: 2300, easing: Easing.inOut(Easing.ease), toValue: 0, useNativeDriver: true }),
+        Animated.timing(breath, { duration: active ? 1600 : 2300, easing: Easing.inOut(Easing.ease), toValue: 1, useNativeDriver: true }),
+        Animated.timing(breath, { duration: active ? 1600 : 2300, easing: Easing.inOut(Easing.ease), toValue: 0, useNativeDriver: true }),
       ]),
     );
     spin.start();
@@ -91,22 +92,22 @@ export function AiOrb({ active = false, size = 62 }: AiOrbProps) {
       spin.stop();
       pulse.stop();
     };
-  }, [breath, phase]);
+  }, [active, breath, phase]);
 
   const radius = size / 2;
-  const dot = Math.max(1.35, size * 0.031);
+  const dot = Math.max(1.1, size * 0.023);
 
   const nodes = useMemo(
     () =>
       TRACKS.map((track, index) => ({
-        color: track.color,
+        color: active ? ACTIVE_PALETTE[index % ACTIVE_PALETTE.length] : track.color,
         key: `node-${index}`,
         opacity: phase.interpolate({ inputRange: INPUT_RANGE, outputRange: track.samples.map((s) => s.opacity) }),
         scale: phase.interpolate({ inputRange: INPUT_RANGE, outputRange: track.samples.map((s) => s.scale) }),
         x: phase.interpolate({ inputRange: INPUT_RANGE, outputRange: track.samples.map((s) => s.x * radius) }),
         y: phase.interpolate({ inputRange: INPUT_RANGE, outputRange: track.samples.map((s) => s.y * radius) }),
       })),
-    [phase, radius],
+    [active, phase, radius],
   );
 
   return (
@@ -116,13 +117,22 @@ export function AiOrb({ active = false, size = 62 }: AiOrbProps) {
         style={[
           styles.halo,
           {
-            borderRadius: size,
-            opacity: breath.interpolate({ inputRange: [0, 1], outputRange: active ? [0.66, 1] : [0.5, 0.86] }),
+            opacity: breath.interpolate({ inputRange: [0, 1], outputRange: active ? [0.28, 0.48] : [0.16, 0.30] }),
             transform: [{ scale: breath.interpolate({ inputRange: [0, 1], outputRange: [0.86, 1.06] }) }],
           },
-          active && styles.haloActive,
         ]}
-      />
+      >
+        <Svg height="100%" width="100%">
+          <Defs>
+            <RadialGradient id="orbHalo" r="50%">
+              <Stop offset="0" stopColor="#FFFFFF" stopOpacity={active ? 0.28 : 0.16} />
+              <Stop offset="0.42" stopColor="#FFFFFF" stopOpacity={active ? 0.12 : 0.07} />
+              <Stop offset="1" stopColor="#FFFFFF" stopOpacity="0" />
+            </RadialGradient>
+          </Defs>
+          <Circle cx="50%" cy="50%" fill="url(#orbHalo)" r="50%" />
+        </Svg>
+      </Animated.View>
       <View style={[styles.body, { borderRadius: radius, height: size, width: size }]}>
         <Svg height={size} width={size}>
           <Defs>
@@ -166,21 +176,18 @@ export function AiOrb({ active = false, size = 62 }: AiOrbProps) {
           </Svg>
         </View>
       </View>
-      {active ? <View pointerEvents="none" style={[styles.ring, { borderRadius: size }]} /> : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   halo: {
-    backgroundColor: "rgba(150,138,186,0.22)",
-    bottom: -10,
-    left: -10,
+    bottom: -8,
+    left: -8,
     position: "absolute",
-    right: -10,
-    top: -10,
+    right: -8,
+    top: -8,
   },
-  haloActive: { backgroundColor: "rgba(178,168,208,0.30)" },
   body: {
     alignItems: "center",
     borderColor: "rgba(255,255,255,0.45)",
@@ -190,13 +197,4 @@ const styles = StyleSheet.create({
   },
   node: { left: "50%", position: "absolute", top: "50%" },
   gloss: { bottom: 0, left: 0, overflow: "hidden", position: "absolute", right: 0, top: 0 },
-  ring: {
-    borderColor: "rgba(255,255,255,0.34)",
-    borderWidth: 1.2,
-    bottom: -5,
-    left: -5,
-    position: "absolute",
-    right: -5,
-    top: -5,
-  },
 });

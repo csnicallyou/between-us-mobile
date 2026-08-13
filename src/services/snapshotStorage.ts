@@ -1,5 +1,6 @@
 import Storage from "expo-sqlite/kv-store";
 import type { AppSnapshot } from "@/domain/models";
+import { normalizeAcceptedBy } from "@/domain/dataSafety";
 import { seedSnapshot } from "@/state/seed";
 
 const SNAPSHOT_KEY = "between-us.snapshot.v2";
@@ -23,10 +24,14 @@ function migrateSnapshot(value: Partial<AppSnapshot>): AppSnapshot {
     journal: mapAuthor(value.journal, seedSnapshot.journal),
     memories: mapAuthor(value.memories, []),
     about: mapAuthor(value.about, []),
-    agreements: mapAuthor(value.agreements, []).map((agreement) => legacy ? {
+    agreements: mapAuthor(value.agreements, []).map((agreement) => ({
       ...agreement,
-      acceptedBy: Object.fromEntries(Object.entries(agreement.acceptedBy).map(([id, accepted]) => [memberId(id), accepted])),
-    } : agreement),
+      acceptedBy: normalizeAcceptedBy(
+        agreement.acceptedBy,
+        (Array.isArray(value.members) ? value.members : seedSnapshot.members).map(({ id }) => id),
+        legacy ? memberId : undefined,
+      ),
+    })),
     conflicts: Array.isArray(value.conflicts) ? value.conflicts : [],
     chat: (Array.isArray(value.chat) ? value.chat : []).map((message) => legacy && message.author !== "ai" ? { ...message, author: memberId(message.author) } : message),
     appearance: value.appearance ?? seedSnapshot.appearance,

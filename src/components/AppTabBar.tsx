@@ -1,8 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useRouter, usePathname } from "expo-router";
-import type { Href } from "expo-router";
+import { usePathname } from "expo-router";
 import { AiOrb } from "@/components/AiOrb";
 import { GlassPanel } from "@/components/GlassPanel";
 import { fill, ink, materialRadius, materialType, rim } from "@/theme/material";
@@ -44,9 +43,8 @@ const RIGHT = ["entries", "we"];
  */
 export function AppTabBar({ navigation, state }: TabBarProps) {
   const insets = useSafeAreaInsets();
-  const router = useRouter();
   const pathname = usePathname();
-  const aiActive = pathname.startsWith("/ai");
+  const aiActive = pathname.startsWith("/ai") || pathname.startsWith("/ai-space");
 
   const go = (name: string) => {
     const route = state.routes.find((item) => item.name === name);
@@ -60,6 +58,9 @@ export function AppTabBar({ navigation, state }: TabBarProps) {
     const meta = labels[name];
     if (!meta) return null;
     const focused = !aiActive && state.routes[state.index]?.name === name;
+    const color = aiActive
+      ? focused ? "rgba(255,255,255,0.96)" : "rgba(255,255,255,0.48)"
+      : focused ? ink.strong : ink.faint;
     return (
       <Pressable
         accessibilityLabel={meta.label}
@@ -69,22 +70,27 @@ export function AppTabBar({ navigation, state }: TabBarProps) {
         onPress={() => go(name)}
         style={[styles.tab, focused && styles.tabActive]}
       >
-        <Ionicons color={focused ? ink.strong : ink.faint} name={meta.icon} size={21} />
-        <Text numberOfLines={1} style={[styles.label, focused && styles.labelActive]}>{meta.label}</Text>
+        <Ionicons color={color} name={meta.icon} size={21} />
+        <Text numberOfLines={1} style={[styles.label, aiActive && styles.labelDark, focused && styles.labelActive]}>{meta.label}</Text>
       </Pressable>
     );
   };
 
   return (
     <View pointerEvents="box-none" style={[styles.dock, { paddingBottom: Math.max(insets.bottom, 10) }]}>
-      <GlassPanel radius={materialRadius.panel} size={64} style={styles.panel}>
+      <GlassPanel
+        radius={materialRadius.panel}
+        size={64}
+        style={[styles.panel, aiActive && styles.panelDark]}
+        tint={aiActive ? "#101010" : undefined}
+      >
         <View style={styles.row}>
           {LEFT.map(renderTab)}
           <Pressable
             accessibilityLabel="Пространство ИИ"
             accessibilityRole="button"
             accessibilityState={{ selected: aiActive }}
-            onPress={() => router.push("/ai" as Href)}
+            onPress={() => go("ai-space")}
             style={styles.core}
           >
             <AiOrb active={aiActive} size={62} />
@@ -99,10 +105,18 @@ export function AppTabBar({ navigation, state }: TabBarProps) {
 const styles = StyleSheet.create({
   dock: { bottom: 0, left: 0, paddingHorizontal: 16, position: "absolute", right: 0 },
   panel: { height: 64, padding: 6 },
+  panelDark: {
+    backgroundColor: "rgba(8,8,8,0.86)",
+    borderColor: "rgba(255,255,255,0.10)",
+    borderWidth: StyleSheet.hairlineWidth,
+    shadowColor: "#000000",
+    shadowOpacity: 0.62,
+  },
   row: { alignItems: "center", flex: 1, flexDirection: "row" },
   tab: { alignItems: "center", borderRadius: 19, flex: 1, gap: 3, height: 52, justifyContent: "center" },
   tabActive: { backgroundColor: fill.selected, borderColor: rim.hair, borderWidth: StyleSheet.hairlineWidth },
   label: { color: ink.faint, fontFamily: materialType.label.fontFamily, fontSize: 9.5, fontWeight: "500" },
+  labelDark: { color: "rgba(255,255,255,0.48)" },
   labelActive: { color: ink.strong },
   core: { alignItems: "center", height: 62, justifyContent: "center", marginHorizontal: 4, transform: [{ translateY: -7 }], width: 62 },
 });

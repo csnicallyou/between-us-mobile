@@ -6,6 +6,7 @@ import { Surface } from "@/components/Surface";
 import { privateImageSource } from "@/services/backendClient";
 import { useAppData } from "@/state/AppDataContext";
 import { useAuth } from "@/state/AuthContext";
+import { dateTimestamp, formatDateSafe } from "@/domain/dataSafety";
 import { fill, ink, rim } from "@/theme/material";
 
 function plural(count: number, one: string, few: string, many: string) {
@@ -18,8 +19,7 @@ function plural(count: number, one: string, few: string, many: string) {
 }
 
 function formatShortDate(value?: string | null) {
-  if (!value) return "";
-  return new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long" }).format(new Date(`${value.slice(0, 10)}T12:00:00`));
+  return formatDateSafe(value, { day: "numeric", month: "long" });
 }
 
 export default function WeScreen() {
@@ -27,10 +27,11 @@ export default function WeScreen() {
   const { accessToken } = useAuth();
   const { snapshot } = useAppData();
   const go = (href: string) => router.push(href as Href);
-  const latestMemory = [...snapshot.memories].sort((a, b) => b.date.localeCompare(a.date))[0];
-  const storyImage = [...snapshot.memories].sort((a, b) => b.date.localeCompare(a.date)).find((item) => item.imageUri)?.imageUri;
-  const latestConflict = [...snapshot.conflicts].sort((a, b) => b.date.localeCompare(a.date))[0];
-  const acceptedAgreements = snapshot.agreements.filter((agreement) => snapshot.members.every((member) => agreement.acceptedBy[member.id])).length;
+  const memoriesByDate = [...snapshot.memories].sort((a, b) => dateTimestamp(b.date) - dateTimestamp(a.date));
+  const latestMemory = memoriesByDate[0];
+  const storyImage = memoriesByDate.find((item) => item.imageUri)?.imageUri;
+  const latestConflict = [...snapshot.conflicts].sort((a, b) => dateTimestamp(b.date) - dateTimestamp(a.date))[0];
+  const acceptedAgreements = snapshot.agreements.filter((agreement) => snapshot.members.every((member) => Boolean(agreement.acceptedBy?.[member.id]))).length;
   const waitingAgreements = snapshot.agreements.length - acceptedAgreements;
 
   return (

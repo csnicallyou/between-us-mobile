@@ -17,6 +17,7 @@ export default function TabsLayout() {
       <Tabs.Screen name="calendar" options={{ title: "Календарь" }} />
       <Tabs.Screen name="entries" options={{ title: "Записи" }} />
       <Tabs.Screen name="we" options={{ title: "Мы" }} />
+      <Tabs.Screen name="ai-space" options={{ title: "Мы и ИИ" }} />
     </Tabs>
   );
 }

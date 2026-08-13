@@ -208,7 +208,7 @@ function Chip({ label, active = false }: { label: string; active?: boolean }) {
 }
 
 const styles = StyleSheet.create({
-  sheet: { paddingHorizontal: 4 },
+  sheet: {},
   header: { alignItems: "flex-start", flexDirection: "row", gap: 12 },
   headerCopy: { flex: 1 },
   kicker: { color: ink.faint, fontFamily: "GolosText", fontSize: 10, fontWeight: "600", letterSpacing: 1.5, textTransform: "uppercase" },
