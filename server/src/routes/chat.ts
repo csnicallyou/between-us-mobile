@@ -25,7 +25,7 @@ export function registerChatRoutes(app: FastifyInstance, db: Pool) {
         title: "Между нами",
         body: "Новое сообщение в общем чате",
         category: "chat",
-        data: { type: "chat" },
+        data: { type: "chat", messageId: row.id },
       }).catch(() => undefined);
     }
     return reply.code(201).send({ id: row.id, authorId: row.author_id, content: row.content, createdAt: row.created_at });

@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ActivityIndicator, Image, Modal, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from "react-native";
 import { V2Button as AppButton, V2Glass as Surface, V2Backdrop, v2 } from "@/ui-v2";
 import { colors, radius, spacing } from "@/theme/tokens";
@@ -34,11 +34,12 @@ interface EntryFormModalProps {
   saveLabel?: string;
   imageUri?: string | null;
   onPickImage?: () => void;
+  onRemoveImage?: () => void;
   pickingImage?: boolean;
   onDelete?: (() => void) | undefined;
 }
 
-export function EntryFormModal({ visible, title, fields, values, onChange, onClose, onSave, onDelete, saveLabel = "Сохранить", imageUri, onPickImage, pickingImage = false }: EntryFormModalProps) {
+export function EntryFormModal({ visible, title, fields, values, onChange, onClose, onSave, onDelete, saveLabel = "Сохранить", imageUri, onPickImage, onRemoveImage, pickingImage = false }: EntryFormModalProps) {
   const { accessToken } = useAuth();
   const [activeDateKey, setActiveDateKey] = useState<string | null>(null);
   const dateValue = (key: string) => {
@@ -47,6 +48,7 @@ export function EntryFormModal({ visible, title, fields, values, onChange, onClo
     return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
   };
   const localDate = (value: Date) => `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, "0")}-${String(value.getDate()).padStart(2, "0")}`;
+  useEffect(() => { if (!visible) setActiveDateKey(null); }, [visible]);
   return (
     <Modal animationType="slide" presentationStyle="pageSheet" visible={visible} onRequestClose={onClose}>
       <View style={styles.page}>
@@ -58,7 +60,12 @@ export function EntryFormModal({ visible, title, fields, values, onChange, onClo
           <Text numberOfLines={1} style={styles.heading}>{title}</Text>
           <View style={styles.closePlaceholder} />
         </View>
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <ScrollView
+          automaticallyAdjustKeyboardInsets={Platform.OS === "ios"}
+          contentContainerStyle={styles.content}
+          keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
+          keyboardShouldPersistTaps="handled"
+        >
           <Surface radius={28} style={styles.form}>
             {fields.map((field) => (
               <View key={field.key} style={styles.field}>
@@ -96,7 +103,12 @@ export function EntryFormModal({ visible, title, fields, values, onChange, onClo
                 )}
               </View>
             ))}
-            {onPickImage ? <View style={styles.field}><Text style={styles.label}>Изображение</Text>{imageUri ? <Image resizeMode="contain" source={privateImageSource(imageUri, accessToken)} style={styles.imagePreview} /> : null}{pickingImage ? <ActivityIndicator color={colors.sea} /> : <AppButton label={imageUri ? "Заменить изображение" : "Добавить изображение"} onPress={onPickImage} variant="secondary" />}</View> : null}
+            {onPickImage ? <View style={styles.field}>
+              <Text style={styles.label}>Изображение</Text>
+              {imageUri ? <Image resizeMode="contain" source={privateImageSource(imageUri, accessToken)} style={styles.imagePreview} /> : null}
+              {pickingImage ? <ActivityIndicator color={colors.sea} /> : <AppButton label={imageUri ? "Заменить изображение" : "Добавить изображение"} onPress={onPickImage} variant="secondary" />}
+              {imageUri && onRemoveImage && !pickingImage ? <AppButton label="Удалить изображение" onPress={onRemoveImage} variant="danger" /> : null}
+            </View> : null}
           </Surface>
           <View style={styles.actions}>
             <AppButton label="Отмена" onPress={onClose} style={styles.action} variant="secondary" />

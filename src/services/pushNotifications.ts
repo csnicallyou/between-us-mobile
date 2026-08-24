@@ -19,11 +19,11 @@ function projectId(): string | undefined {
 
 // Best-effort throughout: a user who denies notification permission, or a device
 // that can't reach Expo's push service, should never block using the app.
-export async function registerPushToken(accessToken: string): Promise<string | null> {
+export async function registerPushToken(accessToken: string, requestPermission = false): Promise<string | null> {
   if (Platform.OS !== "ios" && Platform.OS !== "android") return null;
   try {
     const settings = await Notifications.getPermissionsAsync();
-    const granted = settings.granted || (await Notifications.requestPermissionsAsync()).granted;
+    const granted = settings.granted || (requestPermission && (await Notifications.requestPermissionsAsync()).granted);
     if (!granted) return null;
     const id = projectId();
     if (!id) return null;

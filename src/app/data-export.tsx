@@ -17,9 +17,11 @@ export default function DataExportScreen() {
   const refresh = useCallback(async () => {
     if (!accessToken) return;
     try {
+      setError(null);
       setRequest(await backendClient.exportStatus(accessToken));
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Не удалось получить статус");
+      setRequest((current) => current === undefined ? null : current);
     }
   }, [accessToken]);
 
@@ -87,6 +89,7 @@ export default function DataExportScreen() {
           </>
         )}
         {error ? <Text accessibilityLiveRegion="polite" style={styles.error}>{error}</Text> : null}
+        {error ? <AppButton disabled={busy} label="Обновить статус" onPress={() => void refresh()} variant="secondary" /> : null}
       </Surface>
     </Screen>
   );

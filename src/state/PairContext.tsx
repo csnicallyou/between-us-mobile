@@ -1,6 +1,7 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type PropsWithChildren } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type PropsWithChildren } from "react";
 import * as Linking from "expo-linking";
 import { BackendError, backendClient, type PairDto, type PairInviteDto } from "@/services/backendClient";
+import { getKvStore } from "@/services/syncRepository";
 import { useAuth } from "@/state/AuthContext";
 
 interface PairContextValue {
@@ -15,6 +16,57 @@ interface PairContextValue {
 }
 
 const PairContext = createContext<PairContextValue | null>(null);
+const pairCacheWrites = new Map<string, Promise<void>>();
+
+function pairCacheKey(userId: string) {
+  return `between-us.pair.v1:${userId}`;
+}
+
+function isPairDto(value: unknown, userId: string): value is PairDto {
+  if (!value || typeof value !== "object") return false;
+  const pair = value as Partial<PairDto>;
+  return typeof pair.id === "string"
+    && typeof pair.name === "string"
+    && (pair.relationshipStartedOn === null || typeof pair.relationshipStartedOn === "string")
+    && typeof pair.createdAt === "string"
+    && Array.isArray(pair.members)
+    && pair.members.some((member) => member
+      && typeof member === "object"
+      && "id" in member
+      && member.id === userId)
+    && pair.members.every((member) => member
+      && typeof member.id === "string"
+      && typeof member.displayName === "string"
+      && typeof member.memberSlot === "string"
+      && typeof member.joinedAt === "string");
+}
+
+async function readCachedPair(userId: string): Promise<PairDto | null> {
+  const store = await getKvStore();
+  if (!store) return null;
+  const raw = await store.getItemAsync(pairCacheKey(userId));
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    return isPairDto(parsed, userId) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+async function writeCachedPair(userId: string, pair: PairDto | null): Promise<void> {
+  const store = await getKvStore();
+  if (!store) return;
+  const key = pairCacheKey(userId);
+  const previous = pairCacheWrites.get(key) ?? Promise.resolve();
+  const next = previous.catch(() => undefined).then(() => store.setItemAsync(key, pair ? JSON.stringify(pair) : ""));
+  pairCacheWrites.set(key, next);
+  try {
+    await next;
+  } finally {
+    if (pairCacheWrites.get(key) === next) pairCacheWrites.delete(key);
+  }
+}
 
 export function normalizePairInvite(value: string): string {
   const trimmed = value.trim();
@@ -33,11 +85,15 @@ export function normalizePairInvite(value: string): string {
 }
 
 export function PairProvider({ children }: PropsWithChildren) {
-  const { accessToken, isHydrated, refreshSession } = useAuth();
+  const { accessToken, isHydrated, refreshSession, user } = useAuth();
   const [pair, setPair] = useState<PairDto | null>(null);
   const [invite, setInvite] = useState<PairInviteDto | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [pendingInvite, setPendingInvite] = useState("");
+  const authUserIdRef = useRef<string | null>(user?.id ?? null);
+  const pairOwnerIdRef = useRef<string | null>(null);
+  const reloadGenerationRef = useRef(0);
+  authUserIdRef.current = user?.id ?? null;
 
   useEffect(() => {
     const capture = (url: string | null) => {
@@ -63,18 +119,41 @@ export function PairProvider({ children }: PropsWithChildren) {
   }, [accessToken, refreshSession]);
 
   const reloadPair = useCallback(async () => {
-    if (!accessToken) {
+    const userId = user?.id ?? null;
+    const generation = ++reloadGenerationRef.current;
+    const isCurrent = () => reloadGenerationRef.current === generation && authUserIdRef.current === userId;
+    if (!accessToken || !userId) {
+      pairOwnerIdRef.current = null;
       setPair(null);
+      setInvite(null);
       setIsLoading(false);
       return;
     }
+    if (pairOwnerIdRef.current !== userId) {
+      pairOwnerIdRef.current = userId;
+      setPair(null);
+      setInvite(null);
+    }
     setIsLoading(true);
-    try {
-      setPair(await withToken((token) => backendClient.getPair(token)));
-    } finally {
+    const cached = await readCachedPair(userId).catch(() => null);
+    if (!isCurrent()) return;
+    if (cached) {
+      setPair(cached);
+      // Cached pair data is enough to hydrate the local snapshot while the network
+      // refresh continues in the background.
       setIsLoading(false);
     }
-  }, [accessToken, withToken]);
+    try {
+      const remote = await withToken((token) => backendClient.getPair(token));
+      if (!isCurrent()) return;
+      setPair(remote);
+      await writeCachedPair(userId, remote).catch(() => undefined);
+    } catch (error) {
+      throw error;
+    } finally {
+      if (isCurrent()) setIsLoading(false);
+    }
+  }, [accessToken, user?.id, withToken]);
 
   useEffect(() => {
     if (!isHydrated) return;
@@ -88,11 +167,18 @@ export function PairProvider({ children }: PropsWithChildren) {
   }, [accessToken, pair, reloadPair]);
 
   const createPair = useCallback(async (input: { name: string; relationshipStartedOn: string }) => {
+    const userId = user?.id ?? null;
     const created = await withToken((token) => backendClient.createPair(input, token));
-    setPair(created.pair);
-    setInvite(created.invite);
+    if (userId && authUserIdRef.current === userId) {
+      reloadGenerationRef.current += 1;
+      pairOwnerIdRef.current = userId;
+      setPair(created.pair);
+      setInvite(created.invite);
+      setIsLoading(false);
+    }
+    if (userId) await writeCachedPair(userId, created.pair).catch(() => undefined);
     return created.pair;
-  }, [withToken]);
+  }, [user?.id, withToken]);
 
   const createInvite = useCallback(async () => {
     const created = await withToken((token) => backendClient.createPairInvite(token));
@@ -101,13 +187,20 @@ export function PairProvider({ children }: PropsWithChildren) {
   }, [withToken]);
 
   const joinPair = useCallback(async (rawInvite: string) => {
+    const userId = user?.id ?? null;
     const invite = normalizePairInvite(rawInvite);
     if (!invite) throw new Error("Введите код или ссылку-приглашение");
     const joined = await withToken((token) => backendClient.joinPair(invite, token));
-    setPair(joined.pair);
-    setPendingInvite("");
+    if (userId && authUserIdRef.current === userId) {
+      reloadGenerationRef.current += 1;
+      pairOwnerIdRef.current = userId;
+      setPair(joined.pair);
+      setPendingInvite("");
+      setIsLoading(false);
+    }
+    if (userId) await writeCachedPair(userId, joined.pair).catch(() => undefined);
     return joined.pair;
-  }, [withToken]);
+  }, [user?.id, withToken]);
 
   const value = useMemo<PairContextValue>(() => ({ createInvite, createPair, invite, isLoading, joinPair, pair, pendingInvite, reloadPair }), [createInvite, createPair, invite, isLoading, joinPair, pair, pendingInvite, reloadPair]);
   return <PairContext.Provider value={value}>{children}</PairContext.Provider>;

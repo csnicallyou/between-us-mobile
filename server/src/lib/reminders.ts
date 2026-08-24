@@ -27,7 +27,7 @@ async function remindUnconfirmedAgreements(db: Pool) {
     for (const userId of pending) {
       await sendPushToUser(db, userId, {
         title: "Между нами",
-        body: `Договорённость «${row.payload.title ?? ""}» всё ещё не подтверждена`,
+        body: "Одна из договорённостей всё ещё ждёт вашего подтверждения",
         category: "agreement",
         data: { type: "agreement", entryId: row.id },
       });
@@ -61,7 +61,7 @@ async function remindMemoryAnniversaries(db: Pool) {
     for (const member of members.rows) {
       await sendPushToUser(db, member.user_id, {
         title: "Между нами",
-        body: `${yearsSince} ${yearsLabel(yearsSince)} назад: «${row.payload.title ?? ""}»`,
+        body: "Сегодня годовщина одного из ваших общих событий",
         category: "memory",
         data: { type: "anniversary", entryId: row.id },
       });

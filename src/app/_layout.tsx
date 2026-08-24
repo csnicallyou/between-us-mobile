@@ -3,7 +3,9 @@ import { useFonts } from "expo-font";
 import { StatusBar } from "expo-status-bar";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { NotificationResponseRouter } from "@/components/NotificationResponseRouter";
 import { AppDataProvider } from "@/state/AppDataContext";
+import { AppLockProvider } from "@/state/AppLockContext";
 import { AuthProvider, useAuth } from "@/state/AuthContext";
 import { PairProvider, usePair } from "@/state/PairContext";
 import { colors } from "@/theme/tokens";
@@ -18,6 +20,7 @@ function RootNavigator() {
   }
 
   return (
+    <>
     <Stack screenOptions={{ contentStyle: { backgroundColor: colors.background }, headerShown: false }}>
       <Stack.Protected guard={!isAuthenticated}>
         <Stack.Screen name="(auth)" />
@@ -42,6 +45,8 @@ function RootNavigator() {
         <Stack.Screen name="settings" />
       </Stack.Protected>
     </Stack>
+    {isAuthenticated && pairReady ? <NotificationResponseRouter /> : null}
+    </>
   );
 }
 
@@ -56,7 +61,7 @@ export default function RootLayout() {
 
   return (
     <ErrorBoundary>
-      <AuthProvider><PairProvider><AppDataProvider><StatusBar style="dark" /><RootNavigator /></AppDataProvider></PairProvider></AuthProvider>
+      <AuthProvider><AppLockProvider><PairProvider><AppDataProvider><StatusBar style="dark" /><RootNavigator /></AppDataProvider></PairProvider></AppLockProvider></AuthProvider>
     </ErrorBoundary>
   );
 }

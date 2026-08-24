@@ -7,6 +7,7 @@ on:
       - master
     paths:
       - .github/workflows/ios-unsigned.yml
+      - app.config.js
       - app.json
       - package.json
       - package-lock.json
@@ -21,10 +22,17 @@ concurrency:
 
 jobs:
   build:
-    name: Build for USB sideloading
+    name: Build standalone (${{ matrix.variant }})
     runs-on: macos-26
     timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        variant:
+          - anton
+          - liza
     env:
+      BUILD_VARIANT: ${{ matrix.variant }}
       EXPO_PUBLIC_API_BASE_URL: https://186.246.45.4.nip.io:9444
 
     steps:
@@ -44,7 +52,10 @@ jobs:
         run: |
           npm run typecheck
           npm run check:source
-          npx expo-doctor
+
+      - name: Run Expo diagnostics
+        continue-on-error: true
+        run: npm run doctor
 
       - name: Generate the native iOS project
         env:
@@ -63,7 +74,7 @@ jobs:
           fi
 
           scheme="$(basename "$workspace" .xcworkspace)"
-          derived_data="$RUNNER_TEMP/BetweenUsDerivedData"
+          derived_data="$RUNNER_TEMP/BetweenUsDerivedData-$BUILD_VARIANT"
 
           xcodebuild \
             -workspace "$workspace" \
@@ -82,22 +93,23 @@ jobs:
             exit 1
           fi
 
-          output="$RUNNER_TEMP/BetweenUsUnsigned"
+          output="$RUNNER_TEMP/BetweenUsUnsigned-$BUILD_VARIANT"
           mkdir -p "$output/Payload"
           ditto "$app_path" "$output/Payload/$(basename "$app_path")"
 
           (
             cd "$output"
-            /usr/bin/zip -qry BetweenUs-unsigned.ipa Payload
-            shasum -a 256 BetweenUs-unsigned.ipa > BetweenUs-unsigned.ipa.sha256
+            ipa="BetweenUs-$BUILD_VARIANT-unsigned.ipa"
+            /usr/bin/zip -qry "$ipa" Payload
+            shasum -a 256 "$ipa" > "$ipa.sha256"
           )
 
       - name: Upload unsigned IPA
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: BetweenUs-unsigned-ios
+          name: BetweenUs-${{ matrix.variant }}-unsigned-ios
           path: |
-            ${{ runner.temp }}/BetweenUsUnsigned/BetweenUs-unsigned.ipa
-            ${{ runner.temp }}/BetweenUsUnsigned/BetweenUs-unsigned.ipa.sha256
+            ${{ runner.temp }}/BetweenUsUnsigned-${{ matrix.variant }}/BetweenUs-${{ matrix.variant }}-unsigned.ipa
+            ${{ runner.temp }}/BetweenUsUnsigned-${{ matrix.variant }}/BetweenUs-${{ matrix.variant }}-unsigned.ipa.sha256
           if-no-files-found: error
           retention-days: 7

@@ -1,24 +1,24 @@
 import { createContext, type PropsWithChildren, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { Platform } from "react-native";
+import { AppState, Platform } from "react-native";
 import type { AboutItem, Agreement, AppearanceSettings, AppSnapshot, ChatMessage, ConflictEntry, JournalEntry, Memory, Mood, Plan } from "@/domain/models";
 import { formatDateSafe, normalizeAcceptedBy } from "@/domain/dataSafety";
 import { memberName, moodLabels } from "@/domain/labels";
 import { relationshipDuration } from "@/domain/relationshipDuration";
 import { BackendError } from "@/services/backendClient";
-import { entryPayload, isNetworkError, syncRepository, type EntryKind, type RemoteEntry, type RemotePairData } from "@/services/syncRepository";
-import { offlineQueue, type NewQueuedOperation } from "@/services/offlineQueue";
+import { enqueueAppearanceWrite } from "@/services/appearanceSyncQueue";
+import { deleteStoredImage } from "@/services/imageService";
+import { entryPayload, isNetworkError, syncRepository, type EntryKind, type RemoteEntry } from "@/services/syncRepository";
+import { isLocalEntryId, offlineQueue, type NewQueuedOperation } from "@/services/offlineQueue";
 import { useAuth } from "@/state/AuthContext";
 import { usePair } from "@/state/PairContext";
+import { acceptanceForEditor, applyRemote, blankSnapshot, collectionByKind, domainEntry, pairSnapshot, replaceLocalEntry } from "@/state/appDataIntegrity";
 import { pushBetweenUsSnapshot } from "@/widgets/BetweenUsWidget";
-import { seedSnapshot } from "./seed";
-
 type EditablePlan = Omit<Plan, "id" | "authorId" | "createdAt" | "updatedAt">;
 type EditableJournal = Omit<JournalEntry, "id" | "authorId" | "createdAt" | "updatedAt">;
 type EditableMemory = Omit<Memory, "id" | "authorId" | "createdAt" | "updatedAt">;
 type EditableAbout = Omit<AboutItem, "id" | "authorId" | "createdAt" | "updatedAt">;
 type EditableAgreement = Pick<Agreement, "title" | "description">;
 type EditableConflict = Omit<ConflictEntry, "id" | "createdAt">;
-
 interface AppDataValue {
   snapshot: AppSnapshot;
   isHydrated: boolean;
@@ -28,8 +28,10 @@ interface AppDataValue {
   appearanceSyncError: string | null;
   pendingSyncCount: number;
   syncConflictMessage: string | null;
+  refreshRemote: () => Promise<void>;
+  syncNow: () => Promise<void>;
   setUsePartnerBackground: (value: boolean) => void;
-  setCurrentMood: (mood: Mood) => void;
+  setCurrentMood: (mood: Mood | null) => void;
   addPlan: (input: EditablePlan) => void;
   updatePlan: (id: string, input: EditablePlan) => void;
   deletePlan: (id: string) => void;
@@ -56,79 +58,14 @@ interface AppDataValue {
 }
 
 const AppDataContext = createContext<AppDataValue | null>(null);
-const collectionByKind = {
-  plan: "plans",
-  journal: "journal",
-  memory: "memories",
-  about: "about",
-  agreement: "agreements",
-  conflict: "conflicts",
-} as const;
-const blankSnapshot: AppSnapshot = {
-  ...seedSnapshot,
-  currentMemberId: "",
-  members: [],
-  moods: {},
-  plans: [], journal: [], memories: [], about: [], agreements: [], conflicts: [], chat: [], calendar: [],
-};
-
 function makeId(prefix: string) {
   return `local-${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
-
-function pairSnapshot(pair: NonNullable<ReturnType<typeof usePair>["pair"]>, currentMemberId: string, appearance = seedSnapshot.appearance): AppSnapshot {
-  return {
-    ...blankSnapshot,
-    currentMemberId,
-    members: pair.members.map(({ id, displayName }) => ({ id, displayName })),
-    relationshipStartedAt: pair.relationshipStartedOn ? `${pair.relationshipStartedOn}T00:00:00Z` : pair.createdAt,
-    moods: Object.fromEntries(pair.members.map(({ id }) => [id, { memberId: id, mood: null, updatedAt: null }])),
-    plans: [], journal: [], memories: [], about: [], agreements: [], conflicts: [], chat: [], calendar: [],
-    appearance,
-  };
-}
-
 async function resolvePayloadImage(token: string, payload: Record<string, unknown>) {
   const imageUri = typeof payload.imageUri === "string" ? payload.imageUri : "";
   if (!imageUri || imageUri.startsWith("media:")) return payload;
   return { ...payload, imageUri: await syncRepository.uploadImage(token, imageUri) };
 }
-
-function domainEntry(entry: RemoteEntry) {
-  const rawPayload = entry.payload && typeof entry.payload === "object" && !Array.isArray(entry.payload) ? entry.payload : {};
-  const payload = entry.kind === "agreement"
-    ? { ...rawPayload, acceptedBy: normalizeAcceptedBy(rawPayload.acceptedBy) }
-    : rawPayload;
-  return { ...payload, id: entry.id, authorId: entry.authorId, createdAt: entry.createdAt, updatedAt: entry.updatedAt };
-}
-
-function applyRemote(base: AppSnapshot, data: RemotePairData): AppSnapshot {
-  const grouped: Record<EntryKind, ReturnType<typeof domainEntry>[]> = {
-    plan: [], journal: [], memory: [], about: [], agreement: [], conflict: [],
-  };
-  data.entries.forEach((entry) => grouped[entry.kind].push(domainEntry(entry)));
-  const plans = grouped.plan as unknown as Plan[];
-  const memories = grouped.memory as unknown as Memory[];
-  return {
-    ...base,
-    moods: { ...base.moods, ...data.moods },
-    plans,
-    journal: grouped.journal as unknown as JournalEntry[],
-    memories,
-    about: grouped.about as unknown as AboutItem[],
-    agreements: (grouped.agreement as unknown as Agreement[]).map((agreement) => ({
-      ...agreement,
-      acceptedBy: normalizeAcceptedBy(agreement.acceptedBy, base.members.map(({ id }) => id)),
-    })),
-    conflicts: grouped.conflict as unknown as ConflictEntry[],
-    chat: data.chat,
-    calendar: [
-      ...plans.filter((item) => item.showInCalendar && item.date).map((item) => ({ id: `plan-${item.id}`, title: item.title, date: item.date!, source: "plan" as const })),
-      ...memories.filter((item) => item.showInCalendar && item.date).map((item) => ({ id: `memory-${item.id}`, title: item.title, date: item.date, source: "memory" as const })),
-    ],
-  };
-}
-
 export function AppDataProvider({ children }: PropsWithChildren) {
   const { accessToken, refreshSession, user } = useAuth();
   const { isLoading: isPairLoading, pair } = usePair();
@@ -140,7 +77,10 @@ export function AppDataProvider({ children }: PropsWithChildren) {
   const [pendingSyncCount, setPendingSyncCount] = useState(0);
   const [syncConflictMessage, setSyncConflictMessage] = useState<string | null>(null);
   const identityRef = useRef<string | null>(null);
-
+  const mutationEpochRef = useRef(0);
+  const mutationBarrierRef = useRef<Promise<void>>(Promise.resolve());
+  const remoteLoadGenerationRef = useRef(0);
+  const flushPromiseRef = useRef<Promise<void> | null>(null);
   const withToken = useCallback(async <T,>(operation: (token: string) => Promise<T>) => {
     if (!accessToken) throw new BackendError("Сначала войдите в аккаунт", 401);
     try {
@@ -152,17 +92,32 @@ export function AppDataProvider({ children }: PropsWithChildren) {
       return operation(refreshed.accessToken);
     }
   }, [accessToken, refreshSession]);
-
+  const trackRemoteMutation = useCallback(<T,>(operation: () => Promise<T>): Promise<T> => {
+    mutationEpochRef.current += 1;
+    const work = mutationBarrierRef.current.catch(() => undefined).then(operation);
+    const settled = work.then(() => undefined, () => undefined).then(() => { mutationEpochRef.current += 1; });
+    mutationBarrierRef.current = settled;
+    return work;
+  }, []);
   const reloadRemote = useCallback(async () => {
     if (!pair || !user) return;
     const identity = `${user.id}:${pair.id}`;
-    const data = await withToken((token) => syncRepository.loadRemote(token));
-    if (identityRef.current !== identity) return;
-    setSnapshot((current) => applyRemote(pairSnapshot(pair, user.id, current.appearance), data));
-    const partner = pair.members.find((member) => member.id !== user.id);
-    setPartnerAppearance(partner ? data.appearances[partner.id] ?? null : null);
+    const loadGeneration = ++remoteLoadGenerationRef.current;
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      await mutationBarrierRef.current;
+      const epoch = mutationEpochRef.current;
+      const data = await withToken((token) => syncRepository.loadRemote(token));
+      await mutationBarrierRef.current;
+      if (identityRef.current !== identity || remoteLoadGenerationRef.current !== loadGeneration) return;
+      if (mutationEpochRef.current !== epoch) continue;
+      syncRepository.acceptRemoteVersions(data.entries);
+      setSnapshot((current) => applyRemote(pairSnapshot(pair, user.id, current.appearance), data));
+      const partner = pair.members.find((member) => member.id !== user.id);
+      setPartnerAppearance(partner ? data.appearances[partner.id] ?? null : null);
+      return;
+    }
+    throw new Error("Данные ещё синхронизируются. Попробуйте открыть запись ещё раз.");
   }, [pair, user, withToken]);
-
   useEffect(() => {
     if (isPairLoading) return;
     const identity = pair && user ? `${user.id}:${pair.id}` : null;
@@ -224,17 +179,19 @@ export function AppDataProvider({ children }: PropsWithChildren) {
     if (!pair || !user || !isHydrated || identityRef.current !== `${user.id}:${pair.id}`) return;
     const appearance = snapshot.appearance;
     const describe = (error: unknown) => error instanceof Error ? `${error.name}: ${error.message}` : String(error);
+    setAppearanceSyncError(null);
     if (appearance.backgroundKind === "image" && appearance.backgroundValue && !appearance.backgroundValue.startsWith("media:")) {
       const localUri = appearance.backgroundValue;
-      void withToken(async (token) => {
+      void enqueueAppearanceWrite(() => withToken(async (token) => {
         const stored = await syncRepository.uploadImage(token, localUri);
         setSnapshot((current) => current.appearance.backgroundValue === localUri ? { ...current, appearance: { ...current.appearance, backgroundValue: stored } } : current);
         await syncRepository.putAppearance(token, { ...appearance, backgroundValue: stored });
+        deleteStoredImage(localUri);
         setAppearanceSyncError(null);
-      }).catch((error) => setAppearanceSyncError(describe(error)));
+      })).catch((error) => setAppearanceSyncError(describe(error)));
       return;
     }
-    void withToken((token) => syncRepository.putAppearance(token, appearance)).then(() => setAppearanceSyncError(null)).catch((error) => setAppearanceSyncError(describe(error)));
+    void enqueueAppearanceWrite(() => withToken((token) => syncRepository.putAppearance(token, appearance))).then(() => setAppearanceSyncError(null)).catch((error) => setAppearanceSyncError(describe(error)));
   }, [isHydrated, pair, snapshot.appearance, user, withToken]);
 
   useEffect(() => {
@@ -274,41 +231,102 @@ export function AppDataProvider({ children }: PropsWithChildren) {
   }, [user]);
 
   const uploadPayloadImage = useCallback(resolvePayloadImage, []);
-
-  const flushQueue = useCallback(async () => {
+  const applyCreatedEntry = useCallback((kind: EntryKind, localId: string, remote: RemoteEntry, identity: string | null, createdImageUri?: string | null) => {
+    if (identityRef.current !== identity) return;
+    const key = collectionByKind[kind];
+    const stored = domainEntry(remote);
+    setSnapshot((current) => {
+      const items = current[key] as unknown as Array<Record<string, unknown> & { id: string }>;
+      const next = replaceLocalEntry(items, localId, stored, createdImageUri);
+      return next === items ? current : { ...current, [key]: next };
+    });
+  }, []);
+  const flushQueueUnlocked = useCallback(async () => {
     if (!user || !pair) return;
-    const queue = await offlineQueue.readQueue(user.id, pair.id);
-    if (!queue.length) { setPendingSyncCount(0); return; }
+    const userId = user.id;
+    const pairId = pair.id;
+    const identity = `${userId}:${pairId}`;
     let conflicted = false;
-    for (const op of queue) {
+    while (true) {
+      const op = await offlineQueue.takeNext(userId, pairId);
+      if (!op) break;
       try {
         if (op.type === "createEntry") {
-          await withToken(async (token) => syncRepository.createEntry(token, op.kind, await resolvePayloadImage(token, op.payload)));
+          const remote = await trackRemoteMutation(() => withToken(async (token) => syncRepository.createEntry(token, op.kind, await resolvePayloadImage(token, op.payload))));
+          try {
+            const remoteImageUri = typeof remote.payload.imageUri === "string" ? remote.payload.imageUri : null;
+            await offlineQueue.resolveEntryId(userId, pairId, op.localId, remote.id, op.id, remoteImageUri);
+            applyCreatedEntry(op.kind, op.localId, remote, identity, typeof op.payload.imageUri === "string" ? op.payload.imageUri : null);
+            if (remoteImageUri?.startsWith("media:") && typeof op.payload.imageUri === "string") deleteStoredImage(op.payload.imageUri);
+          } catch {
+            await offlineQueue.complete(userId, pairId, op.id).catch(() => undefined);
+            conflicted = true;
+          }
         } else if (op.type === "updateEntry") {
-          await withToken(async (token) => syncRepository.updateEntry(token, op.entryId, await resolvePayloadImage(token, op.payload)));
+          const result = await trackRemoteMutation(() => withToken(async (token) => {
+            const payload = await resolvePayloadImage(token, op.payload);
+            const remote = await syncRepository.updateEntry(token, op.entryId, payload);
+            if (op.previousImageUri?.startsWith("media:") && op.previousImageUri !== payload.imageUri) {
+              await syncRepository.deleteMedia(token, op.previousImageUri).catch(() => undefined);
+            }
+            return { payload, remote };
+          }));
+          await offlineQueue.completeEntryUpdate(
+            userId,
+            pairId,
+            op.id,
+            op.entryId,
+            op.payload.imageUri,
+            "imageUri" in result.remote.payload ? result.remote.payload.imageUri : result.payload.imageUri,
+          ).catch(() => { conflicted = true; });
+          if (typeof op.payload.imageUri === "string" && result.remote.payload.imageUri !== op.payload.imageUri) deleteStoredImage(op.payload.imageUri);
         } else if (op.type === "deleteEntry") {
-          await withToken((token) => syncRepository.deleteEntry(token, op.entryId));
+          await trackRemoteMutation(() => withToken(async (token) => {
+            await syncRepository.deleteEntry(token, op.entryId);
+            if (op.previousImageUri?.startsWith("media:")) {
+              await syncRepository.deleteMedia(token, op.previousImageUri).catch(() => undefined);
+            }
+          }));
+          await offlineQueue.complete(userId, pairId, op.id).catch(() => { conflicted = true; });
         } else if (op.type === "setMood") {
-          await withToken((token) => syncRepository.putMood(token, op.mood));
+          await trackRemoteMutation(() => withToken((token) => syncRepository.putMood(token, op.mood)));
+          await offlineQueue.complete(userId, pairId, op.id).catch(() => { conflicted = true; });
         } else if (op.type === "sendChat") {
-          await withToken((token) => syncRepository.postChatMessage(token, op.content));
+          await trackRemoteMutation(() => withToken((token) => syncRepository.postChatMessage(token, op.content)));
+          await offlineQueue.complete(userId, pairId, op.id).catch(() => { conflicted = true; });
         }
-        await offlineQueue.dequeue(user.id, pair.id, op.id);
       } catch (error) {
-        if (isNetworkError(error)) break;
+        if (isNetworkError(error)) {
+          await offlineQueue.restore(userId, pairId, op);
+          break;
+        }
         // A real rejection (the partner changed/removed the same entry while we were
         // offline, etc.) can't be replayed as-is — drop it and pull fresh state instead
         // of retrying forever or silently overwriting what they did.
-        await offlineQueue.dequeue(user.id, pair.id, op.id);
+        if (op.type === "createEntry") {
+          await offlineQueue.discardLocalEntry(userId, pairId, op.localId);
+        } else {
+          await offlineQueue.complete(userId, pairId, op.id);
+        }
         conflicted = true;
       }
     }
-    setPendingSyncCount(await offlineQueue.count(user.id, pair.id));
+    const queuedCount = await offlineQueue.count(userId, pairId);
+    if (identityRef.current !== identity) return;
+    setPendingSyncCount(queuedCount);
     if (conflicted) {
       setSyncConflictMessage("Часть изменений, сделанных офлайн, не удалось применить — партнёр изменил те же записи. Обновляем данные.");
       void reloadRemote().catch(() => undefined);
     }
-  }, [pair, reloadRemote, user, withToken]);
+  }, [applyCreatedEntry, pair, reloadRemote, trackRemoteMutation, user, withToken]);
+  const flushQueue = useCallback((): Promise<void> => {
+    if (flushPromiseRef.current) return flushPromiseRef.current;
+    const promise = flushQueueUnlocked();
+    flushPromiseRef.current = promise;
+    const release = () => { if (flushPromiseRef.current === promise) flushPromiseRef.current = null; };
+    void promise.then(release, release);
+    return promise;
+  }, [flushQueueUnlocked]);
 
   useEffect(() => {
     if (!pair || !user) return;
@@ -316,62 +334,101 @@ export function AppDataProvider({ children }: PropsWithChildren) {
     return () => clearInterval(timer);
   }, [flushQueue, pair, reloadRemote, user]);
 
-  // A failed mutation is either a real server rejection (reconcile: pull the truth and
-  // let the optimistic edit be corrected/reverted) or a network failure (queue it — the
-  // optimistic local state already reflects the edit, so there's nothing to revert; the
-  // 10s tick above will replay it once connectivity returns).
-  const handleMutationFailure = useCallback((error: unknown, op: NewQueuedOperation) => {
-    if (isNetworkError(error) && user && pair) {
-      void offlineQueue.enqueue(user.id, pair.id, op).then(() => offlineQueue.count(user.id, pair.id)).then(setPendingSyncCount);
+  useEffect(() => {
+    if (!pair || !user) return;
+    const subscription = AppState.addEventListener("change", (state) => {
+      if (state === "active") { if (appearanceSyncError) setSnapshot((current) => ({ ...current, appearance: { ...current.appearance } })); void flushQueue().then(() => reloadRemote()).catch(() => undefined); }
+    });
+    return () => subscription.remove();
+  }, [appearanceSyncError, flushQueue, pair, reloadRemote, user]);
+  const enqueueMutation = useCallback((op: NewQueuedOperation) => {
+    if (!user || !pair) {
+      reconcile();
       return;
     }
-    reconcile();
+    void offlineQueue.enqueue(user.id, pair.id, op)
+      .then(() => offlineQueue.count(user.id, pair.id))
+      .then(setPendingSyncCount)
+      .catch(() => reconcile());
   }, [pair, reconcile, user]);
+
+  const handleMutationFailure = useCallback((error: unknown, op: NewQueuedOperation) => {
+    if (isNetworkError(error)) {
+      enqueueMutation(op);
+      return;
+    }
+    setSyncConflictMessage("Изменение не сохранено, данные обновлены с сервера");
+    reconcile();
+  }, [enqueueMutation, reconcile]);
 
   const createEntry = useCallback((kind: EntryKind, optimistic: Record<string, unknown>) => {
     const key = collectionByKind[kind];
     const localId = String(optimistic.id);
     const identity = identityRef.current;
+    const queueUserId = user?.id ?? null;
+    const queuePairId = pair?.id ?? null;
     setSnapshot((current) => ({ ...current, [key]: [optimistic, ...(current[key] as unknown[])] }));
-    void withToken(async (token) => syncRepository.createEntry(token, kind, await uploadPayloadImage(token, entryPayload(optimistic)))).then((remote) => {
-      if (identityRef.current !== identity) return;
-      const stored = domainEntry(remote);
-      setSnapshot((current) => {
-        const items = current[key] as unknown as Array<{ id: string }>;
-        if (items.some((item) => item.id === remote.id)) return current;
-        return { ...current, [key]: items.some((item) => item.id === localId) ? items.map((item) => item.id === localId ? stored : item) : [stored, ...items] };
+    void trackRemoteMutation(() => withToken(async (token) => syncRepository.createEntry(token, kind, await uploadPayloadImage(token, entryPayload(optimistic))))).then((remote) => {
+      const finalize = queueUserId && queuePairId
+        ? offlineQueue.resolveEntryId(
+            queueUserId,
+            queuePairId,
+            localId,
+            remote.id,
+            undefined,
+            typeof remote.payload.imageUri === "string" ? remote.payload.imageUri : null,
+          ).catch(() => undefined)
+        : Promise.resolve();
+      void finalize.then(() => {
+        applyCreatedEntry(kind, localId, remote, identity, typeof optimistic.imageUri === "string" ? optimistic.imageUri : null);
+        if (typeof optimistic.imageUri === "string" && remote.payload.imageUri !== optimistic.imageUri) deleteStoredImage(optimistic.imageUri);
+        void flushQueue().catch(() => undefined);
       });
-    }).catch((error) => handleMutationFailure(error, { type: "createEntry", kind, localId, payload: entryPayload(optimistic) }));
-  }, [handleMutationFailure, uploadPayloadImage, withToken]);
+    }).catch((error) => {
+      if (!isNetworkError(error) && queueUserId && queuePairId) {
+        void offlineQueue.discardLocalEntry(queueUserId, queuePairId, localId).catch(() => undefined);
+      }
+      handleMutationFailure(error, { type: "createEntry", kind, localId, payload: entryPayload(optimistic) });
+    });
+  }, [applyCreatedEntry, flushQueue, handleMutationFailure, pair?.id, trackRemoteMutation, uploadPayloadImage, user?.id, withToken]);
 
   const updateEntry = useCallback((kind: EntryKind, id: string, optimistic: Record<string, unknown>) => {
     const key = collectionByKind[kind];
     const identity = identityRef.current;
     const previous = (snapshot[key] as unknown as Array<{ id: string; imageUri?: string | null }>).find((item) => item.id === id);
     setSnapshot((current) => ({ ...current, [key]: (current[key] as unknown as Array<{ id: string }>).map((item) => item.id === id ? optimistic : item) }));
-    void withToken(async (token) => {
+    if (isLocalEntryId(id)) {
+      enqueueMutation({ type: "updateEntry", entryId: id, payload: entryPayload(optimistic), previousImageUri: previous?.imageUri ?? null });
+      return;
+    }
+    void trackRemoteMutation(() => withToken(async (token) => {
       const payload = await uploadPayloadImage(token, entryPayload(optimistic));
       const remote = await syncRepository.updateEntry(token, id, payload);
       if (previous?.imageUri?.startsWith("media:") && previous.imageUri !== payload.imageUri) {
         await syncRepository.deleteMedia(token, previous.imageUri).catch(() => undefined);
       }
-      return remote;
-    }).then((remote) => {
+      return { remote, uploadedImageUri: typeof payload.imageUri === "string" && payload.imageUri !== previous?.imageUri ? optimistic.imageUri : null };
+    })).then(({ remote, uploadedImageUri }) => {
+      if (typeof uploadedImageUri === "string" && remote.payload.imageUri !== uploadedImageUri) deleteStoredImage(uploadedImageUri);
       if (identityRef.current !== identity) return;
       const stored = domainEntry(remote);
       setSnapshot((current) => ({ ...current, [key]: (current[key] as unknown as Array<{ id: string }>).map((item) => item.id === id ? stored : item) }));
-    }).catch((error) => handleMutationFailure(error, { type: "updateEntry", entryId: id, payload: entryPayload(optimistic) }));
-  }, [handleMutationFailure, snapshot, uploadPayloadImage, withToken]);
+    }).catch((error) => handleMutationFailure(error, { type: "updateEntry", entryId: id, payload: entryPayload(optimistic), previousImageUri: previous?.imageUri ?? null }));
+  }, [enqueueMutation, handleMutationFailure, snapshot, trackRemoteMutation, uploadPayloadImage, withToken]);
 
   const deleteEntry = useCallback((kind: EntryKind, id: string) => {
     const key = collectionByKind[kind];
     const removed = (snapshot[key] as unknown as Array<{ id: string; imageUri?: string | null }>).find((item) => item.id === id);
     setSnapshot((current) => ({ ...current, [key]: (current[key] as unknown as Array<{ id: string }>).filter((item) => item.id !== id) }));
-    void withToken(async (token) => {
+    if (isLocalEntryId(id)) {
+      enqueueMutation({ type: "deleteEntry", entryId: id, previousImageUri: removed?.imageUri ?? null });
+      return;
+    }
+    void trackRemoteMutation(() => withToken(async (token) => {
       await syncRepository.deleteEntry(token, id);
       if (removed?.imageUri?.startsWith("media:")) await syncRepository.deleteMedia(token, removed.imageUri).catch(() => undefined);
-    }).catch((error) => handleMutationFailure(error, { type: "deleteEntry", entryId: id }));
-  }, [handleMutationFailure, snapshot, withToken]);
+    })).catch((error) => handleMutationFailure(error, { type: "deleteEntry", entryId: id, previousImageUri: removed?.imageUri ?? null }));
+  }, [enqueueMutation, handleMutationFailure, snapshot, trackRemoteMutation, withToken]);
 
   const value = useMemo<AppDataValue>(() => {
     const now = () => new Date().toISOString();
@@ -384,11 +441,13 @@ export function AppDataProvider({ children }: PropsWithChildren) {
       appearanceSyncError,
       pendingSyncCount,
       syncConflictMessage,
+      refreshRemote: reloadRemote,
+      syncNow: async () => { if (appearanceSyncError) setSnapshot((current) => ({ ...current, appearance: { ...current.appearance } })); await flushQueue(); await reloadRemote(); },
       setUsePartnerBackground,
       setCurrentMood: (mood) => {
         const updatedAt = now();
         setSnapshot((current) => ({ ...current, moods: { ...current.moods, [current.currentMemberId]: { memberId: current.currentMemberId, mood, updatedAt } } }));
-        void withToken((token) => syncRepository.putMood(token, mood)).catch((error) => handleMutationFailure(error, { type: "setMood", mood }));
+        void trackRemoteMutation(() => withToken((token) => syncRepository.putMood(token, mood))).catch((error) => handleMutationFailure(error, { type: "setMood", mood }));
       },
       addPlan: (input) => createEntry("plan", { ...input, id: makeId("plan"), authorId: snapshot.currentMemberId, createdAt: now(), updatedAt: now() }),
       updatePlan: (id, input) => { const item = snapshot.plans.find((value) => value.id === id); if (item) updateEntry("plan", id, { ...item, ...input, updatedAt: now() }); },
@@ -403,7 +462,13 @@ export function AppDataProvider({ children }: PropsWithChildren) {
       updateAboutItem: (id, input) => { const item = snapshot.about.find((value) => value.id === id); if (item) updateEntry("about", id, { ...item, ...input, updatedAt: now() }); },
       deleteAboutItem: (id) => deleteEntry("about", id),
       addAgreement: (input) => createEntry("agreement", { ...input, id: makeId("agreement"), acceptedBy: Object.fromEntries(snapshot.members.map(({ id }) => [id, id === snapshot.currentMemberId])), authorId: snapshot.currentMemberId, createdAt: now(), updatedAt: now() }),
-      updateAgreement: (id, input) => { const item = snapshot.agreements.find((value) => value.id === id); if (item) updateEntry("agreement", id, { ...item, ...input, updatedAt: now() }); },
+      updateAgreement: (id, input) => {
+        const item = snapshot.agreements.find((value) => value.id === id);
+        if (item) {
+          const acceptedBy = acceptanceForEditor(snapshot.members, snapshot.currentMemberId);
+          updateEntry("agreement", id, { ...item, ...input, acceptedBy, updatedAt: now() });
+        }
+      },
       deleteAgreement: (id) => deleteEntry("agreement", id),
       toggleAgreement: (id) => { const item = snapshot.agreements.find((value) => value.id === id); if (item) { const acceptedBy = normalizeAcceptedBy(item.acceptedBy, snapshot.members.map(({ id: memberId }) => memberId)); updateEntry("agreement", id, { ...item, acceptedBy: { ...acceptedBy, [snapshot.currentMemberId]: !acceptedBy[snapshot.currentMemberId] }, updatedAt: now() }); } },
       addConflict: (input) => createEntry("conflict", { ...input, id: makeId("conflict"), authorId: snapshot.currentMemberId, createdAt: now() }),
@@ -414,7 +479,7 @@ export function AppDataProvider({ children }: PropsWithChildren) {
         const identity = identityRef.current;
         const optimistic = { id: localId, author: snapshot.currentMemberId, content, createdAt: now() } satisfies ChatMessage;
         setSnapshot((current) => ({ ...current, chat: [...current.chat, optimistic] }));
-        void withToken((token) => syncRepository.postChatMessage(token, content)).then((message) => {
+        void trackRemoteMutation(() => withToken((token) => syncRepository.postChatMessage(token, content))).then((message) => {
           if (identityRef.current !== identity) return;
           setSnapshot((current) => ({ ...current, chat: current.chat.map((item) => item.id === localId ? { id: message.id, author: message.authorId, content: message.content, createdAt: message.createdAt } : item) }));
         }).catch((error) => handleMutationFailure(error, { type: "sendChat", localId, content }));
@@ -423,8 +488,7 @@ export function AppDataProvider({ children }: PropsWithChildren) {
       setBackgroundImage: (uri, luminance) => setSnapshot((current) => ({ ...current, appearance: { backgroundKind: "image", backgroundValue: uri, backgroundLuminance: luminance } })),
       resetBackground: () => setSnapshot((current) => ({ ...current, appearance: { backgroundKind: "default", backgroundValue: null, backgroundLuminance: 0.95 } })),
     };
-  }, [appearanceSyncError, createEntry, deleteEntry, handleMutationFailure, isHydrated, partnerAppearance, pendingSyncCount, setUsePartnerBackground, snapshot, syncConflictMessage, updateEntry, usePartnerBackground, withToken]);
-
+  }, [appearanceSyncError, createEntry, deleteEntry, flushQueue, handleMutationFailure, isHydrated, partnerAppearance, pendingSyncCount, reloadRemote, setUsePartnerBackground, snapshot, syncConflictMessage, trackRemoteMutation, updateEntry, usePartnerBackground, withToken]);
   return <AppDataContext.Provider value={value}>{children}</AppDataContext.Provider>;
 }
 

@@ -1,10 +1,12 @@
 import { useState } from "react";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import { EntryFormModal, type FormValue } from "@/components/EntryFormModal";
 import { SwipeToDelete } from "@/components/SwipeToDelete";
 import { InnerGlass as Surface, InnerScreen as Screen, InnerScreenHeader, InnerSectionHeader, innerStyles } from "@/components/redesign/InnerScreenChrome";
 import { memberName } from "@/domain/labels";
 import type { AboutCategory, AboutItem, AboutOwner } from "@/domain/models";
+import { useRemoteEntryCommand } from "@/hooks/useRemoteEntryCommand";
 import { useAppData } from "@/state/AppDataContext";
 import { fill, ink, materialType, rim, surfaceShadow } from "@/ui-v2/styleTokens";
 
@@ -14,7 +16,9 @@ const categoryColors: Record<AboutCategory, string> = { support: "#8FAE9B", boun
 const empty: Record<string, FormValue> = { owner: "couple", category: "important", title: "", content: "" };
 
 export default function AboutScreen() {
-  const { snapshot, addAboutItem, updateAboutItem, deleteAboutItem } = useAppData();
+  const { snapshot, addAboutItem, updateAboutItem, deleteAboutItem, isHydrated, refreshRemote } = useAppData();
+  const params = useLocalSearchParams<{ entryId?: string }>();
+  const router = useRouter();
   const [editing, setEditing] = useState<AboutItem | null>(null);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<Record<string, FormValue>>(empty);
@@ -28,6 +32,17 @@ export default function AboutScreen() {
     setForm(item ? { owner: item.owner, category: item.category, title: item.title, content: item.content } : { ...empty, owner: selectedOwner });
     setOpen(true);
   };
+
+  useRemoteEntryCommand({
+    entryId: params.entryId,
+    isHydrated,
+    items: snapshot.about,
+    missingMessage: "Возможно, она была удалена на другом устройстве.",
+    missingTitle: "Карточка не найдена",
+    onConsume: () => router.setParams({ entryId: undefined }),
+    onFound: (item) => { setSelectedOwner(item.owner); begin(item); },
+    refreshRemote,
+  });
   const save = () => {
     const title = String(form.title).trim();
     const content = String(form.content).trim();
@@ -36,9 +51,9 @@ export default function AboutScreen() {
     editing ? updateAboutItem(editing.id, input) : addAboutItem(input);
     setOpen(false);
   };
-  const remove = (item: AboutItem) => Alert.alert("Удалить карточку?", item.title, [
+  const remove = (item: AboutItem, closeEditor = false) => Alert.alert("Удалить карточку?", item.title, [
     { text: "Отмена", style: "cancel" },
-    { text: "Удалить", style: "destructive", onPress: () => deleteAboutItem(item.id) },
+    { text: "Удалить", style: "destructive", onPress: () => { deleteAboutItem(item.id); if (closeEditor) setOpen(false); } },
   ]);
 
   return (
@@ -85,6 +100,7 @@ export default function AboutScreen() {
         fields={[{ key: "owner", label: "О ком", choices: ownerChoices }, { key: "category", label: "Категория", choices: Object.entries(categories).map(([value, label]) => ({ value, label })) }, { key: "title", label: "Название" }, { key: "content", label: "Описание", multiline: true }]}
         onChange={(key, value) => setForm((current) => ({ ...current, [key]: value }))}
         onClose={() => setOpen(false)}
+        onDelete={editing ? () => remove(editing, true) : undefined}
         onSave={save}
         title={editing ? "Изменить карточку" : "Новая карточка"}
         values={form}

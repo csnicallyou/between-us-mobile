@@ -8,7 +8,7 @@ import { useAuth } from "@/state/AuthContext";
 import { normalizeHex, paletteForLuminance, relativeLuminance } from "@/theme/adaptivePalette";
 import { fill, ink, materialRadius, materialSpacing, materialType, rim } from "@/ui-v2/styleTokens";
 import { colors } from "@/theme/tokens";
-import { analyzeImageLuminance, deleteStoredImage, selectAndStoreImage } from "@/services/imageService";
+import { analyzeImageLuminance, captureAndStoreImage, deleteStoredImage, selectAndStoreImage } from "@/services/imageService";
 
 const presets = ["#F7FAFC", "#DDEBE7", "#E7E3F4", "#F4DED8", "#173246", "#253D36", "#3A3152", "#55332F"];
 
@@ -19,11 +19,11 @@ export default function AppearanceScreen() {
   const [selectingPhoto, setSelectingPhoto] = useState(false);
   const apply = (candidate = value) => { const normalized = normalizeHex(candidate); if (!normalized) return Alert.alert("Неверный цвет", "Используйте формат #RRGGBB, например #173246."); if (snapshot.appearance.backgroundKind === "image") deleteStoredImage(snapshot.appearance.backgroundValue); setValue(normalized); setBackgroundColor(normalized, relativeLuminance(normalized)); };
   const luminance = relativeLuminance(value); const palette = paletteForLuminance(luminance);
-  const choosePhoto = async () => {
+  const choosePhoto = async (source: "camera" | "library") => {
     let selectedUri: string | null = null;
     try {
       setSelectingPhoto(true);
-      const uri = await selectAndStoreImage("background");
+      const uri = source === "camera" ? await captureAndStoreImage("background") : await selectAndStoreImage("background");
       if (!uri) return;
       selectedUri = uri;
       const analysis = await analyzeImageLuminance(uri);
@@ -32,9 +32,19 @@ export default function AppearanceScreen() {
       selectedUri = null;
     } catch (error) {
       deleteStoredImage(selectedUri);
-      Alert.alert("Не удалось выбрать фон", error instanceof Error && error.message === "PHOTO_PERMISSION_DENIED" ? "Разрешите доступ к фотографиям в настройках iPhone." : "Попробуйте выбрать другое изображение.");
+      const message = error instanceof Error && error.message === "PHOTO_PERMISSION_DENIED"
+        ? "Разрешите доступ к фотографиям в настройках iPhone."
+        : error instanceof Error && error.message === "CAMERA_PERMISSION_DENIED"
+          ? "Разрешите доступ к камере в настройках iPhone."
+          : "Попробуйте выбрать другое изображение.";
+      Alert.alert("Не удалось выбрать фон", message);
     } finally { setSelectingPhoto(false); }
   };
+  const choosePhotoSource = () => Alert.alert("Добавить фотографию", undefined, [
+    { text: "Отмена", style: "cancel" },
+    { text: "Снять фото", onPress: () => void choosePhoto("camera") },
+    { text: "Выбрать из галереи", onPress: () => void choosePhoto("library") },
+  ]);
   return <Screen header={<InnerScreenHeader kicker="Приложение" title="Фон и контраст" subtitle="Выберите основу — приложение автоматически подстроит заголовки, системную строку, защитный слой и стеклянные поверхности." />}>
     <Surface style={styles.partnerToggle}>
       <View style={styles.partnerToggleRow}>
@@ -52,7 +62,7 @@ export default function AppearanceScreen() {
     <Surface style={styles.preview}><View style={[styles.sample, { backgroundColor: normalizeHex(value) ?? colors.background }]}><Text style={[styles.sampleTitle, { color: palette.foreground }]}>Предпросмотр фона</Text><Text style={[styles.sampleText, { color: palette.mutedForeground }]}>Текст остаётся читаемым автоматически</Text><View style={styles.sampleGlass}><Text style={styles.sampleGlassText}>Стеклянная карточка</Text></View></View></Surface>
     <Text style={[styles.sectionTitle, snapshot.appearance.backgroundLuminance < 0.36 && snapshot.appearance.backgroundKind !== "default" && styles.lightText]}>Готовые оттенки</Text><View style={styles.presets}>{presets.map((color) => <Pressable accessibilityLabel={`Выбрать цвет ${color}`} key={color} onPress={() => apply(color)} style={[styles.swatch, { backgroundColor: color }, snapshot.appearance.backgroundValue === color && styles.selected]} />)}</View>
     <Surface style={styles.form}><Text style={styles.label}>Свой цвет</Text><TextInput autoCapitalize="characters" autoCorrect={false} onChangeText={setValue} placeholder="#173246" placeholderTextColor={colors.muted} style={styles.input} value={value} /><AppButton label="Применить цвет" onPress={() => apply()} /></Surface>
-    <Surface style={styles.photo}><Text style={styles.photoTitle}>Фотография из галереи</Text><Text style={styles.photoText}>Приложение сохранит сжатую копию и автоматически подберёт контраст. Исходное фото в галерее не изменяется.</Text>{snapshot.appearance.backgroundKind === "image" && snapshot.appearance.backgroundValue ? <Image resizeMode="cover" source={{ uri: snapshot.appearance.backgroundValue }} style={styles.photoPreview} /> : null}{selectingPhoto ? <ActivityIndicator color={colors.sea} /> : <AppButton label="Выбрать фотографию" onPress={() => void choosePhoto()} variant="secondary" />}{snapshot.appearance.backgroundKind === "image" && appearanceSyncError ? <Text selectable style={styles.syncError}>Не удалось передать фон партнёру: {appearanceSyncError}</Text> : null}</Surface>
+    <Surface style={styles.photo}><Text style={styles.photoTitle}>Фотография</Text><Text style={styles.photoText}>Снимите фото или выберите его из галереи. Приложение сохранит сжатую копию и автоматически подберёт контраст; исходник не изменяется.</Text>{snapshot.appearance.backgroundKind === "image" && snapshot.appearance.backgroundValue ? <Image resizeMode="cover" source={privateImageSource(snapshot.appearance.backgroundValue, accessToken)} style={styles.photoPreview} /> : null}{selectingPhoto ? <ActivityIndicator color={colors.sea} /> : <AppButton label="Добавить фотографию" onPress={choosePhotoSource} variant="secondary" />}{snapshot.appearance.backgroundKind === "image" && appearanceSyncError ? <Text selectable style={styles.syncError}>Не удалось передать фон партнёру: {appearanceSyncError}</Text> : null}</Surface>
     <AppButton label="Вернуть стандартный фон" onPress={() => { if (snapshot.appearance.backgroundKind === "image") deleteStoredImage(snapshot.appearance.backgroundValue); resetBackground(); }} variant="secondary" style={styles.reset} />
   </Screen>;
 }

@@ -1,17 +1,20 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { Alert, Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { EntryFormModal, type FormValue } from "@/components/EntryFormModal";
 import { SwipeToDelete } from "@/components/SwipeToDelete";
 import { InnerGlass as Surface, InnerScreen as Screen, InnerScreenHeader, innerStyles } from "@/components/redesign/InnerScreenChrome";
 import type { Memory, MemoryKind } from "@/domain/models";
-import { deleteStoredImage, selectAndStoreImage } from "@/services/imageService";
+import { useRemoteEntryCommand } from "@/hooks/useRemoteEntryCommand";
+import { captureAndStoreImage, deleteStoredImage, selectAndStoreImage } from "@/services/imageService";
 import { privateImageSource } from "@/services/backendClient";
 import { useAppData } from "@/state/AppDataContext";
 import { useAuth } from "@/state/AuthContext";
 import { fill, ink, materialRadius, materialType, rim } from "@/ui-v2/styleTokens";
 
 const kinds: Record<MemoryKind, string> = { anniversary: "Важная дата", trip: "Поездка", first: "Впервые", gift: "Подарок", everyday: "Обычный день", other: "Другое" };
-const empty: Record<string, FormValue> = { title: "", description: "", date: new Date().toISOString().slice(0, 10), kind: "other", showInCalendar: true, imageUri: "" };
+const todayIso = () => { const date = new Date(); return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`; };
+const empty: Record<string, FormValue> = { title: "", description: "", date: "", kind: "other", showInCalendar: true, imageUri: "" };
 const dateValue = (value: string) => new Date(`${value}T12:00:00`);
 const shortDate = (value: string) => new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long" }).format(dateValue(value));
 const monthLabel = (value: string) => {
@@ -35,7 +38,10 @@ function memoryRows(items: Memory[]): Memory[][] {
 
 export default function MemoriesScreen() {
   const { accessToken } = useAuth();
-  const { snapshot, addMemory, updateMemory, deleteMemory } = useAppData();
+  const { snapshot, addMemory, updateMemory, deleteMemory, isHydrated, refreshRemote } = useAppData();
+  const params = useLocalSearchParams<{ entryId?: string; compose?: string; date?: string; title?: string }>();
+  const router = useRouter();
+  const handledCommand = useRef("");
   const [editing, setEditing] = useState<Memory | null>(null);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<Record<string, FormValue>>(empty);
@@ -52,43 +58,76 @@ export default function MemoriesScreen() {
   const firstDate = sorted.at(-1)?.date;
   const kicker = firstDate ? `${snapshot.memories.length} моментов с ${shortDate(firstDate)}` : "Сохраняйте общие моменты";
 
-  const begin = (item?: Memory) => {
+  const begin = (item?: Memory, initial?: { date?: string; title?: string; kind?: MemoryKind }) => {
     setEditing(item ?? null);
-    setForm(item ? { title: item.title, description: item.description, date: item.date, kind: item.kind, showInCalendar: item.showInCalendar, imageUri: item.imageUri ?? "" } : empty);
+    setForm(item ? { title: item.title, description: item.description, date: item.date, kind: item.kind, showInCalendar: item.showInCalendar, imageUri: item.imageUri ?? "" } : { ...empty, date: initial?.date ?? todayIso(), title: initial?.title ?? "", kind: initial?.kind ?? "other" });
     setOpen(true);
   };
+
+  useRemoteEntryCommand({
+    entryId: params.entryId,
+    isHydrated,
+    items: snapshot.memories,
+    missingMessage: "Возможно, оно было удалено на другом устройстве.",
+    missingTitle: "Событие не найдено",
+    onConsume: () => router.setParams({ entryId: undefined }),
+    onFound: begin,
+    refreshRemote,
+  });
+
+  useEffect(() => {
+    if (!isHydrated) return;
+    if (params.entryId) return;
+    const command = [params.compose ?? "", params.date ?? "", params.title ?? ""].join("|");
+    if (command === "||") { handledCommand.current = ""; return; }
+    if (handledCommand.current === command) return;
+    handledCommand.current = command;
+    if (params.compose === "memory") {
+      begin(undefined, { ...(params.date ? { date: params.date } : {}), ...(params.title ? { title: params.title, kind: "anniversary" as const } : {}) });
+    }
+    router.setParams({ compose: undefined, date: undefined, title: undefined });
+  }, [isHydrated, params.compose, params.date, params.entryId, params.title, router]);
   const save = () => {
     const title = String(form.title).trim();
     const date = String(form.date).trim();
     if (!title || !date) return Alert.alert("Заполните событие", "Нужны название и дата.");
     const input = { title, description: String(form.description).trim(), date, kind: form.kind as MemoryKind, imageUri: String(form.imageUri).trim() || null, showInCalendar: Boolean(form.showInCalendar) };
-    if (editing?.imageUri && editing.imageUri !== input.imageUri) deleteStoredImage(editing.imageUri);
     editing ? updateMemory(editing.id, input) : addMemory(input);
     setOpen(false);
   };
-  const pickImage = async () => {
+  const pickImage = async (source: "camera" | "library") => {
     try {
       setPickingImage(true);
-      const uri = await selectAndStoreImage("memory");
+      const uri = source === "camera" ? await captureAndStoreImage("memory") : await selectAndStoreImage("memory");
       if (uri) {
         const currentDraft = String(form.imageUri || "");
         if (currentDraft && currentDraft !== (editing?.imageUri ?? "")) deleteStoredImage(currentDraft);
         setForm((current) => ({ ...current, imageUri: uri }));
       }
     } catch (error) {
-      Alert.alert("Не удалось добавить изображение", error instanceof Error && error.message === "PHOTO_PERMISSION_DENIED" ? "Разрешите доступ к фотографиям в настройках iPhone." : "Попробуйте другое изображение.");
+      const message = error instanceof Error && error.message === "PHOTO_PERMISSION_DENIED"
+        ? "Разрешите доступ к фотографиям в настройках iPhone."
+        : error instanceof Error && error.message === "CAMERA_PERMISSION_DENIED"
+          ? "Разрешите доступ к камере в настройках iPhone."
+          : "Попробуйте другое изображение.";
+      Alert.alert("Не удалось добавить изображение", message);
     } finally {
       setPickingImage(false);
     }
   };
+  const chooseImage = () => Alert.alert("Добавить изображение", undefined, [
+    { text: "Отмена", style: "cancel" },
+    { text: "Снять фото", onPress: () => void pickImage("camera") },
+    { text: "Выбрать из галереи", onPress: () => void pickImage("library") },
+  ]);
   const close = () => {
     const draftImage = String(form.imageUri || "");
     if (draftImage && draftImage !== (editing?.imageUri ?? "")) deleteStoredImage(draftImage);
     setOpen(false);
   };
-  const remove = (item: Memory) => Alert.alert("Удалить событие?", item.title, [
+  const remove = (item: Memory, closeEditor = false) => Alert.alert("Удалить событие?", item.title, [
     { text: "Отмена", style: "cancel" },
-    { text: "Удалить", style: "destructive", onPress: () => { deleteStoredImage(item.imageUri); deleteMemory(item.id); } },
+    { text: "Удалить", style: "destructive", onPress: () => { deleteMemory(item.id); if (closeEditor) setOpen(false); } },
   ]);
 
   const renderMemory = (item: Memory, compact: boolean) => (
@@ -131,7 +170,13 @@ export default function MemoriesScreen() {
         imageUri={String(form.imageUri || "") || null}
         onChange={(key, value) => setForm((current) => ({ ...current, [key]: value }))}
         onClose={close}
-        onPickImage={() => void pickImage()}
+        onDelete={editing ? () => remove(editing, true) : undefined}
+        onPickImage={chooseImage}
+        onRemoveImage={() => {
+          const draftImage = String(form.imageUri || "");
+          if (draftImage && draftImage !== (editing?.imageUri ?? "")) deleteStoredImage(draftImage);
+          setForm((current) => ({ ...current, imageUri: "" }));
+        }}
         onSave={save}
         pickingImage={pickingImage}
         title={editing ? "Изменить момент" : "Новый момент"}

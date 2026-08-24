@@ -121,6 +121,8 @@ export const backendClient = {
   refresh: (refreshToken: string) =>
     request<RefreshSessionDto>("/auth/refresh", { method: "POST", body: JSON.stringify({ refreshToken }) }),
   me: (accessToken: string) => request<UserDto>("/auth/me", {}, accessToken),
+  updateMe: (displayName: string, accessToken: string) =>
+    request<Pick<UserDto, "id" | "email" | "displayName">>("/users/me", { method: "PATCH", body: JSON.stringify({ displayName }) }, accessToken),
   logout: (refreshToken: string, accessToken: string) =>
     request<void>("/auth/logout", { method: "POST", body: JSON.stringify({ refreshToken }) }, accessToken),
   verifyEmail: (code: string, accessToken: string) =>

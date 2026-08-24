@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { type Href, useRouter } from "expo-router";
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { ActionSheetIOS, Alert, Image, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { memberName, moodLabels, planKindLabels, planStatusLabels } from "@/domain/labels";
 import type { Mood } from "@/domain/models";
 import { privateImageSource } from "@/services/backendClient";
@@ -49,7 +49,10 @@ function durationLabel(startedAt: string) {
 function daysTogether(startedAt: string) {
   const started = parseDate(startedAt);
   if (!started) return 0;
-  return Math.max(0, Math.floor((Date.now() - started.getTime()) / 86_400_000));
+  const now = new Date();
+  const startDay = Date.UTC(started.getFullYear(), started.getMonth(), started.getDate());
+  const currentDay = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+  return Math.max(0, Math.floor((currentDay - startDay) / 86_400_000));
 }
 
 function daysUntil(value: string | null | undefined) {
@@ -102,9 +105,23 @@ export default function HomeScreen() {
     return { date, marked };
   });
   const currentMood = snapshot.moods[snapshot.currentMemberId]?.mood ?? null;
-  const cycleMood = () => {
-    const currentIndex = currentMood ? moods.indexOf(currentMood) : -1;
-    setCurrentMood(moods[(currentIndex + 1) % moods.length] ?? "calm");
+  const chooseMood = () => {
+    const labels = moods.map((mood) => moodLabels[mood]);
+    if (Platform.OS === "ios") {
+      ActionSheetIOS.showActionSheetWithOptions(
+        { cancelButtonIndex: 0, options: ["Отмена", "Не выбрано", ...labels], title: "Как вы себя чувствуете?" },
+        (index) => {
+          if (index === 1) setCurrentMood(null);
+          else if (index > 1) setCurrentMood(moods[index - 2] ?? null);
+        },
+      );
+      return;
+    }
+    Alert.alert("Как вы себя чувствуете?", undefined, [
+      { text: "Отмена", style: "cancel" },
+      { text: "Не выбрано", onPress: () => setCurrentMood(null) },
+      ...moods.map((mood) => ({ text: moodLabels[mood], onPress: () => setCurrentMood(mood) })),
+    ]);
   };
 
   return (
@@ -151,7 +168,7 @@ export default function HomeScreen() {
               const mood = snapshot.moods[member.id];
               const mine = member.id === snapshot.currentMemberId;
               return (
-                <Pressable key={member.id} disabled={!mine} onPress={cycleMood} style={styles.moodPressable}>
+                <Pressable accessibilityLabel={mine ? "Изменить своё настроение" : undefined} key={member.id} disabled={!mine} onPress={chooseMood} style={styles.moodPressable}>
                   <OrbSinkItem><V2Glass radius={24} style={styles.moodTile}>
                     <View style={styles.moodRow}>
                       <View style={[styles.moodDot, { backgroundColor: index === 0 ? "#8FAE9B" : "#C79C8E" }]} />
@@ -166,7 +183,7 @@ export default function HomeScreen() {
             })}
           </View>
 
-          <Pressable onPress={() => router.push("/(tabs)/entries?filter=plans" as Href)}>
+          <Pressable onPress={() => router.push(nextPlan ? `/(tabs)/entries?filter=plans&entryId=${encodeURIComponent(nextPlan.id)}` as Href : "/(tabs)/entries?filter=plans&compose=plan" as Href)}>
             <OrbSinkItem><V2Glass radius={28} style={styles.plan}>
               <View style={styles.planPhoto}>
                 {nextPlan?.imageUri ? <Image resizeMode="cover" source={privateImageSource(nextPlan.imageUri, accessToken)} style={StyleSheet.absoluteFill} /> : <View style={styles.photoFallback}><Ionicons color={ink.faint} name="map-outline" size={30} /></View>}
@@ -187,7 +204,7 @@ export default function HomeScreen() {
             </View>
             <Text style={styles.noteTitle}>{partnerEntry?.title ?? "Пока нет сообщений"}</Text>
             <Text style={styles.noteText}>{partnerEntry?.content ?? "Напишите друг другу первую запись."}</Text>
-            <Pressable onPress={() => router.push("/(tabs)/entries?filter=journal" as Href)} style={styles.reply}>
+            <Pressable onPress={() => router.push(partnerEntry ? `/(tabs)/entries?filter=journal&compose=journal&replyToId=${encodeURIComponent(partnerEntry.id)}` as Href : "/(tabs)/entries?filter=journal&compose=journal" as Href)} style={styles.reply}>
               <Ionicons color={anchor.label} name="arrow-undo-outline" size={15} />
               <Text style={styles.replyText}>Ответить</Text>
             </Pressable>

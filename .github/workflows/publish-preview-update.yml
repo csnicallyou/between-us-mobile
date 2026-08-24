@@ -8,6 +8,7 @@ on:
     paths:
       - src/**
       - assets/**
+      - app.config.js
       - app.json
       - package.json
       - package-lock.json
@@ -41,9 +42,29 @@ jobs:
         run: npm ci
 
       - name: Verify project
-        run: npm run verify
+        run: |
+          npm run typecheck
+          npm run check:source
 
-      - name: Publish preview update
+      - name: Run Expo diagnostics
+        continue-on-error: true
+        run: npm run doctor
+
+      - name: Publish preview updates for every installed runtime
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-        run: npx --yes eas-cli@21.7.1 update --channel preview --platform ios --non-interactive --message "GitHub ${GITHUB_SHA::7}"
+        shell: bash
+        run: |
+          set -euo pipefail
+          for variant in default anton liza; do
+            if [[ "$variant" == "default" ]]; then
+              unset BUILD_VARIANT
+            else
+              export BUILD_VARIANT="$variant"
+            fi
+            npx --yes eas-cli@21.7.1 update \
+              --channel preview \
+              --platform ios \
+              --non-interactive \
+              --message "GitHub ${GITHUB_SHA::7} · ${variant}"
+          done

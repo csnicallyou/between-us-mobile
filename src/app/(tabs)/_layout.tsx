@@ -5,7 +5,7 @@ export default function TabsLayout() {
   return (
     <Tabs
       backBehavior="history"
-      screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: "transparent" } }}
+      screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: "transparent" }, tabBarHideOnKeyboard: true }}
       tabBar={(props) => <AppTabBar {...props} />}
     >
       <Tabs.Screen name="index" options={{ title: "Сегодня" }} />

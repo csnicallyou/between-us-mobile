@@ -1,9 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
 import { type Href, useRouter } from "expo-router";
-import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
+import { Alert, Pressable, StyleSheet, Switch, Text, View } from "react-native";
 import { InnerGlass as Surface, InnerScreen as Screen, InnerScreenHeader } from "@/components/redesign/InnerScreenChrome";
 import { glassDiagnostics, supportsNativeLiquidGlass } from "@/platform/glass";
 import { useAppData } from "@/state/AppDataContext";
+import { useAppLock } from "@/state/AppLockContext";
 import { useAuth } from "@/state/AuthContext";
 import { fill, ink, materialSpacing, materialType, rim } from "@/ui-v2/styleTokens";
 
@@ -49,9 +50,18 @@ function SettingsItem({ item, last }: { item: SettingsRow; last: boolean }) {
   );
 }
 
+function SettingsToggle({ disabled, onChange, subtitle, title, value }: { disabled: boolean; onChange: (value: boolean) => void; subtitle: string; title: string; value: boolean }) {
+  return <View style={styles.row}>
+    <View style={styles.iconWell}><Ionicons color={ink.muted} name="lock-closed-outline" size={20} /></View>
+    <View style={styles.rowCopy}><Text style={styles.rowTitle}>{title}</Text><Text style={styles.rowSubtitle}>{subtitle}</Text></View>
+    <Switch disabled={disabled} onValueChange={onChange} trackColor={{ false: "rgba(33,30,41,0.18)", true: "#79A99E" }} value={value} />
+  </View>;
+}
+
 export default function SettingsScreen() {
   const { user } = useAuth();
   const { effectiveAppearance } = useAppData();
+  const appLock = useAppLock();
   const backgroundSubtitle = effectiveAppearance.backgroundKind === "color"
     ? `Свой цвет · ${effectiveAppearance.backgroundValue ?? "#F4F1F6"}`
     : effectiveAppearance.backgroundKind === "image" ? "Своя фотография" : "Стандартный фон";
@@ -65,7 +75,7 @@ export default function SettingsScreen() {
     },
     { href: "/notifications" as Href, icon: "notifications-outline", title: "Уведомления", subtitle: "Категории и тихие часы" },
     { href: "/appearance" as Href, icon: "globe-outline", title: "Фон и контраст", subtitle: backgroundSubtitle },
-    { href: "/data-export" as Href, icon: "download-outline", title: "Экспорт данных", subtitle: "Нет активного запроса" },
+    { href: "/data-export" as Href, icon: "download-outline", title: "Экспорт данных", subtitle: "Выгрузка с согласием обоих" },
   ];
   const diagnostics: SettingsRow = {
     icon: "information-circle-outline",
@@ -76,9 +86,31 @@ export default function SettingsScreen() {
       `API: ${glassDiagnostics.apiAvailable ? "доступен" : "недоступен"}\nСборка: ${glassDiagnostics.compiledWithLiquidGlass ? "поддерживает" : "не поддерживает"}\nUIKit GlassView: ${supportsNativeLiquidGlass ? "активен" : "недоступен"}`,
     ),
   };
+  const changeAppLock = async (enabled: boolean) => {
+    try {
+      await appLock.setEnabled(enabled);
+    } catch (error) {
+      const message = error instanceof Error && error.message === "BIOMETRICS_UNAVAILABLE"
+        ? "На этом устройстве Face ID не настроен или недоступен."
+        : error instanceof Error && error.message === "BIOMETRIC_AUTH_FAILED"
+          ? "Не удалось подтвердить Face ID. Настройка не изменена."
+        : "Не удалось изменить защиту. Попробуйте ещё раз.";
+      Alert.alert("Face ID", message);
+    }
+  };
 
   return (
     <Screen header={<InnerScreenHeader kicker="Приложение" title="Настройки" />}>
+      <SectionTitle>Безопасность</SectionTitle>
+      <Surface style={styles.group}>
+        <SettingsToggle
+          disabled={!appLock.available || appLock.busy}
+          onChange={(enabled) => void changeAppLock(enabled)}
+          subtitle={appLock.available ? "Запрашивать при запуске и после сворачивания" : "Face ID недоступен на этом устройстве"}
+          title="Защита Face ID"
+          value={appLock.enabled}
+        />
+      </Surface>
       <SectionTitle>Пара</SectionTitle>
       <Surface style={styles.group}>
         {rows.map((item, index) => <SettingsItem item={item} key={item.title} last={index === rows.length - 1} />)}

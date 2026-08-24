@@ -1,18 +1,22 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import { EntryFormModal, type FormValue } from "@/components/EntryFormModal";
 import { SwipeToDelete } from "@/components/SwipeToDelete";
 import { InnerGlass as Surface, InnerScreen as Screen, InnerScreenHeader, InnerSectionHeader, innerStyles } from "@/components/redesign/InnerScreenChrome";
 import { memberName } from "@/domain/labels";
 import type { Agreement } from "@/domain/models";
+import { useRemoteEntryCommand } from "@/hooks/useRemoteEntryCommand";
 import { useAppData } from "@/state/AppDataContext";
 import { fill, ink, materialRadius, materialType, rim } from "@/ui-v2/styleTokens";
 
 const empty: Record<string, FormValue> = { title: "", description: "" };
 
 export default function AgreementsScreen() {
-  const { snapshot, addAgreement, updateAgreement, deleteAgreement, toggleAgreement } = useAppData();
+  const { snapshot, addAgreement, updateAgreement, deleteAgreement, toggleAgreement, isHydrated, refreshRemote } = useAppData();
+  const params = useLocalSearchParams<{ entryId?: string }>();
+  const router = useRouter();
   const [editing, setEditing] = useState<Agreement | null>(null);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<Record<string, FormValue>>(empty);
@@ -25,6 +29,17 @@ export default function AgreementsScreen() {
     setForm(item ? { title: item.title, description: item.description } : empty);
     setOpen(true);
   };
+
+  useRemoteEntryCommand({
+    entryId: params.entryId,
+    isHydrated,
+    items: snapshot.agreements,
+    missingMessage: "Возможно, она была удалена на другом устройстве.",
+    missingTitle: "Договорённость не найдена",
+    onConsume: () => router.setParams({ entryId: undefined }),
+    onFound: begin,
+    refreshRemote,
+  });
   const save = () => {
     const title = String(form.title).trim();
     if (!title) return Alert.alert("Добавьте название");
@@ -32,9 +47,9 @@ export default function AgreementsScreen() {
     editing ? updateAgreement(editing.id, input) : addAgreement(input);
     setOpen(false);
   };
-  const remove = (item: Agreement) => Alert.alert("Удалить договорённость?", item.title, [
+  const remove = (item: Agreement, closeEditor = false) => Alert.alert("Удалить договорённость?", item.title, [
     { text: "Отмена", style: "cancel" },
-    { text: "Удалить", style: "destructive", onPress: () => deleteAgreement(item.id) },
+    { text: "Удалить", style: "destructive", onPress: () => { deleteAgreement(item.id); if (closeEditor) setOpen(false); } },
   ]);
 
   const renderAgreement = (item: Agreement) => {
@@ -81,6 +96,7 @@ export default function AgreementsScreen() {
         fields={[{ key: "title", label: "Название", placeholder: "Коротко и конкретно" }, { key: "description", label: "Как это работает", multiline: true }]}
         onChange={(key, value) => setForm((current) => ({ ...current, [key]: value }))}
         onClose={() => setOpen(false)}
+        onDelete={editing ? () => remove(editing, true) : undefined}
         onSave={save}
         title={editing ? "Изменить" : "Новая договорённость"}
         values={form}

@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { type Href, useRouter } from "expo-router";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import { anniversariesInRange } from "@/domain/anniversaries";
 import { planKindLabels, planStatusLabels } from "@/domain/labels";
 import { useAppData } from "@/state/AppDataContext";
@@ -55,13 +55,18 @@ export default function CalendarScreen() {
     setCursor(next);
     setSelected(isoDate(next));
   };
+  const addForSelectedDate = () => Alert.alert("Что добавить?", undefined, [
+    { text: "Отмена", style: "cancel" },
+    { text: "План", onPress: () => router.push(`/(tabs)/entries?filter=plans&compose=plan&date=${encodeURIComponent(selected)}` as Href) },
+    { text: "Памятную дату", onPress: () => router.push(`/memories?compose=memory&date=${encodeURIComponent(selected)}` as Href) },
+  ]);
 
   return (
     <V2Screen>
       <View style={styles.header}>
         <View style={styles.copy}><Text style={styles.kicker}>Всё важное по датам</Text><Text style={styles.h1}>Календарь</Text></View>
         <RoundButton icon="search-outline" label="Поиск" onPress={() => router.push("/search" as Href)} />
-        <RoundButton dark icon="add-outline" label="Добавить план" onPress={() => router.push("/(tabs)/entries?filter=plans" as Href)} />
+        <RoundButton dark icon="add-outline" label="Добавить событие" onPress={addForSelectedDate} />
       </View>
 
       <OrbSinkItem><V2Glass depth="pronounced" radius={30} style={styles.monthCard}>
@@ -79,7 +84,7 @@ export default function CalendarScreen() {
             const todayDay = value === today;
             const marks = items.filter((item) => item.date === value);
             return <Pressable key={value} onPress={() => setSelected(value)} style={styles.cell}>
-              <View style={[styles.date, todayDay && styles.today, selectedDay && styles.selected]}><Text style={[styles.dateText, outside && styles.outside, selectedDay && styles.selectedText]}>{date.getDate()}</Text></View>
+              <View style={[styles.date, !outside && styles.dateGlass, todayDay && styles.today, selectedDay && styles.selected]}><Text style={[styles.dateText, outside && styles.outside, selectedDay && styles.selectedText]}>{date.getDate()}</Text></View>
               <View style={styles.marks}>{marks.some((item) => item.source === "plan") && <View style={[styles.mark, styles.planMark]} />}{marks.some((item) => item.source !== "plan") && <View style={[styles.mark, styles.memoryMark]} />}</View>
             </Pressable>;
           })}</View>)}
@@ -91,7 +96,7 @@ export default function CalendarScreen() {
       </V2Glass></OrbSinkItem>
 
       <View style={styles.agendaHeader}><Text style={styles.agendaDate}>{new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long" }).format(selectedDate)}</Text><Text style={styles.agendaDay}>{new Intl.DateTimeFormat("ru-RU", { weekday: "long" }).format(selectedDate)}</Text></View>
-      <View style={styles.agendaItems}>{selectedItems.length ? selectedItems.map((item) => <OrbSinkItem key={item.id}><Pressable onPress={() => router.push(item.source === "plan" ? "/(tabs)/entries?filter=plans" as Href : "/memories" as Href)}><V2Glass depth="pronounced" radius={22} style={styles.agendaItem}><View style={[styles.itemBar, item.source === "plan" ? styles.planBar : styles.memoryBar]} /><View style={styles.itemCopy}><Text style={styles.itemMeta}>{item.source === "plan" ? `План · ${item.meta}` : item.meta}</Text><Text style={styles.itemTitle}>{item.title}</Text></View><Ionicons color={colors.faint} name="chevron-forward" size={16} /></V2Glass></Pressable></OrbSinkItem>) : <OrbSinkItem><V2Glass depth="pronounced" radius={22} style={styles.empty}><Text style={styles.emptyText}>На этот день пока ничего не добавлено.</Text></V2Glass></OrbSinkItem>}</View>
+      <View style={styles.agendaItems}>{selectedItems.length ? selectedItems.map((item) => <OrbSinkItem key={item.id}><Pressable onPress={() => router.push(item.source === "plan" ? `/(tabs)/entries?filter=plans&entryId=${encodeURIComponent(item.id)}` as Href : item.source === "memory" ? `/memories?entryId=${encodeURIComponent(item.id)}` as Href : `/memories?compose=memory&date=${encodeURIComponent(item.date)}&title=${encodeURIComponent(item.title)}` as Href)}><V2Glass depth="pronounced" radius={22} style={styles.agendaItem}><View style={[styles.itemBar, item.source === "plan" ? styles.planBar : styles.memoryBar]} /><View style={styles.itemCopy}><Text style={styles.itemMeta}>{item.source === "plan" ? `План · ${item.meta}` : item.meta}</Text><Text style={styles.itemTitle}>{item.title}</Text></View><Ionicons color={colors.faint} name="chevron-forward" size={16} /></V2Glass></Pressable></OrbSinkItem>) : <OrbSinkItem><V2Glass depth="pronounced" radius={22} style={styles.empty}><Text style={styles.emptyText}>На этот день пока ничего не добавлено.</Text></V2Glass></OrbSinkItem>}</View>
     </V2Screen>
   );
 }
@@ -118,6 +123,7 @@ const styles = StyleSheet.create({
   week: { flexDirection: "row" },
   cell: { alignItems: "center", flex: 1, height: 46, justifyContent: "center" },
   date: { alignItems: "center", borderRadius: 13, height: 38, justifyContent: "center", width: 38 },
+  dateGlass: { backgroundColor: "rgba(255,255,255,.20)", borderColor: "rgba(255,255,255,.22)", borderTopColor: "rgba(255,255,255,.55)", borderWidth: StyleSheet.hairlineWidth },
   today: { borderColor: "rgba(33,30,41,.18)", borderWidth: 1.4 },
   selected: { backgroundColor: colors.anchor, borderWidth: 0 },
   dateText: { color: colors.text, fontFamily: "GolosText", fontSize: 14.5, fontVariant: ["tabular-nums"], fontWeight: "500", letterSpacing: -0.17 },

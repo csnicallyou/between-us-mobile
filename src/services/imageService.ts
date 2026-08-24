@@ -14,6 +14,17 @@ export async function selectAndStoreImage(prefix: string) {
   const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
   if (!permission.granted) throw new Error("PHOTO_PERMISSION_DENIED");
   const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], allowsMultipleSelection: false, quality: 1 });
+  return storePickerImage(prefix, result);
+}
+
+export async function captureAndStoreImage(prefix: string) {
+  const permission = await ImagePicker.requestCameraPermissionsAsync();
+  if (!permission.granted) throw new Error("CAMERA_PERMISSION_DENIED");
+  const result = await ImagePicker.launchCameraAsync({ mediaTypes: ["images"], cameraType: ImagePicker.CameraType.back, quality: 1 });
+  return storePickerImage(prefix, result);
+}
+
+async function storePickerImage(prefix: string, result: ImagePicker.ImagePickerResult) {
   if (result.canceled || !result.assets[0]) return null;
 
   const asset = result.assets[0];

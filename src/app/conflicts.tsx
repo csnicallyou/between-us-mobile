@@ -1,15 +1,18 @@
 import { useMemo, useState } from "react";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import { EntryFormModal, type FormValue } from "@/components/EntryFormModal";
 import { SwipeToDelete } from "@/components/SwipeToDelete";
 import { InnerGlass as Surface, InnerScreen as Screen, InnerScreenHeader, InnerSectionHeader, innerStyles } from "@/components/redesign/InnerScreenChrome";
 import type { ConflictEntry, ConflictTopic } from "@/domain/models";
+import { useRemoteEntryCommand } from "@/hooks/useRemoteEntryCommand";
 import { useAppData } from "@/state/AppDataContext";
 import { fill, ink, materialRadius, materialType, rim } from "@/ui-v2/styleTokens";
 
 const topics: Record<ConflictTopic, string> = { availability: "Доступность", trust: "Доверие", boundaries: "Границы", communication: "Общение", other: "Другое" };
 const topicOrder = Object.keys(topics) as ConflictTopic[];
-const empty: Record<string, FormValue> = { title: "", summary: "", lesson: "", date: new Date().toISOString().slice(0, 10), topic: "communication" };
+const todayIso = () => { const date = new Date(); return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`; };
+const empty: Record<string, FormValue> = { title: "", summary: "", lesson: "", date: "", topic: "communication" };
 const dateValue = (value: string) => new Date(`${value}T12:00:00`);
 const shortDate = (value: string) => new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long" }).format(dateValue(value));
 const monthLabel = (value: string) => {
@@ -18,7 +21,9 @@ const monthLabel = (value: string) => {
 };
 
 export default function ConflictsScreen() {
-  const { snapshot, addConflict, updateConflict, deleteConflict } = useAppData();
+  const { snapshot, addConflict, updateConflict, deleteConflict, isHydrated, refreshRemote } = useAppData();
+  const params = useLocalSearchParams<{ entryId?: string }>();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<ConflictEntry | null>(null);
   const [form, setForm] = useState<Record<string, FormValue>>(empty);
@@ -36,9 +41,20 @@ export default function ConflictsScreen() {
 
   const begin = (item?: ConflictEntry) => {
     setEditing(item ?? null);
-    setForm(item ? { title: item.title, summary: item.summary, lesson: item.lesson, date: item.date, topic: item.topic } : empty);
+    setForm(item ? { title: item.title, summary: item.summary, lesson: item.lesson, date: item.date, topic: item.topic } : { ...empty, date: todayIso() });
     setOpen(true);
   };
+
+  useRemoteEntryCommand({
+    entryId: params.entryId,
+    isHydrated,
+    items: snapshot.conflicts,
+    missingMessage: "Возможно, он был удалён на другом устройстве.",
+    missingTitle: "Эпизод не найден",
+    onConsume: () => router.setParams({ entryId: undefined }),
+    onFound: begin,
+    refreshRemote,
+  });
   const save = () => {
     const title = String(form.title).trim();
     const summary = String(form.summary).trim();
@@ -49,9 +65,9 @@ export default function ConflictsScreen() {
     setEditing(null);
     setForm(empty);
   };
-  const remove = (item: ConflictEntry) => Alert.alert("Удалить эпизод?", item.title, [
+  const remove = (item: ConflictEntry, closeEditor = false) => Alert.alert("Удалить эпизод?", item.title, [
     { text: "Отмена", style: "cancel" },
-    { text: "Удалить", style: "destructive", onPress: () => deleteConflict(item.id) },
+    { text: "Удалить", style: "destructive", onPress: () => { deleteConflict(item.id); if (closeEditor) setOpen(false); } },
   ]);
 
   return (
@@ -97,6 +113,7 @@ export default function ConflictsScreen() {
         fields={[{ key: "title", label: "Название" }, { key: "date", label: "Дата", type: "date" }, { key: "topic", label: "Тема", choices: Object.entries(topics).map(([value, label]) => ({ value, label })) }, { key: "summary", label: "Что произошло", multiline: true }, { key: "lesson", label: "Что стоит изменить", multiline: true }]}
         onChange={(key, value) => setForm((current) => ({ ...current, [key]: value }))}
         onClose={() => { setOpen(false); setEditing(null); }}
+        onDelete={editing ? () => remove(editing, true) : undefined}
         onSave={save}
         title={editing ? "Изменить эпизод" : "Новый эпизод"}
         values={form}

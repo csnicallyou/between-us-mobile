@@ -57,7 +57,7 @@ npm test
 
 ## Установка тестовой IPA
 
-Workflow `Build unsigned iOS IPA` создаёт неподписанный `BetweenUs-unsigned.ipa`. На Windows его можно подписать своим Apple ID через Sideloadly. На Mac удобнее использовать Sideloadly, AltStore или локальную сборку Xcode. При бесплатной подписи Apple приложение обычно требуется переподписывать раз в семь дней; OTA обновляет JavaScript, но не заменяет обязательное переподписание и не устанавливает новые нативные зависимости.
+Workflow `Build unsigned iOS IPA` создаёт два неподписанных standalone-артефакта: `BetweenUs-anton-unsigned.ipa` и `BetweenUs-liza-unsigned.ipa`. У них отдельные bundle ID, поэтому они устанавливаются рядом с development client и друг с другом. Widget extension намеренно не входит в эти варианты: бесплатная подпись Sideloadly меняет bundle ID основного приложения и ломает связь с расширением. На Windows IPA можно подписать своим Apple ID через Sideloadly. При бесплатной подписи Apple приложение обычно требуется переподписывать раз в семь дней; OTA обновляет JavaScript, но не заменяет обязательное переподписание и не устанавливает новые нативные зависимости.
 
 ## Безопасность и ограничения беты
 
@@ -83,17 +83,19 @@ Workflow `Build unsigned iOS IPA` создаёт неподписанный `Bet
 
 ## Проверки
 
-На 11 августа 2026 года:
+На 25 августа 2026 года:
 
 ```text
 npm run typecheck       passed
-npm run check:source    passed (50 TypeScript files)
-npm run doctor          passed (21/21)
+npm run check:source    passed (86 TypeScript files)
+npm run doctor          20/22; см. примечание ниже
 npm run export:web      passed
 server npm run build    passed
-server npm test         passed (4/4)
+server npm test         passed (15/15)
 server npm audit        passed (0 vulnerabilities)
 live two-account flow   passed: pair, shared entry, mood, chat, feedback, media
 ```
+
+Expo Doctor сообщает о доступных patch-версиях пакетов SDK 56 и рекомендует SDK 57 ради исправленной версии Hermes. Зависимости намеренно не обновлялись без отдельного разрешения; TypeScript, source gate, web export и iOS Metro bundle проходят. Диагностика остаётся видимой в CI, но не блокирует сборку IPA/OTA до согласованного обновления SDK.
 
 `npm audit` мобильного workspace показывает предупреждения в актуальной цепочке Expo/Metro. Предложенный автоматический «fix» откатывает Expo и React Native на несовместимые старые версии, поэтому он намеренно не применён; аудит нужно повторять после обновлений Expo SDK.

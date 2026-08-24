@@ -7,13 +7,19 @@ import { memberName } from "@/domain/labels";
 import { useAppData } from "@/state/AppDataContext";
 import { fill, ink, materialSpacing, materialType, rim } from "@/ui-v2/styleTokens";
 
-interface SearchResult { id: string; kindLabel: string; href: Href; title: string; snippet: string; authorId: string; dateLabel: string; }
+interface SearchResult { id: string; kindLabel: string; href: Href; title: string; snippet: string; authorId: string; dateLabel: string; sortAt: string; }
 const kindMeta = {
   plan: { label: "План", href: "/(tabs)/entries?filter=plans" as Href }, journal: { label: "Дневник", href: "/(tabs)/entries?filter=journal" as Href },
   memory: { label: "Памятное событие", href: "/memories" as Href }, about: { label: "Важное о нас", href: "/about" as Href },
   agreement: { label: "Договорённость", href: "/agreements" as Href }, conflict: { label: "Разбор ссоры", href: "/conflicts" as Href },
 };
 function matches(query: string, ...fields: (string | null | undefined)[]) { const needle = query.trim().toLowerCase(); return !!needle && fields.some((field) => field?.toLowerCase().includes(needle)); }
+function searchableDate(value: string | null | undefined) {
+  if (!value) return "";
+  const parsed = new Date(value.includes("T") ? value : `${value}T12:00:00`);
+  if (Number.isNaN(parsed.getTime())) return value;
+  return `${value} ${new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long", year: "numeric" }).format(parsed)}`;
+}
 
 export default function SearchScreen() {
   const router = useRouter();
@@ -22,17 +28,18 @@ export default function SearchScreen() {
   const results = useMemo<SearchResult[]>(() => {
     if (!query.trim()) return [];
     const items: SearchResult[] = [];
-    snapshot.plans.forEach((item) => { if (matches(query, item.title, item.description)) items.push({ id: item.id, kindLabel: kindMeta.plan.label, href: kindMeta.plan.href, title: item.title, snippet: item.description, authorId: item.authorId, dateLabel: item.date ?? "" }); });
-    snapshot.journal.forEach((item) => { if (matches(query, item.title, item.content)) items.push({ id: item.id, kindLabel: kindMeta.journal.label, href: kindMeta.journal.href, title: item.title, snippet: item.content, authorId: item.authorId, dateLabel: item.createdAt.slice(0, 10) }); });
-    snapshot.memories.forEach((item) => { if (matches(query, item.title, item.description)) items.push({ id: item.id, kindLabel: kindMeta.memory.label, href: kindMeta.memory.href, title: item.title, snippet: item.description, authorId: item.authorId, dateLabel: item.date }); });
-    snapshot.about.forEach((item) => { if (matches(query, item.title, item.content)) items.push({ id: item.id, kindLabel: kindMeta.about.label, href: kindMeta.about.href, title: item.title, snippet: item.content, authorId: item.authorId, dateLabel: item.createdAt.slice(0, 10) }); });
-    snapshot.agreements.forEach((item) => { if (matches(query, item.title, item.description)) items.push({ id: item.id, kindLabel: kindMeta.agreement.label, href: kindMeta.agreement.href, title: item.title, snippet: item.description, authorId: item.authorId, dateLabel: item.createdAt.slice(0, 10) }); });
-    snapshot.conflicts.forEach((item) => { if (matches(query, item.title, item.summary, item.lesson)) items.push({ id: item.id, kindLabel: kindMeta.conflict.label, href: kindMeta.conflict.href, title: item.title, snippet: item.summary, authorId: snapshot.currentMemberId, dateLabel: item.date }); });
-    return items;
+    snapshot.plans.forEach((item) => { if (matches(query, item.title, item.description, searchableDate(item.date))) items.push({ id: item.id, kindLabel: kindMeta.plan.label, href: `${kindMeta.plan.href}&entryId=${encodeURIComponent(item.id)}` as Href, title: item.title, snippet: item.description, authorId: item.authorId, dateLabel: item.date ?? "", sortAt: item.date ?? item.updatedAt }); });
+    snapshot.journal.forEach((item) => { if (matches(query, item.title, item.content, searchableDate(item.createdAt))) items.push({ id: item.id, kindLabel: kindMeta.journal.label, href: `${kindMeta.journal.href}&entryId=${encodeURIComponent(item.id)}` as Href, title: item.title, snippet: item.content, authorId: item.authorId, dateLabel: item.createdAt.slice(0, 10), sortAt: item.createdAt }); });
+    snapshot.memories.forEach((item) => { if (matches(query, item.title, item.description, searchableDate(item.date))) items.push({ id: item.id, kindLabel: kindMeta.memory.label, href: `${kindMeta.memory.href}?entryId=${encodeURIComponent(item.id)}` as Href, title: item.title, snippet: item.description, authorId: item.authorId, dateLabel: item.date, sortAt: item.date }); });
+    snapshot.about.forEach((item) => { if (matches(query, item.title, item.content, searchableDate(item.createdAt))) items.push({ id: item.id, kindLabel: kindMeta.about.label, href: `${kindMeta.about.href}?entryId=${encodeURIComponent(item.id)}` as Href, title: item.title, snippet: item.content, authorId: item.authorId, dateLabel: item.createdAt.slice(0, 10), sortAt: item.createdAt }); });
+    snapshot.agreements.forEach((item) => { if (matches(query, item.title, item.description, searchableDate(item.createdAt))) items.push({ id: item.id, kindLabel: kindMeta.agreement.label, href: `${kindMeta.agreement.href}?entryId=${encodeURIComponent(item.id)}` as Href, title: item.title, snippet: item.description, authorId: item.authorId, dateLabel: item.createdAt.slice(0, 10), sortAt: item.createdAt }); });
+    snapshot.conflicts.forEach((item) => { if (matches(query, item.title, item.summary, item.lesson, searchableDate(item.date))) items.push({ id: item.id, kindLabel: kindMeta.conflict.label, href: `${kindMeta.conflict.href}?entryId=${encodeURIComponent(item.id)}` as Href, title: item.title, snippet: item.summary, authorId: "authorId" in item && typeof item.authorId === "string" ? item.authorId : snapshot.currentMemberId, dateLabel: item.date, sortAt: item.date }); });
+    snapshot.chat.forEach((item) => { if (matches(query, item.content, searchableDate(item.createdAt))) items.push({ id: item.id, kindLabel: "Общий чат", href: `/(tabs)/ai-space?mode=chat&messageId=${encodeURIComponent(item.id)}` as Href, title: item.content, snippet: "", authorId: item.author === "ai" ? snapshot.currentMemberId : item.author, dateLabel: item.createdAt.slice(0, 10), sortAt: item.createdAt }); });
+    return items.sort((left, right) => right.sortAt.localeCompare(left.sortAt));
   }, [query, snapshot]);
 
   return (
-    <Screen header={<InnerScreenHeader kicker="Общее пространство" title="Поиск" subtitle="Планы, записи, события и договорённости — в одном месте." />}>
+    <Screen header={<InnerScreenHeader kicker="Общее пространство" title="Поиск" subtitle="Планы, записи, события, договорённости и общий чат — в одном месте." />}>
       <Surface style={styles.searchPanel}>
         <View style={styles.searchField}>
           <Ionicons color={ink.faint} name="search-outline" size={19} />

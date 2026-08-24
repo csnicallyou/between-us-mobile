@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef } from "react";
-import { Animated, Easing, StyleSheet, View } from "react-native";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { AccessibilityInfo, Animated, Easing, StyleSheet, View } from "react-native";
 import Svg, { Circle, Defs, Line, RadialGradient, Stop } from "react-native-svg";
 import { BlurView } from "expo-blur";
 
@@ -62,14 +62,28 @@ function createNetwork() {
 const NETWORK = createNetwork();
 
 /**
- * The orb is a transparent glass volume, not a coloured button. The sixteen
- * particles and their links mirror `docs/redesign/mockups/neurons.js`.
+ * The orb is a transparent glass volume, not a coloured button. Its particles
+ * and links mirror `docs/redesign/mockups/neurons.js`.
  */
 export function AiOrb({ active = false, dark = false, size = 62 }: AiOrbProps) {
   const spin = useRef(new Animated.Value(0)).current;
   const breath = useRef(new Animated.Value(0)).current;
+  const [reduceMotion, setReduceMotion] = useState(false);
 
   useEffect(() => {
+    AccessibilityInfo.isReduceMotionEnabled().then(setReduceMotion).catch(() => undefined);
+    const subscription = AccessibilityInfo.addEventListener("reduceMotionChanged", setReduceMotion);
+    return () => subscription.remove();
+  }, []);
+
+  useEffect(() => {
+    if (reduceMotion) {
+      spin.stopAnimation();
+      breath.stopAnimation();
+      spin.setValue(0);
+      breath.setValue(0);
+      return;
+    }
     const rotation = Animated.loop(
       Animated.timing(spin, {
         duration: active ? 10500 : 15000,
@@ -87,7 +101,7 @@ export function AiOrb({ active = false, dark = false, size = 62 }: AiOrbProps) {
     rotation.start();
     pulse.start();
     return () => { rotation.stop(); pulse.stop(); };
-  }, [active, breath, spin]);
+  }, [active, breath, reduceMotion, spin]);
 
   const radius = size / 2;
   const networkRadius = radius - size * 0.065;

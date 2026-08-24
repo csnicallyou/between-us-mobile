@@ -132,8 +132,6 @@ export const syncRepository = {
       fetchPages<RemoteChatMessage>("/chat/messages", token),
       request<{ items: RemoteAppearance[] }>("/appearance", token),
     ]);
-    versions.clear();
-    entries.forEach((entry) => versions.set(entry.id, entry.version));
     return {
       entries,
       moods: Object.fromEntries(moodResponse.items.map((item) => [item.userId, {
@@ -252,6 +250,11 @@ export const syncRepository = {
 
   clearVersions() {
     versions.clear();
+  },
+
+  acceptRemoteVersions(entries: RemoteEntry[]) {
+    versions.clear();
+    entries.forEach((entry) => versions.set(entry.id, entry.version));
   },
 };
 

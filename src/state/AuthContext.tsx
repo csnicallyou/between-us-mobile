@@ -1,10 +1,14 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type PropsWithChildren } from "react";
 import { Platform } from "react-native";
+import Constants from "expo-constants";
 import { BackendError, backendClient, type AuthSessionDto, type UserDto } from "@/services/backendClient";
 import { registerPushToken, unregisterPushToken } from "@/services/pushNotifications";
 import { clearSession, readSession, writeSession, type StoredSession } from "@/services/secureStorage";
 
-const deviceLabel = Platform.OS === "ios" ? "iPhone" : Platform.OS === "android" ? "Android" : "Устройство";
+const platformLabel = Platform.OS === "ios" ? "iPhone" : Platform.OS === "android" ? "Android" : "Устройство";
+const buildVariant = Constants.expoConfig?.extra?.buildVariant;
+const variantLabel = buildVariant === "anton" ? "Антон" : buildVariant === "liza" ? "Лиза" : __DEV__ ? "разработка" : null;
+const deviceLabel = variantLabel ? `${platformLabel} · ${variantLabel}` : platformLabel;
 
 interface SignUpInput {
   displayName: string;
@@ -23,6 +27,7 @@ interface AuthContextValue {
   refreshSession: () => Promise<StoredSession | null>;
   verifyEmail: (code: string) => Promise<void>;
   resendVerification: () => Promise<void>;
+  updateDisplayName: (displayName: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -69,7 +74,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
       }
     })();
     refreshPromiseRef.current = promise;
-    void promise.finally(() => { if (refreshPromiseRef.current === promise) refreshPromiseRef.current = null; });
+    const release = () => { if (refreshPromiseRef.current === promise) refreshPromiseRef.current = null; };
+    void promise.then(release, release);
     return promise;
   }, [applySession, session?.refreshToken]);
 
@@ -138,14 +144,45 @@ export function AuthProvider({ children }: PropsWithChildren) {
   }, [refreshSession, session?.accessToken]);
 
   const verifyEmail = useCallback(async (code: string) => {
+    const epoch = authEpochRef.current;
+    const userId = session?.user.id;
+    if (!userId) throw new BackendError("Сначала войдите в аккаунт", 401);
     await withAccessToken((token) => backendClient.verifyEmail(code, token));
     const refreshedUser = await withAccessToken((token) => backendClient.me(token));
-    setSession((current) => current ? { ...current, user: refreshedUser } : current);
-  }, [withAccessToken]);
+    setSession((current) => {
+      if (
+        !current
+        || authEpochRef.current !== epoch
+        || current.user.id !== userId
+        || refreshedUser.id !== userId
+      ) return current;
+      const next = { ...current, user: refreshedUser };
+      void writeSession(next).catch(() => undefined);
+      return next;
+    });
+  }, [session?.user.id, withAccessToken]);
 
   const resendVerification = useCallback(async () => {
     await withAccessToken((token) => backendClient.resendVerification(token));
   }, [withAccessToken]);
+
+  const updateDisplayName = useCallback(async (displayName: string) => {
+    const epoch = authEpochRef.current;
+    const userId = session?.user.id;
+    if (!userId) throw new BackendError("Сначала войдите в аккаунт", 401);
+    const updated = await withAccessToken((token) => backendClient.updateMe(displayName.trim(), token));
+    setSession((current) => {
+      if (
+        !current
+        || authEpochRef.current !== epoch
+        || current.user.id !== userId
+        || updated.id !== userId
+      ) return current;
+      const next = { ...current, user: { ...current.user, ...updated } };
+      void writeSession(next).catch(() => undefined);
+      return next;
+    });
+  }, [session?.user.id, withAccessToken]);
 
   const signOut = useCallback(async () => {
     authEpochRef.current += 1;
@@ -172,9 +209,10 @@ export function AuthProvider({ children }: PropsWithChildren) {
     signIn,
     signOut,
     signUp,
+    updateDisplayName,
     user: session?.user ?? null,
     verifyEmail,
-  }), [isHydrated, refreshSession, resendVerification, session, signIn, signOut, signUp, verifyEmail]);
+  }), [isHydrated, refreshSession, resendVerification, session, signIn, signOut, signUp, updateDisplayName, verifyEmail]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
