@@ -1,0 +1,15 @@
+{
+  "expo": {
+    "name": "Между нами — новая версия",
+    "slug": "between-us-next-prototype",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true
+    },
+    "web": {
+      "bundler": "metro"
+    }
+  }
+}
