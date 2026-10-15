@@ -15,7 +15,8 @@
     "react-native": "0.85.3",
     "react-native-web": "~0.21.2",
     "expo-status-bar": "~56.0.4",
-    "expo-sqlite": "~56.0.5"
+    "expo-sqlite": "~56.0.5",
+    "react-dom": "19.2.3"
   },
   "devDependencies": {
     "@types/react": "~19.2.7",
