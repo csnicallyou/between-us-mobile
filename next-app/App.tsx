@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import Storage from 'expo-sqlite/kv-store';
-import { SafeAreaView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, ScrollView, View } from 'react-native';
+import { PanResponder, SafeAreaView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, ScrollView, View } from 'react-native';
 
 type Tab = 'Общение' | 'Активности' | 'Мир' | 'История' | 'Ещё';
 type Message = { id: number; author: 'Я' | 'Партнёр'; text: string };
@@ -33,6 +33,10 @@ export default function App() {
   const [selectedDay, setSelectedDay] = useState((new Date().getDay()+6)%7);
   const [worldLevel, setWorldLevel] = useState(0);
   const [roomIndex, setRoomIndex] = useState(0);
+  const roomSwipe=useMemo(()=>PanResponder.create({
+    onMoveShouldSetPanResponder:(_,g)=>Math.abs(g.dy)>20 && Math.abs(g.dy)>Math.abs(g.dx)*1.3,
+    onPanResponderRelease:(_,g)=>{if(g.dy < -35) setRoomIndex(v=>(v+1)%3);else if(g.dy > 35) setRoomIndex(v=>(v+2)%3);}
+  }),[]);
   const [tasks, setTasks] = useState<Task[]>(() => load('tasks',initialTasks.map((name,id)=>({id,name,done:false}))));
   const [newTask, setNewTask] = useState('');
   const [historyYear, setHistoryYear] = useState(new Date().getFullYear());
@@ -63,8 +67,8 @@ export default function App() {
     <View style={s.header}><View><Text style={s.eyebrow}>МЕЖДУ НАМИ</Text><Text style={s.headerTitle}>{tab === 'Активности' ? 'Наша жизнь' : tab === 'Мир' ? 'Наш мир' : tab === 'История' ? 'Наша история' : tab}</Text></View><Text style={s.headerHeart}>♥</Text></View>
     <ScrollView style={s.page} contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
       {tab === 'Мир' && <>
-        <Panel title={worldLevel===0 ? rooms[roomIndex] : levels[worldLevel]} subtitle="Упрощённая сцена. Настоящий 3D-мир появится на следующем этапе.">
-          <View style={s.worldScene}><Text style={s.worldBackdrop}>{['⌂  ♡  ⌂','⌂  ⌂  ⌂','⌂  ♧  ⌂','◎  ✧  ◎'][worldLevel]}</Text><Text style={s.worldAvatars}>{worldLevel===0?'◕  ♥  ◕':'✦    ♥    ✦'}</Text><Text style={s.worldCaption}>{levels[worldLevel]}</Text>
+        <Panel title={worldLevel===0 ? rooms[roomIndex] : levels[worldLevel]} subtitle={worldLevel===0?'Свайп вверх/вниз — смена комнаты. Пока используется упрощённая сцена.':'Упрощённая сцена. Настоящий 3D-мир появится на следующем этапе.'}>
+          <View style={s.worldScene} {...(worldLevel===0?roomSwipe.panHandlers:{})}><Text style={s.worldBackdrop}>{['⌂  ♡  ⌂','⌂  ⌂  ⌂','⌂  ♧  ⌂','◎  ✧  ◎'][worldLevel]}</Text><Text style={s.worldAvatars}>{worldLevel===0?'◕  ♥  ◕':'✦    ♥    ✦'}</Text><Text style={s.worldCaption}>{levels[worldLevel]}</Text>
             {worldLevel===0 && <View style={s.speech}><Text numberOfLines={2} style={s.speechText}>{last.text}</Text></View>}
           </View>
           <View style={s.actions}><Button label="＋ Приблизить" onPress={()=>setWorldLevel(v=>Math.max(0,v-1))}/><Button label="－ Отдалить" onPress={()=>setWorldLevel(v=>Math.min(3,v+1))}/></View>
