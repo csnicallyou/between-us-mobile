@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import Storage from 'expo-sqlite/kv-store';
 import { SafeAreaView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, ScrollView, View } from 'react-native';
 
 type Tab = 'Общение' | 'Активности' | 'Мир' | 'История' | 'Ещё';
@@ -12,6 +13,11 @@ const weekDays = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 const levels = ['Комната', 'Дом', 'Город', 'Глобус'];
 const rooms = ['Наша комната', 'Моя комната', 'Комната партнёра'];
 const initialTasks = ['Выбрать фильм на вечер', 'Подготовить прогулку', 'Купить продукты'];
+type Task = {id:number;name:string;done:boolean};
+type Memory = {id:number;title:string;date:string;season:string};
+const defaultMemories:Memory[] = [{id:1,title:'Наши прогулки',date:'Лето',season:'☀'},{id:2,title:'Совместный вечер',date:'Осень',season:'❧'}];
+function load<T>(key:string,fallback:T):T { try { const raw=Storage.getItemSync('between-us-next:'+key); return raw?JSON.parse(raw) as T:fallback; } catch {return fallback;} }
+function persist<T>(key:string,value:T) { try {Storage.setItemSync('between-us-next:'+key,JSON.stringify(value));} catch { /* The UI remains usable without local persistence. */ } }
 
 function Button({ label, onPress, active = false }: {label: string; onPress: () => void; active?: boolean}) {
   return <TouchableOpacity onPress={onPress} style={[s.pill, active && s.pillSelected]}><Text style={[s.pillText, active && s.pillTextSelected]}>{label}</Text></TouchableOpacity>;
@@ -21,15 +27,23 @@ function Panel({ title, subtitle, children }: {title: string; subtitle?: string;
 }
 export default function App() {
   const [tab, setTab] = useState<Tab>('Мир');
-  const [messages, setMessages] = useState<Message[]>([{id: 1, author:'Партнёр', text:'Привет! Как прошёл день? ♡'}]);
+  const [messages, setMessages] = useState<Message[]>(() => load('messages',[{id:1,author:'Партнёр',text:'Привет! Как прошёл день? ♡'}]));
   const [draft, setDraft] = useState('');
   const [dateOffset, setDateOffset] = useState(0);
-  const [selectedDay, setSelectedDay] = useState(0);
+  const [selectedDay, setSelectedDay] = useState((new Date().getDay()+6)%7);
   const [worldLevel, setWorldLevel] = useState(0);
   const [roomIndex, setRoomIndex] = useState(0);
-  const [tasks, setTasks] = useState(initialTasks.map((name, id) => ({ id, name, done: false })));
+  const [tasks, setTasks] = useState<Task[]>(() => load('tasks',initialTasks.map((name,id)=>({id,name,done:false}))));
   const [newTask, setNewTask] = useState('');
-  const [historyYear, setHistoryYear] = useState(2026);
+  const [historyYear, setHistoryYear] = useState(new Date().getFullYear());
+  const [memories,setMemories] = useState<Memory[]>(()=>load('memories',defaultMemories));
+  const [memoryTitle,setMemoryTitle] = useState('');
+  const [ideas,setIdeas] = useState<string[]>(()=>load('ideas',['Посмотреть новый фильм','Небольшое путешествие']));
+  const [ideaDraft,setIdeaDraft] = useState('');
+  useEffect(()=>persist('messages',messages),[messages]);
+  useEffect(()=>persist('tasks',tasks),[tasks]);
+  useEffect(()=>persist('memories',memories),[memories]);
+  useEffect(()=>persist('ideas',ideas),[ideas]);
   const [showTools, setShowTools] = useState(false);
   const last = messages[messages.length - 1];
   const days = useMemo(() => {
@@ -77,7 +91,7 @@ export default function App() {
           {tasks.map(t=><TouchableOpacity key={t.id} onPress={()=>setTasks(list=>list.map(x=>x.id===t.id?{...x,done:!x.done}:x))} style={s.task}><Text style={s.body}>{t.done?'☑':'☐'}  {t.name}</Text></TouchableOpacity>)}
           <View style={s.compose}><TextInput style={s.input} value={newTask} onChangeText={setNewTask} placeholder="Новая задача" placeholderTextColor="#95879a"/><TouchableOpacity style={s.send} onPress={()=>{if(!newTask.trim())return;setTasks(a=>[...a,{id:Date.now(),name:newTask.trim(),done:false}]);setNewTask('');}}><Text style={s.sendLabel}>＋</Text></TouchableOpacity></View>
         </Panel>
-        <Panel title="Идеи и желания"><Text style={s.body}>✧ Посмотреть новый фильм</Text><Text style={s.body}>✧ Небольшое путешествие</Text></Panel>
+        <Panel title="Идеи и желания">{ideas.map((idea,i)=><Text key={i} style={s.body}>✧ {idea}</Text>)}<View style={s.compose}><TextInput style={s.input} value={ideaDraft} onChangeText={setIdeaDraft} placeholder="Добавить идею" placeholderTextColor="#95879a"/><TouchableOpacity style={s.send} onPress={()=>{if(!ideaDraft.trim())return;setIdeas(x=>[...x,ideaDraft.trim()]);setIdeaDraft('');}}><Text style={s.sendLabel}>＋</Text></TouchableOpacity></View></Panel>
         <Button label={showTools?'Скрыть инструменты':'Все инструменты →'} onPress={()=>setShowTools(v=>!v)}/>
         {showTools && <Panel title="Разделы"><Text style={s.body}>Календарь · Задачи · Идеи · Цели · Голосования · Поездки</Text></Panel>}
       </>}
@@ -86,12 +100,11 @@ export default function App() {
           <View style={s.actions}><Button label="‹ Год" onPress={()=>setHistoryYear(y=>y-1)}/><Button label={String(historyYear)} onPress={()=>setHistoryYear(2026)}/><Button label="Год ›" onPress={()=>setHistoryYear(y=>y+1)}/></View>
           <View style={s.road}>
             <Text style={s.season}>❀ Весна</Text><Text style={s.roadNode}>● Первые моменты</Text>
-            <Text style={s.season}>☀ Лето</Text><Text style={s.roadNode}>● Наши прогулки    ▧ Фото</Text>
-            <Text style={s.season}>❧ Осень</Text><Text style={s.roadNode}>● Совместный вечер ♡</Text>
+            {memories.map(m=><React.Fragment key={m.id}><Text style={s.season}>{m.season} {m.date}</Text><Text style={s.roadNode}>● {m.title}</Text></React.Fragment>)}
             <Text style={s.season}>❄ Зима</Text><Text style={s.roadNode}>● Памятные даты</Text>
           </View>
         </Panel>
-        <Panel title="В этот день" subtitle="Здесь будут появляться воспоминания прошлых лет."/>
+        <Panel title="Новое воспоминание" subtitle="Ручное сохранение. Фото и медиа подключим далее."><View style={s.compose}><TextInput style={s.input} value={memoryTitle} onChangeText={setMemoryTitle} placeholder="Название момента" placeholderTextColor="#95879a"/><TouchableOpacity style={s.send} onPress={()=>{if(!memoryTitle.trim())return;const now=new Date();const season=['❄','❄','❀','❀','❀','☀','☀','☀','❧','❧','❧','❄'][now.getMonth()];setMemories(a=>[...a,{id:Date.now(),title:memoryTitle.trim(),date:now.toLocaleDateString('ru-RU'),season}]);setMemoryTitle('');}}><Text style={s.sendLabel}>＋</Text></TouchableOpacity></View></Panel><Panel title="В этот день" subtitle="Здесь появятся воспоминания прошлых лет."/>
         <Panel title="Наши коллекции"><Text style={s.body}>Альбомы  ·  Дневники  ·  Письма</Text><Text style={s.body}>Капсулы времени  ·  Поездки  ·  Наша книга</Text></Panel>
       </>}
       {tab === 'Ещё' && <>
