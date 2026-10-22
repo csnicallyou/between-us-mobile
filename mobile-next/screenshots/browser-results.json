@@ -1,0 +1,17 @@
+{
+  "viewport": "390x844 and 320x640",
+  "checks": [
+    "WebGL scene",
+    "five tabs",
+    "chat persistence",
+    "six room themes",
+    "editor save/cancel",
+    "undo/redo controls",
+    "task to linked memory",
+    "favourite persistence",
+    "draw to extruded creature",
+    "narrow viewport",
+    "reload persistence"
+  ],
+  "errors": []
+}
