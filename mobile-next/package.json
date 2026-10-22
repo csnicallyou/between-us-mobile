@@ -8,14 +8,21 @@
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
     "test": "tsx --test src/domain/*.test.ts",
-    "export:web": "expo export --platform web"
+    "export:web": "expo export --platform web",
+    "export:all": "expo export --platform all",
+    "preview": "node scripts/serve.cjs",
+    "test:browser": "node scripts/browser-check.cjs",
+    "format": "prettier --write src/App.tsx src/components/Room*.tsx src/domain/room*.ts scripts/*.cjs"
   },
   "dependencies": {
     "@expo/metro-runtime": "~6.1.2",
     "@expo/vector-icons": "^15.0.3",
     "@react-native-async-storage/async-storage": "2.2.0",
+    "@react-three/fiber": "^9.3.0",
     "expo": "~54.0.33",
+    "expo-asset": "~12.0.9",
     "expo-blur": "~15.0.8",
+    "expo-gl": "~16.0.9",
     "expo-haptics": "~15.0.8",
     "expo-image-picker": "~17.0.11",
     "expo-linear-gradient": "~15.0.8",
@@ -24,11 +31,15 @@
     "react-native": "0.81.5",
     "react-native-safe-area-context": "~5.6.0",
     "react-native-svg": "15.12.1",
-    "react-native-web": "^0.21.0"
+    "react-native-web": "^0.21.0",
+    "three": "^0.180.0"
   },
   "devDependencies": {
-    "typescript": "~5.9.2",
     "@types/react": "~19.1.10",
-    "tsx": "^4.20.0"
+    "@types/three": "^0.180.0",
+    "playwright": "^1.64.1",
+    "prettier": "^3.9.10",
+    "tsx": "^4.20.0",
+    "typescript": "~5.9.2"
   }
 }

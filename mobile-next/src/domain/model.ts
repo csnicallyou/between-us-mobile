@@ -1,9 +1,10 @@
+import type {RoomDesign} from './room';
 export type Kind = 'event' | 'task' | 'idea' | 'goal' | 'poll' | 'memory' | 'diary' | 'letter' | 'capsule' | 'note' | 'expense' | 'habit' | 'agreement';
 export type Visibility = 'private' | 'shared' | 'secret';
 export type Block = { id: string; type: 'text' | 'photo' | 'place'; value: string };
 export type Entry = { id: string; kind: Kind; title: string; body: string; date: string; visibility: Visibility; owner: string; blocks: Block[]; status: 'open' | 'doing' | 'done'; amount: number; progress: number; linkedId?: string; pinned?: boolean; hidden?: boolean; liked?: boolean; rsvp?: string; versions: { at: string; title: string; body: string; blocks: Block[] }[] };
 export type Message = { id: string; text: string; author: string; at: string; reaction?: string; pinned?: boolean; replyTo?: string; media?: string; kind: 'text' | 'care'; status: 'demo' | 'local' };
-export type State = { version: 1; onboarded: boolean; name: string; partner: string; paired: boolean; room: 'personal' | 'shared'; mood: string; theme: 'light' | 'dark'; palette: string; avatar: string; reduceMotion: boolean; quiet: boolean; previews: boolean; aiConsent: boolean; entries: Entry[]; messages: Message[]; coins: number; inventory: string[]; requests: { id: string; title: string; before: string; after: string; status: 'pending' | 'accepted' | 'declined'; author: string }[] };
+export type State = { version: 1; roomDesign?: RoomDesign; silhouette?: number[][]; onboarded: boolean; name: string; partner: string; paired: boolean; room: 'personal' | 'shared'; mood: string; theme: 'light' | 'dark'; palette: string; avatar: string; reduceMotion: boolean; quiet: boolean; previews: boolean; aiConsent: boolean; entries: Entry[]; messages: Message[]; coins: number; inventory: string[]; requests: { id: string; title: string; before: string; after: string; status: 'pending' | 'accepted' | 'declined'; author: string }[] };
 export const uid = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 export const dayKey = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 export const addDays = (key: string, days: number) => { const d = new Date(`${key}T12:00:00`); d.setDate(d.getDate()+days); return dayKey(d); };
