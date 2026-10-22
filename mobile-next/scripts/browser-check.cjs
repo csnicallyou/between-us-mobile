@@ -28,6 +28,18 @@ const assert = require("node:assert/strict");
   await page.waitForTimeout(2200);
   assert.equal(await page.locator("canvas").count(), 1);
   await shot("01-room");
+  if (process.argv.includes("--preview")) {
+    for (const name of ["Общение", "Активности", "История", "Ещё"]) {
+      await button(name).click();
+      await shot("redesign-" + name);
+    }
+    await button("Мир").click();
+    await button("Настроить комнату").click();
+    await shot("redesign-editor");
+    console.log("Preview errors", errors);
+    await browser.close();
+    return;
+  }
   // Real mesh raycast: the first creature occupies the lower centre of this viewport.
   await page.locator("canvas").click({ position: { x: 143, y: 430 } });
   await page.waitForTimeout(150);
@@ -116,6 +128,11 @@ const assert = require("node:assert/strict");
   await button("История").click();
   assert.ok(await page.getByText("Прогулка в парке", { exact: true }).count());
   await shot("06-history");
+  await button("Открыть воспоминание: Прогулка в парке").click();
+  assert.ok(
+    await page.getByText("Чай и разговоры без спешки", { exact: true }).count(),
+  );
+  await button("Закрыть воспоминание").click();
   await button("В избранное: Прогулка в парке").click();
   await settle();
   assert.equal(

@@ -1,3 +1,4 @@
+import { MemoryGallery } from "./components/MemoryGallery";
 import React, { useState, useEffect, useMemo } from "react";
 import {
   View,
@@ -27,6 +28,7 @@ import {
   redoRoom,
 } from "./domain/room";
 import { Room3D } from "./components/Room3D";
+import { ClayIcon, MemoryScene } from "./components/ClayArt";
 
 type Tab = "Общение" | "Активности" | "Мир" | "История" | "Ещё";
 const tabs: Tab[] = ["Общение", "Активности", "Мир", "История", "Ещё"];
@@ -37,7 +39,7 @@ const icons = [
   "albums",
   "ellipsis-horizontal",
 ] as const;
-const ink = "#56404d";
+const ink = "#3e3440";
 function Clay({
   children,
   onPress,
@@ -73,6 +75,29 @@ function Clay({
         },
       ]}
     >
+      {(!StyleSheet.flatten(style)?.backgroundColor ||
+        StyleSheet.flatten(style)?.backgroundColor === "#f2b1bd") && (
+        <>
+          <LinearGradient
+            pointerEvents="none"
+            colors={active ? ["#ffe2df", "#f5adbb"] : ["#fffaf0", "#f7e5d7"]}
+            style={StyleSheet.absoluteFillObject}
+          />
+          <View
+            pointerEvents="none"
+            style={{
+              position: "absolute",
+              top: 2,
+              left: 7,
+              right: 7,
+              height: 13,
+              borderTopWidth: 1,
+              borderTopColor: "#ffffffcc",
+              borderRadius: 22,
+            }}
+          />
+        </>
+      )}
       {children}
     </Pressable>
   );
@@ -80,8 +105,14 @@ function Clay({
 function Txt({ children, style }: { children: React.ReactNode; style?: any }) {
   return <Text style={[c.text, style]}>{children}</Text>;
 }
-function Heading({ children }: { children: React.ReactNode }) {
-  return <Txt style={c.heading}>{children}</Txt>;
+function Heading({
+  children,
+  style,
+}: {
+  children: React.ReactNode;
+  style?: any;
+}) {
+  return <Txt style={[c.heading, style]}>{children}</Txt>;
 }
 function Icon({
   name,
@@ -92,6 +123,45 @@ function Icon({
   size?: number;
   color?: string;
 }) {
+  if (
+    [
+      "heart",
+      "heart-outline",
+      "home",
+      "chatbubbles",
+      "checkmark-circle",
+      "checkmark",
+      "albums",
+      "gift",
+      "moon",
+      "leaf",
+      "sparkles",
+      "planet",
+      "happy",
+      "walk",
+      "brush",
+      "cafe",
+    ].includes(name)
+  )
+    return (
+      <ClayIcon
+        name={name}
+        size={size + 8}
+        color={
+          color === ink
+            ? (
+                {
+                  leaf: "#a4bb76",
+                  gift: "#ee9b8e",
+                  moon: "#ac8fe0",
+                  sparkles: "#eac16e",
+                  heart: "#ed8ba5",
+                } as Record<string, string>
+              )[name] || color
+            : color
+        }
+      />
+    );
   return <Ionicons name={name} size={size} color={color} />;
 }
 function Shell() {
@@ -101,6 +171,8 @@ function Shell() {
   const [bubble, setBubble] = useState(false);
   const [selectedDate, setSelectedDate] = useState(dayKey());
   const [linkedId, setLinkedId] = useState<string | undefined>();
+  const [memoryId, setMemoryId] = useState<string | null>(null);
+  const [showData, setShowData] = useState(false);
   const [tab, setTab] = useState<Tab>("Мир");
   const [history, setHistory] = useState<RoomHistory | null>(null);
   const [selected, select] = useState("styles");
@@ -239,7 +311,7 @@ function Shell() {
     );
   return (
     <LinearGradient
-      colors={["#f4d9cc", "#faeee4", "#edd9d5"]}
+      colors={["#fae4d8", "#fff2e6", "#f3dfd8"]}
       style={{ flex: 1 }}
     >
       <SafeAreaView style={{ flex: 1 }}>
@@ -259,21 +331,43 @@ function Shell() {
                 />
               </View>
               <View pointerEvents="box-none" style={c.roomChrome}>
+                <LinearGradient
+                  pointerEvents="none"
+                  colors={["#ad715cbb", "#c08b6d55", "#dbb08a00"]}
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: 200,
+                  }}
+                />
                 <View style={c.header}>
                   <View style={{ flex: 1, minWidth: 0 }}>
-                    <Txt style={c.eyebrow}>
+                    <Txt style={[c.eyebrow, history && { display: "none" }]}>
                       {history
                         ? "СДЕЛАЕМ ЭТО МЕСТО СВОИМ"
                         : "МАЛЕНЬКИЙ МИР ДЛЯ ДВОИХ"}
                     </Txt>
-                    <Heading>
+                    <Heading
+                      style={
+                        !history
+                          ? {
+                              color: "#fff9ef",
+                              textShadowColor: "#84554766",
+                              textShadowOffset: { width: 0, height: 2 },
+                              textShadowRadius: 4,
+                            }
+                          : { fontSize: 20, lineHeight: 26, marginVertical: 2 }
+                      }
+                    >
                       {history ? "Редактор комнаты" : "Между нами"}
-                      <Text style={{ color: "#d87a8c" }}> ♡</Text>
+                      {!history && <Text style={{ color: "#d87a8c" }}> ♡</Text>}
                     </Heading>
                     <Txt style={c.sub}>
                       {history
                         ? "Нажмите на предмет, чтобы изменить его"
-                        : "Наша комната · хорошо быть рядом"}
+                        : "Наше уютное место"}
                     </Txt>
                   </View>
                   <Clay
@@ -319,14 +413,34 @@ function Shell() {
                         <Icon name="planet" color="#b39c72" />
                       </Clay>
                     </View>
-                    <View style={c.roomFoot}>
-                      <Txt style={{ fontSize: 13, fontWeight: "600" }}>
-                        Ростик и Искра
-                      </Txt>
-                      <Txt style={c.sub}>
-                        Нажмите на существо — побудьте рядом
-                      </Txt>
-                    </View>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel="Наш ближайший план"
+                      onPress={() => setTab("Активности")}
+                      style={c.roomFoot}
+                    >
+                      <Icon name="leaf" color="#9db67d" size={28} />
+                      <View style={{ flex: 1 }}>
+                        <Txt
+                          style={{
+                            fontSize: 11,
+                            fontWeight: "800",
+                            marginBottom: 2,
+                          }}
+                        >
+                          Наши планы
+                        </Txt>
+                        <Txt style={{ fontSize: 13 }}>
+                          {state.entries.find(
+                            (e) => e.kind === "event" && e.status !== "done",
+                          )?.title || "Время для двоих"}
+                        </Txt>
+                        <Txt style={c.sub}>
+                          Сегодня · немного времени вместе
+                        </Txt>
+                      </View>
+                      <Icon name="chevron-forward" size={17} color="#b8948e" />
+                    </Pressable>
                   </>
                 )}
               </View>
@@ -472,10 +586,13 @@ function Shell() {
           ) : (
             <ScrollView
               style={{ flex: 1 }}
-              contentContainerStyle={c.content}
+              contentContainerStyle={[
+                c.content,
+                tab === "Общение" && { flexGrow: 1 },
+              ]}
               keyboardShouldPersistTaps="handled"
             >
-              <Txt style={c.eyebrow}>
+              <Txt style={[c.eyebrow, { display: "none" }]}>
                 {tab === "Общение"
                   ? "СЛОВА, КОТОРЫЕ СБЛИЖАЮТ"
                   : tab === "Активности"
@@ -484,15 +601,15 @@ function Shell() {
                       ? "ВСЁ, ЧТО ДЕЛАЕТ НАС НАМИ"
                       : "СВОЁ ПРОСТРАНСТВО"}
               </Txt>
-              <View style={c.row}>
+              <View style={[c.row, tab === "Общение" && { display: "none" }]}>
                 <Heading>
                   {tab === "Общение"
                     ? "Наш разговор"
                     : tab === "Активности"
                       ? "Активности"
                       : tab === "История"
-                        ? "Наша история"
-                        : "Ещё немного нас"}
+                        ? "История"
+                        : "Настройки"}
                 </Heading>
                 {(tab === "История" || tab === "Активности") && (
                   <Clay
@@ -511,16 +628,33 @@ function Shell() {
               </View>
               {tab === "Общение" && (
                 <>
-                  <View style={c.card}>
+                  <View
+                    style={[
+                      c.card,
+                      {
+                        backgroundColor: "transparent",
+                        borderWidth: 0,
+                        boxShadow: "none",
+                        padding: 0,
+                      },
+                    ]}
+                  >
                     <View style={c.row}>
+                      <Clay
+                        label="Вернуться в комнату"
+                        onPress={() => setTab("Мир")}
+                        style={[c.round, { width: 38, height: 38 }]}
+                      >
+                        <Icon name="chevron-back" size={20} />
+                      </Clay>
                       <View
                         style={[c.miniAvatar, { backgroundColor: "#d4b9e9" }]}
                       >
-                        <Txt style={{ fontSize: 24 }}>✦</Txt>
+                        <ClayIcon name="sparkles" color="#b39bd6" size={35} />
                       </View>
                       <View>
                         <Txt style={{ fontWeight: "700" }}>
-                          {state.partner} · Искра
+                          {state.partner} ♡
                         </Txt>
                         <Txt style={c.sub}>
                           Локальный чат · доставка не подключена
@@ -537,6 +671,22 @@ function Shell() {
                       ]}
                     >
                       <Txt>{m.text}</Txt>
+                      {m.status === "demo" && m.author === "partner" && (
+                        <View
+                          style={{
+                            height: 165,
+                            width: 240,
+                            maxWidth: "100%",
+                            marginTop: 9,
+                            borderRadius: 15,
+                            overflow: "hidden",
+                            borderWidth: 3,
+                            borderColor: "#fff9ef",
+                          }}
+                        >
+                          <MemoryScene />
+                        </View>
+                      )}
                       <Txt
                         style={{ fontSize: 10, opacity: 0.55, marginTop: 7 }}
                       >
@@ -548,6 +698,7 @@ function Shell() {
                       </Txt>
                     </View>
                   ))}
+                  <View style={{ flexGrow: 1, minHeight: 8 }} />
                   <View style={c.row}>
                     <TextInput
                       accessibilityLabel="Сообщение"
@@ -566,17 +717,6 @@ function Shell() {
                       <Icon name="arrow-up" />
                     </Clay>
                   </View>
-                  <Clay
-                    onPress={() => {
-                      send("Думаю о тебе ♡");
-                      setAction("hug");
-                    }}
-                  >
-                    <Txt>♡ Отправить немного тепла</Txt>
-                  </Clay>
-                  <Txt style={c.sub}>
-                    Последнее сообщение появится и в нашей комнате.
-                  </Txt>
                 </>
               )}
               {tab === "Активности" && (
@@ -741,83 +881,28 @@ function Shell() {
                   </Clay>
                 </>
               )}
-              {tab === "История" && (
-                <>
-                  <Txt style={c.sub}>У каждого «помнишь?» есть своё место.</Txt>
-                  {state.entries
-                    .filter((e) => e.kind === "memory")
-                    .map((e, i) => (
-                      <View key={e.id} style={c.card}>
-                        <LinearGradient
-                          colors={
-                            i % 2
-                              ? ["#b8c5da", "#e4b9d0"]
-                              : ["#c2d2ae", "#efd0a9"]
-                          }
-                          style={c.memoryArt}
-                        >
-                          <Icon
-                            name={i % 2 ? "moon" : "leaf"}
-                            color="#fff4df"
-                            size={62}
-                          />
-                          <Txt
-                            style={{
-                              fontSize: 12,
-                              color: "#fff",
-                              marginTop: 12,
-                            }}
-                          >
-                            НАШ МАЛЕНЬКИЙ МОМЕНТ
-                          </Txt>
-                        </LinearGradient>
-                        <View style={c.row}>
-                          <Txt style={{ fontWeight: "700", flex: 1 }}>
-                            {e.title}
-                          </Txt>
-                          <Clay
-                            label={`В избранное: ${e.title}`}
-                            onPress={() =>
-                              set((s) => ({
-                                ...s,
-                                entries: s.entries.map((x) =>
-                                  x.id === e.id ? { ...x, liked: !x.liked } : x,
-                                ),
-                              }))
-                            }
-                            style={{ padding: 6 }}
-                          >
-                            <Icon
-                              name={e.liked ? "heart" : "heart-outline"}
-                              color="#d98197"
-                              size={22}
-                            />
-                          </Clay>
-                        </View>
-                        <Txt style={c.sub}>{e.date}</Txt>
-                        <Txt>{e.body}</Txt>
-                        {e.linkedId && (
-                          <Txt style={c.sub}>Связано с нашим планом</Txt>
-                        )}
-                      </View>
-                    ))}
-                  <Txt style={c.sub}>
-                    Первые три записи — демонстрационные. Новые воспоминания
-                    сохраняются на вашем устройстве.
-                  </Txt>
-                </>
-              )}
+              {tab === "История" && <MemoryGallery onOpen={setMemoryId} />}
               {tab === "Ещё" && (
                 <>
                   <View style={c.card}>
-                    <Txt style={c.eyebrow}>НАШИ ПЕРСОНАЖИ</Txt>
-                    <Heading>
-                      {state.name} и {state.partner}
-                    </Heading>
-                    <Txt>
-                      Ростик и Искра — временные вымышленные существа. Нарисуйте
-                      свой силуэт, чтобы заменить Ростика.
-                    </Txt>
+                    <View style={c.row}>
+                      <View
+                        style={{
+                          width: 72,
+                          height: 72,
+                          borderRadius: 23,
+                          overflow: "hidden",
+                        }}
+                      >
+                        <MemoryScene />
+                      </View>
+                      <View>
+                        <Txt style={{ fontSize: 18, fontWeight: "800" }}>
+                          {state.name} и {state.partner}
+                        </Txt>
+                        <Txt style={c.sub}>Наши персонажи · Ростик и Искра</Txt>
+                      </View>
+                    </View>
                     <Clay
                       active
                       onPress={() => {
@@ -840,22 +925,37 @@ function Shell() {
                       set((s) => ({ ...s, reduceMotion: !s.reduceMotion }))
                     }
                   >
-                    <Txt>
-                      Плавные анимации:{" "}
-                      {state.reduceMotion ? "выключены" : "включены"}
-                    </Txt>
+                    <View style={c.row}>
+                      <Icon name="moon" color="#a494cf" />
+                      <Txt>
+                        Плавные анимации:{" "}
+                        {state.reduceMotion ? "выключены" : "включены"}
+                      </Txt>
+                    </View>
                   </Clay>
-                  <View style={c.card}>
-                    <Txt style={{ fontWeight: "700" }}>Данные и связь</Txt>
-                    <Txt>
-                      Чат, планы, воспоминания, рисунок и оформление хранятся
-                      локально. Партнёр и присутствие показаны в
-                      демонстрационном режиме.
-                    </Txt>
-                    <Txt style={c.sub}>
-                      Синхронизация, аккаунты, push и ИИ ещё не подключены.
-                    </Txt>
-                  </View>
+                  <Clay onPress={() => setShowData((v) => !v)}>
+                    <View style={c.row}>
+                      <Icon name="albums" color="#9fbcc9" />
+                      <Txt>Данные и приватность</Txt>
+                      <Icon
+                        name={showData ? "chevron-up" : "chevron-forward"}
+                        size={17}
+                      />
+                    </View>
+                  </Clay>
+                  {showData && (
+                    <View style={c.card}>
+                      <Txt style={{ fontWeight: "700" }}>Данные и связь</Txt>
+                      <Txt>
+                        Чат, планы, воспоминания, рисунок и оформление хранятся
+                        локально. Партнёр и присутствие показаны в
+                        демонстрационном режиме.
+                      </Txt>
+                      <Txt style={c.sub}>
+                        Синхронизация, аккаунты, push и ИИ ещё не подключены.
+                      </Txt>
+                    </View>
+                  )}
                   <Txt style={c.sub}>
                     Между нами · первый интерактивный 3D-прототип
                   </Txt>
@@ -924,24 +1024,36 @@ function Shell() {
                 style={StyleSheet.absoluteFill}
                 onPress={() => setWho(null)}
               />
-              <View style={c.menu}>
-                <Heading>
-                  {who === "me"
-                    ? "Ростик"
-                    : who === "partner"
-                      ? "Искра"
-                      : who === "menu"
-                        ? "Наша комната"
-                        : who === "world"
-                          ? "Наш мир"
-                          : who === "sofa"
-                            ? "Мягкий диван"
-                            : who === "creative"
-                              ? "Творческий уголок"
-                              : who === "lamp"
-                                ? "Тёплый свет"
-                                : "Время вместе"}
-                </Heading>
+              <View
+                style={[
+                  c.menu,
+                  (who === "me" || who === "partner") && {
+                    backgroundColor: "transparent",
+                    borderWidth: 0,
+                    boxShadow: "none",
+                    padding: 0,
+                  },
+                ]}
+              >
+                {!(who === "me" || who === "partner") && (
+                  <Heading>
+                    {who === "me"
+                      ? "Ростик"
+                      : who === "partner"
+                        ? "Искра"
+                        : who === "menu"
+                          ? "Наша комната"
+                          : who === "world"
+                            ? "Наш мир"
+                            : who === "sofa"
+                              ? "Мягкий диван"
+                              : who === "creative"
+                                ? "Творческий уголок"
+                                : who === "lamp"
+                                  ? "Тёплый свет"
+                                  : "Время вместе"}
+                  </Heading>
+                )}
                 {who === "me" || who === "partner" ? (
                   <View style={c.radial}>
                     {(who === "me"
@@ -973,8 +1085,9 @@ function Shell() {
                         <Txt
                           style={{
                             fontSize: 11,
+                            lineHeight: 14,
                             textAlign: "center",
-                            marginTop: 5,
+                            marginTop: 3,
                           }}
                         >
                           {label}
@@ -1104,6 +1217,39 @@ function Shell() {
           </Modal>
           <Modal
             transparent
+            visible={!!memoryId}
+            animationType="fade"
+            onRequestClose={() => setMemoryId(null)}
+          >
+            <View style={c.modalBackdrop}>
+              <View style={c.menu}>
+                <View
+                  style={{ height: 200, borderRadius: 20, overflow: "hidden" }}
+                >
+                  <MemoryScene
+                    variant={state.entries
+                      .filter((e) => e.kind === "memory")
+                      .findIndex((e) => e.id === memoryId)}
+                  />
+                </View>
+                <Heading>
+                  {state.entries.find((e) => e.id === memoryId)?.title}
+                </Heading>
+                <Txt style={c.sub}>
+                  {state.entries.find((e) => e.id === memoryId)?.date}
+                </Txt>
+                <Txt>{state.entries.find((e) => e.id === memoryId)?.body}</Txt>
+                <Clay
+                  label="Закрыть воспоминание"
+                  onPress={() => setMemoryId(null)}
+                >
+                  <Txt>Закрыть</Txt>
+                </Clay>
+              </View>
+            </View>
+          </Modal>
+          <Modal
+            transparent
             visible={drawing}
             animationType="slide"
             onRequestClose={() => draw(false)}
@@ -1190,10 +1336,10 @@ const c = StyleSheet.create({
   },
   text: { color: ink, fontSize: 14, lineHeight: 21 },
   heading: {
-    fontSize: 29,
+    fontSize: 30,
     lineHeight: 36,
     fontWeight: "800",
-    letterSpacing: -1,
+    letterSpacing: -1.2,
     marginVertical: 6,
   },
   eyebrow: {
@@ -1212,6 +1358,7 @@ const c = StyleSheet.create({
   row: { flexDirection: "row", alignItems: "center", gap: 9 },
   clay: {
     backgroundColor: "#fff1e5",
+    overflow: "hidden",
     borderRadius: 22,
     paddingHorizontal: 15,
     paddingVertical: 12,
@@ -1219,7 +1366,7 @@ const c = StyleSheet.create({
     borderColor: "#fff8f0",
     borderBottomWidth: 4,
     borderBottomColor: "#dec2b4",
-    boxShadow: "0px 5px 12px #81584b20",
+    boxShadow: "0px 5px 10px #92594f2b, inset 0px 2px 1px #fffdf4",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -1243,7 +1390,21 @@ const c = StyleSheet.create({
   },
   dot: { width: 6, height: 6, backgroundColor: "#b6a67d", borderRadius: 4 },
   roomSide: { position: "absolute", right: 17, top: 150, gap: 12 },
-  roomFoot: { position: "absolute", bottom: 17, left: 24 },
+  roomFoot: {
+    position: "absolute",
+    bottom: 8,
+    left: 5,
+    right: 5,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 13,
+    padding: 15,
+    borderRadius: 25,
+    backgroundColor: "#fff5e8ee",
+    borderWidth: 2,
+    borderColor: "#fff9ef",
+    boxShadow: "0px 5px 15px #915f5230",
+  },
   nav: {
     flexDirection: "row",
     margin: 12,
@@ -1280,15 +1441,15 @@ const c = StyleSheet.create({
     backgroundColor: "#f2b1bd",
     boxShadow: "0px 4px 10px #bd75863a",
   },
-  content: { padding: 23, paddingBottom: 24, gap: 16 },
+  content: { padding: 19, paddingTop: 26, paddingBottom: 20, gap: 12 },
   card: {
     backgroundColor: "#fff5eaca",
-    borderRadius: 27,
-    padding: 18,
+    borderRadius: 23,
+    padding: 14,
     gap: 10,
     borderWidth: 1.5,
     borderColor: "#fff9f2",
-    boxShadow: "0px 5px 14px #9c797014",
+    boxShadow: "0px 4px 9px #aa7c7020, inset 0px 2px 1px #fffbf4",
   },
   miniAvatar: {
     height: 47,
@@ -1327,7 +1488,7 @@ const c = StyleSheet.create({
   },
   day: { padding: 7, borderRadius: 15, alignItems: "center" },
   memoryArt: {
-    height: 145,
+    height: 175,
     borderRadius: 18,
     alignItems: "center",
     justifyContent: "center",

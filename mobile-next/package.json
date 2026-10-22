@@ -12,7 +12,7 @@
     "export:all": "expo export --platform all",
     "preview": "node scripts/serve.cjs",
     "test:browser": "node scripts/browser-check.cjs",
-    "format": "prettier --write src/App.tsx src/components/Room*.tsx src/domain/room*.ts scripts/*.cjs"
+    "format": "prettier --write src/App.tsx src/components/Room*.tsx src/components/ClayArt.tsx src/components/MemoryGallery.tsx src/domain/room*.ts scripts/*.cjs"
   },
   "dependencies": {
     "@expo/metro-runtime": "~6.1.2",
